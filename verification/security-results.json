@@ -1,5 +1,6 @@
 {
   "checks": [
+    "fresh install defaults to device persistence without an unlock password",
     "legacy plaintext migrates to session and preserves old language before persistent deletion",
     "no API request before explicit data-processing consent",
     "invalid save preserves existing session key",
@@ -11,7 +12,19 @@
     "correct password unlocks after browser restart",
     "public config never returns decrypted key, ciphertext, password or salt",
     "session-only mode removes the encrypted persistent copy",
-    "delete clears both credential stores"
+    "delete clears both credential stores",
+    "device mode saves through UI without password or extra checkbox and clears key input",
+    "device key survives real browser restart without unlocking",
+    "device AES-256 key survives as a non-extractable CryptoKey in extension IndexedDB",
+    "tampered device ciphertext fails closed and restores without leaking credentials",
+    "device credentials are excluded from public config",
+    "device mode cannot misleadingly report a password lock",
+    "failed encryption conversion preserves remembered key",
+    "switching device to password encryption removes automatic device key",
+    "locked vault is preserved until user unlocks or supplies replacement key",
+    "unlocked encrypted key can switch to device mode without retyping key",
+    "session mode removes persistent copies and remains selected after restart",
+    "deleting device credentials also deletes the automatic decryption key across restart"
   ],
   "apiRequests": 0,
   "fixtureOnly": true

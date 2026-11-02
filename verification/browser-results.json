@@ -3,7 +3,7 @@
   "checks": [
     "unpacked extension loads; settings renders without remote assets",
     "missing Key shows setup action and sends no request",
-    "Key saved to session by default and cleared from visible input",
+    "Key remembered on device by default and cleared from visible input",
     "content scripts cannot read secret storage",
     "webpage content scripts cannot unlock, save, lock or delete credentials",
     "site-authorized selection launcher and streamed translation",

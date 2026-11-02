@@ -1,5 +1,6 @@
 import { DEFAULTS, LANGUAGES, languagePreferences, buildRequest, consumeSSE, apiError, type Settings, type Task } from './core';
 import { encryptKey, decryptKey } from './vault';
+import { encryptDeviceKey, decryptDeviceKey, removeDeviceKey } from './device-vault';
 
 const ready = Promise.all([
   chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }),
@@ -10,14 +11,19 @@ const ready = Promise.all([
   if (typeof legacy.apiKey === 'string' && legacy.apiKey) {
     const current = await chrome.storage.session.get('apiKey');
     await chrome.storage.session.set({ apiKey: current.apiKey || legacy.apiKey, legacyMigrated: true });
+    await chrome.storage.local.set({keyStorageMode: 'session'});
   }
   await chrome.storage.local.remove('apiKey');
 });
 async function config() {
   await ready;
-  const local = await chrome.storage.local.get(['settings', 'encryptedKey', 'dataConsent']);
+  const local = await chrome.storage.local.get(['settings', 'encryptedKey', 'deviceKey', 'keyStorageMode', 'dataConsent']);
   const session = await chrome.storage.session.get(['apiKey', 'legacyMigrated']);
-  return { settings: { ...DEFAULTS, ...(local.settings as Partial<Settings> || {}), ...languagePreferences(local.settings || {}) } as Settings, apiKey: String(session.apiKey || ''), vault: local.encryptedKey, remember: !!local.encryptedKey, dataConsent: local.dataConsent === 1, migrated: !!session.legacyMigrated };
+  let apiKey = String(session.apiKey || ''), deviceError = false;
+  if (!apiKey && local.deviceKey) {
+    try { apiKey = await decryptDeviceKey(local.deviceKey); } catch { deviceError = true; }
+  }
+  return { settings: { ...DEFAULTS, ...(local.settings as Partial<Settings> || {}), ...languagePreferences(local.settings || {}) } as Settings, apiKey, deviceError, storageMode: local.deviceKey ? 'device' : local.encryptedKey ? 'encrypted' : typeof local.keyStorageMode === 'string' && ['device','session','encrypted'].includes(local.keyStorageMode) ? local.keyStorageMode : session.apiKey ? 'session' : 'device', vault: local.encryptedKey, remember: !!local.encryptedKey, dataConsent: local.dataConsent === 1, migrated: !!session.legacyMigrated };
 }
 function trusted(sender: chrome.runtime.MessageSender) {
   // An options page opened in a tab also has sender.tab; trust its extension URL.
@@ -25,7 +31,7 @@ function trusted(sender: chrome.runtime.MessageSender) {
 }
 async function publicConfig() {
   const c = await config();
-  return { settings: c.settings, hasKey: !!c.apiKey, hasVault: !!c.vault, remember: c.remember, dataConsent: c.dataConsent, migrated: c.migrated };
+  return { settings: c.settings, hasKey: !!c.apiKey, hasVault: !!c.vault, remember: c.remember, storageMode: c.storageMode, deviceError: c.deviceError, dataConsent: c.dataConsent, migrated: c.migrated };
 }
 let credentialQueue = Promise.resolve<unknown>(undefined), credentialEpoch = 0;
 function mutateCredentials(action: () => Promise<unknown>) {
@@ -38,11 +44,12 @@ function mutateCredentials(action: () => Promise<unknown>) {
 async function credentialAction(msg: any) {
   const old = await config();
   if (msg.type === 'lock') {
+    if (old.storageMode === 'device') throw new Error('免解锁模式不使用密码锁定；请删除 Key，或改为加密保存。');
     await chrome.storage.session.remove(['apiKey','legacyMigrated']); return publicConfig();
   }
   if (msg.type === 'deleteKey') {
-    await chrome.storage.local.remove(['encryptedKey','apiKey']);
-    await chrome.storage.session.remove(['apiKey','legacyMigrated']); return publicConfig();
+    await chrome.storage.local.remove(['encryptedKey','deviceKey','apiKey']);
+    await chrome.storage.session.remove(['apiKey','legacyMigrated']); await removeDeviceKey(); return publicConfig();
   }
   if (msg.type === 'unlock') {
     if (!old.vault) throw new Error('尚未加密保存 Key。');
@@ -59,16 +66,22 @@ async function credentialAction(msg: any) {
     if (typeof msg.key !== 'string' || !/^sk-[\x21-\x7e]{15,500}$/.test(msg.key.trim())) throw new Error('Key 格式不正确，请完整粘贴以 sk- 开头的 API Key。');
     apiKey = msg.key.trim();
   }
+  const storageMode = msg.storageMode ?? (msg.remember ? 'encrypted' : 'session');
+  if (!['session','encrypted','device'].includes(storageMode)) throw new Error('请选择有效的 Key 保存方式。');
+  if (storageMode === 'device' && msg.deviceConsent !== true) throw new Error('请确认免解锁模式使用本机自动加密保存 Key。');
+  if (storageMode === 'device' && !apiKey) throw new Error('请先解锁已保存的 Key，或重新填写 Key，再开启免解锁。');
   let vault = old.vault;
-  if (msg.remember && (!vault || msg.key || msg.password)) {
+  if (storageMode === 'encrypted' && (!vault || msg.key || msg.password)) {
     if (!apiKey) throw new Error('请先填写 Key 或解锁已保存的 Key。');
     if (typeof msg.password !== 'string' || msg.password !== msg.passwordConfirm) throw new Error('两次解锁密码不一致。');
     vault = await encryptKey(apiKey, msg.password);
   }
+  const deviceKey = storageMode === 'device' ? await encryptDeviceKey(apiKey) : undefined;
   // Finish validation/encryption before touching stored credentials.
-  await chrome.storage.local.set({settings, dataConsent: msg.dataConsent === true ? 1 : 0, ...(msg.remember ? {encryptedKey: vault} : {})});
+  await chrome.storage.local.set({settings, keyStorageMode: storageMode, dataConsent: msg.dataConsent === true ? 1 : 0, ...(storageMode === 'encrypted' ? {encryptedKey: vault} : storageMode === 'device' ? {deviceKey} : {})});
   if (apiKey) await chrome.storage.session.set({apiKey});
-  if (!msg.remember) await chrome.storage.local.remove('encryptedKey');
+  if (storageMode !== 'encrypted') await chrome.storage.local.remove('encryptedKey');
+  if (storageMode !== 'device') { await chrome.storage.local.remove('deviceKey'); await removeDeviceKey(); }
   await chrome.storage.session.remove('legacyMigrated');
   return publicConfig();
 }
@@ -162,6 +175,7 @@ chrome.runtime.onConnect.addListener(port => {
       const c = await config();
       if (epoch !== credentialEpoch || closed) throw new Error('设置已变化，请重新操作。');
       if (!c.dataConsent) throw new Error('请先在设置中确认将选中文字发送给 OpenAI 的说明并保存。');
+      if (c.deviceError) throw new Error('本机凭据无法读取，请重新填写 API Key 并保存。');
       if (!c.apiKey && c.vault) throw new Error('Key 已锁定，请在设置中输入本机解锁密码。');
       if (!c.apiKey) throw new Error('请先打开设置，填写你的 OpenAI API Key。');
       if (sender.tab && c.settings.blockedHosts.includes(new URL(sender.url!).hostname)) throw new Error('此站点已暂停 Lingo，请从扩展菜单重新启用。');

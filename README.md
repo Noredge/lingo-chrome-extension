@@ -1,4 +1,4 @@
-# Lingo 1.3.0 · 划词翻译与写作
+# Lingo 1.4.0 · 划词翻译与写作
 
 个人使用的 Chrome Manifest V3 扩展。选中文字，点击「文」，先看翻译，再按需校对、改写、复制或替换。
 
@@ -44,7 +44,7 @@
 | 标准 textarea、文本 / 搜索 / 电话 / URL 输入框 | 支持选区替换与原生撤销 |
 | 只读输入框 | 仅复制结果 |
 | 简单 contenteditable | 支持符合安全检查的选区替换；周围格式保留 |
-| Gmail 正文 | 基于标准 contenteditable 支持简单正文；已增加 Gmail 换行、语法标记和 Smart Compose 提示层适配；真实测试记录见 verification/LIVE-CHROME-GMAIL.md（该记录对应 1.0.0；1.3.0 回归另见 VERIFICATION.md） |
+| Gmail 正文 | 基于标准 contenteditable 支持简单正文；已增加 Gmail 换行、语法标记和 Smart Compose 提示层适配；真实测试记录见 verification/LIVE-CHROME-GMAIL.md（该记录对应 1.0.0；1.4.0 回归另见 VERIFICATION.md） |
 | ProseMirror、Lexical、Slate、Quill、Monaco、CodeMirror、Google Docs 等复杂编辑器 | 不直接替换；可获取选区时提供复制 |
 | 带图片、表格或不可编辑嵌入块的富文本编辑区（已识别的 Gmail 提示层除外） | 为避免破坏结构，仅复制 |
 | iframe | 已授权的普通网页框架可注入；跨域框架需要相应站点授权，临时工具栏调用主要处理顶层选区 |
@@ -55,11 +55,13 @@
 ## Key 与隐私
 
 - 发布目录和源码都不内置真实 Key。由用户在扩展设置中自行填写。
-- 默认仅存于 `chrome.storage.session`；浏览器会话结束、扩展重载/停用后需要重新填写。
-- 可选择「加密保存到本机」：设置至少 12 字符的本机解锁密码，使用 AES-256-GCM 加密，PBKDF2-SHA-256 600,000 次派生。只持久化密文、盐值、IV 与算法参数，不保存密码或解密密钥。重启/重载后需要解锁。忘记密码无法恢复，只能删除加密副本并重新填写 Key。
-- 旧版持久明文 Key 自动转入本次会话后删除持久字段，等待用户主动加密保存。立即锁定清除会话 Key 并停止正在进行的请求；删除 Key 清除会话与加密副本。
+- 默认「记住 Key，免解锁」：使用随机 AES-256-GCM 密钥自动加密，密文保存在受限 `chrome.storage.local`，不可导出的 CryptoKey 保存在扩展自己的 IndexedDB。保存一次，重启后直接使用；不会把明文 Key 写入持久存储，也不使用固定或源码内置密钥。
+- 自动解密密钥也在本机浏览器中，因此不能防护完整浏览器配置被窃取或系统被控制；这不是操作系统钥匙串或硬件保护。
+- 可选择「仅本次会话」：只存于 `chrome.storage.session`，浏览器会话结束、扩展重载/停用后需要重新填写。
+- 可选择「加密保存，每次启动后解锁」：设置至少 12 字符的本机解锁密码，使用 AES-256-GCM 加密，PBKDF2-SHA-256 600,000 次派生。只持久化密文、盐值、IV 与算法参数，不保存密码或解密密钥。重启/重载后需要解锁。忘记密码无法恢复，只能删除加密副本并重新填写 Key。
+- 旧版持久明文 Key 自动转入本次会话后删除持久字段，等待用户选择保存方式。已有密码加密 Key 升级后保留原模式；先解锁，再选择免解锁并保存即可，无需重填 Key。密码模式下立即锁定清除会话 Key 并停止正在进行的请求；免解锁模式不显示锁定按钮。删除 Key 清除会话、密文与自动解密密钥。
 - 首次或升级后必须阅读并确认数据处理说明；撤销确认并保存会阻止后续 API 请求。
-- 两种存储均限制为 `TRUSTED_CONTEXTS`。网页 Content Script 不可读取 Key；设置页不回显已保存的 Key。
+- Chrome local/session 存储均限制为 `TRUSTED_CONTEXTS`。网页 Content Script 不可读取 Key；设置页不回显已保存的 Key。
 - 所有请求固定发往 `https://api.openai.com/v1/responses`，由 Service Worker 发起。只发送选中文字、操作所需指令、目标语言和用户自定义要求。
 - 不自动上传整页、整封邮件、页面 URL 或浏览历史；若用户主动选取整封邮件或含网址的文字，这些选区内容仍会发送。不做输入监听上传，不使用分析或遥测服务。
 - 使用 `store:false`，不主动建立 Responses 会话历史。这不等于 OpenAI 服务端零保留，服务端数据政策以账户条款为准。
@@ -117,3 +119,7 @@ npm run package:store
 ## Unlisted 商店发布
 
 上架材料位于 `store/`，先阅读 `store/SUBMISSION-GUIDE.md`。`npm run package:store` 生成 manifest 位于根目录的运行时 ZIP。源码与隐私支持文档统一放在公开的 `Noredge/lingo-chrome-extension` 仓库。本项目不包含真实 API Key 或审核凭据。
+
+## License
+
+本项目采用 [MIT License](LICENSE)，Copyright (c) 2026 Noredge。允许使用、修改和分发，需保留版权及许可声明。Vite 生成的运行时辅助代码声明见 [THIRD_PARTY_NOTICES](public/THIRD_PARTY_NOTICES.txt)；开发依赖遵循各自许可证。

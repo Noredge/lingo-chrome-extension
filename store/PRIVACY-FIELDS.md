@@ -8,7 +8,7 @@ Translate, proofread and rewrite text explicitly selected by the user, then let 
 
 | 后台字段 | 英文说明 |
 |---|---|
-| storage | Store local preferences, consent state, a user-password-encrypted API key (only if opted in), and the currently unlocked API key in trusted-context-only session storage. No Chrome sync storage or text history is used. |
+| storage | Store local preferences, consent state, an AES-256-GCM encrypted API key (automatic device encryption by default, password encryption optional), and the currently available API key in trusted-context-only session storage. The automatic non-extractable decryption CryptoKey is stored in extension-origin IndexedDB. No Chrome sync storage or text history is used. |
 | activeTab | Temporarily access the current page after the user invokes the toolbar, shortcut or context-menu action, to read the selected text and show the translation popup. |
 | scripting | Inject the bundled content script into the user-invoked page or explicitly authorized sites. The script displays the popup and performs user-requested selection replacement. No remotely hosted script is injected. |
 | contextMenus | Provide the explicit “translate and edit with Lingo” action for selected text and editable fields. |

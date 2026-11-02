@@ -1,8 +1,8 @@
-import "./ui-CxrvlWlw.js";
+import "./ui-BOAe4Mgc.js";
 const DEFAULTS = { languages: ["简体中文", "English"] };
 const LANGUAGES = ["简体中文", "繁體中文", "English", "日本語", "한국어", "Français", "Deutsch", "Español", "Português（葡萄牙语）", "Italiano（意大利语）", "Nederlands（荷兰语）", "Русский（俄语）", "Українська（乌克兰语）", "Polski（波兰语）", "Čeština（捷克语）", "Svenska（瑞典语）", "Dansk（丹麦语）", "Norsk（挪威语）", "Suomi（芬兰语）", "Ελληνικά（希腊语）", "Türkçe（土耳其语）", "العربية（阿拉伯语）", "עברית（希伯来语）", "فارسی（波斯语）", "हिन्दी（印地语）", "বাংলা（孟加拉语）", "ไทย（泰语）", "Tiếng Việt（越南语）", "Bahasa Indonesia（印尼语）", "Bahasa Melayu（马来语）", "Filipino（菲律宾语）"];
 const $ = (id) => document.getElementById(id);
-const key = $("api-key"), model = $("model"), language = $("language"), remember = $("remember");
+const key = $("api-key"), model = $("model"), language = $("language"), storageMode = $("storage-mode");
 let selectedLanguages = [...DEFAULTS.languages];
 function drawLanguages(preferred = language.value) {
   language.replaceChildren();
@@ -55,19 +55,26 @@ function status(id, text, error = false) {
   $(id).textContent = text;
   $(id).classList.toggle("error", error);
 }
+function drawStorage() {
+  const mode = storageMode.value;
+  $("password-fields").hidden = mode !== "encrypted";
+  $("device-disclosure").hidden = mode !== "device";
+  $("storage-help").textContent = mode === "device" ? "保存一次，重启 Chrome 后也可直接使用，无需解锁。" : mode === "encrypted" ? "重启 Chrome 或重载扩展后解锁一次，之后的划词与打开浮窗都不需要重复输入密码。" : "关闭浏览器或重载扩展后，需要重新填写 Key。";
+}
 function draw(c) {
   model.value = c.settings.model;
   selectedLanguages = [...c.settings.languages];
   drawLanguages(c.settings.language);
-  remember.checked = c.remember;
+  storageMode.value = c.storageMode;
   $("key-status").textContent = c.hasKey ? "Key 已配置" : c.hasVault ? "Key 已锁定" : "尚未配置 Key";
   $("key-status").classList.toggle("connected", c.hasKey);
   key.placeholder = c.hasKey ? "已保存 · 留空保留，输入新 Key 可替换" : "sk-…";
-  $("key-hint").textContent = c.hasVault ? c.hasKey ? "已加密保存到本机，本次会话已解锁。" : "已加密保存到本机，请输入解锁密码。" : c.hasKey ? "仅保留在本次浏览器会话，不写入磁盘。" : "Key 仅在扩展后台使用，不会传给网页脚本。";
+  $("key-hint").textContent = c.deviceError ? "本机凭据无法读取，请重新填写 API Key 并保存。" : c.storageMode === "device" && c.hasKey ? "已记住 Key，本机自动加密，重启 Chrome 后无需解锁。" : c.hasVault ? c.hasKey ? "已加密保存到本机，本次会话已解锁。" : "已加密保存到本机，请输入解锁密码。" : c.hasKey ? "仅保留在本次浏览器会话，不写入磁盘。" : "Key 仅在扩展后台使用，不会传给网页脚本。";
   $("migration-note").hidden = !c.migrated;
   $("unlock-section").hidden = !c.hasVault || c.hasKey;
-  $("password-fields").hidden = !remember.checked;
-  $("lock-key").disabled = !c.hasKey;
+  drawStorage();
+  $("lock-key").disabled = !c.hasKey || c.storageMode === "device";
+  $("lock-key").hidden = c.storageMode === "device";
   $("data-consent").checked = c.dataConsent;
   $("blocked").replaceChildren();
   if (c.settings.blockedHosts.length) {
@@ -100,7 +107,7 @@ $("settings-form").addEventListener("submit", async (e) => {
   const b = document.querySelector('button[type="submit"]');
   b.disabled = true;
   try {
-    const c = await message({ type: "save", key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, remember: remember.checked, password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
+    const c = await message({ type: "save", key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === "device", password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
     key.value = "";
     $("vault-password").value = "";
     $("vault-confirm").value = "";
@@ -114,9 +121,7 @@ $("settings-form").addEventListener("submit", async (e) => {
     b.disabled = false;
   }
 });
-remember.addEventListener("change", () => {
-  $("password-fields").hidden = !remember.checked;
-});
+storageMode.addEventListener("change", drawStorage);
 $("unlock-key").addEventListener("click", async () => {
   const password = $("unlock-password"), button = $("unlock-key");
   button.disabled = true;

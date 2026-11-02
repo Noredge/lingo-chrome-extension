@@ -75,9 +75,9 @@ function apiError(status, code) {
   return `请求失败（HTTP ${status}），请检查模型设置后重试。`;
 }
 const ITERATIONS = 6e5;
-const aad = new TextEncoder().encode("Lingo/OpenAI-key/v1");
-const encode = (bytes) => btoa(String.fromCharCode(...bytes));
-function decode(value, max) {
+const aad$1 = new TextEncoder().encode("Lingo/OpenAI-key/v1");
+const encode$1 = (bytes) => btoa(String.fromCharCode(...bytes));
+function decode$1(value, max) {
   if (typeof value !== "string" || value.length > max * 2 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) throw new Error("invalid vault");
   return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
 }
@@ -89,20 +89,77 @@ async function encryptKey(apiKey, password) {
   if (typeof password !== "string" || password.length < 12 || password.length > 1024) throw new Error("本机解锁密码需要 12–1,024 个字符。");
   const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await derive(password, salt, ["encrypt"]);
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aad }, key, new TextEncoder().encode(apiKey));
-  return { version: 1, algorithm: "AES-GCM", kdf: "PBKDF2-SHA256", iterations: ITERATIONS, salt: encode(salt), iv: encode(iv), ciphertext: encode(new Uint8Array(ciphertext)) };
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aad$1 }, key, new TextEncoder().encode(apiKey));
+  return { version: 1, algorithm: "AES-GCM", kdf: "PBKDF2-SHA256", iterations: ITERATIONS, salt: encode$1(salt), iv: encode$1(iv), ciphertext: encode$1(new Uint8Array(ciphertext)) };
 }
 async function decryptKey(input, password) {
   try {
     const vault = input;
     if (typeof password !== "string" || !password.length || password.length > 1024 || !vault || vault.version !== 1 || vault.algorithm !== "AES-GCM" || vault.kdf !== "PBKDF2-SHA256" || vault.iterations !== ITERATIONS) throw new Error("invalid vault");
-    const salt = decode(vault.salt, 16), iv = decode(vault.iv, 12), ciphertext = decode(vault.ciphertext, 1024);
+    const salt = decode$1(vault.salt, 16), iv = decode$1(vault.iv, 12), ciphertext = decode$1(vault.ciphertext, 1024);
     if (salt.length !== 16 || iv.length !== 12 || ciphertext.length < 16 || ciphertext.length > 1024) throw new Error("invalid vault");
     const key = await derive(password, salt, ["decrypt"]);
-    return new TextDecoder("utf-8", { fatal: true }).decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: aad }, key, ciphertext));
+    return new TextDecoder("utf-8", { fatal: true }).decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: aad$1 }, key, ciphertext));
   } catch {
     throw new Error("解锁失败：密码不正确，或加密数据已损坏。");
   }
+}
+const aad = new TextEncoder().encode("Lingo/device-key/v1");
+const encode = (bytes) => btoa(String.fromCharCode(...bytes));
+function decode(value, maximum) {
+  if (typeof value !== "string" || value.length > maximum * 2 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) throw new Error("Invalid device vault");
+  const result = Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+  if (result.length > maximum) throw new Error("Invalid device vault");
+  return result;
+}
+async function database() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("lingo-device-vault", 1);
+    request.onupgradeneeded = () => request.result.createObjectStore("keys");
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(new Error("无法访问本机凭据存储。"));
+    request.onblocked = () => reject(new Error("本机凭据存储正忙，请重试。"));
+  });
+}
+async function keyOperation(mode, key) {
+  const db = await database();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction("keys", mode === "read" ? "readonly" : "readwrite");
+      const store = tx.objectStore("keys");
+      const request = mode === "read" ? store.get("aes") : mode === "write" ? store.put(key, "aes") : store.delete("aes");
+      tx.oncomplete = () => resolve(mode === "read" ? request.result : void 0);
+      tx.onabort = tx.onerror = () => reject(new Error("本机凭据存储失败，请重试。"));
+    });
+  } finally {
+    db.close();
+  }
+}
+async function encryptDeviceKey(secret) {
+  let key = await keyOperation("read");
+  if (!key) {
+    key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    await keyOperation("write", key);
+  }
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aad }, key, new TextEncoder().encode(secret));
+  return { version: 1, algorithm: "AES-GCM", iv: encode(iv), ciphertext: encode(new Uint8Array(ciphertext)) };
+}
+async function decryptDeviceKey(input) {
+  try {
+    const record = input;
+    if (!record || record.version !== 1 || record.algorithm !== "AES-GCM") throw new Error("Invalid device vault");
+    const iv = decode(record.iv, 12), ciphertext = decode(record.ciphertext, 1024);
+    if (iv.length !== 12 || ciphertext.length < 16) throw new Error("Invalid device vault");
+    const key = await keyOperation("read");
+    if (!key) throw new Error("Missing device key");
+    return new TextDecoder("utf-8", { fatal: true }).decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: aad }, key, ciphertext));
+  } catch {
+    throw new Error("本机凭据无法读取，请重新填写 API Key 并保存。");
+  }
+}
+async function removeDeviceKey() {
+  await keyOperation("delete");
 }
 const ready = Promise.all([
   chrome.storage.local.setAccessLevel({ accessLevel: "TRUSTED_CONTEXTS" }),
@@ -112,21 +169,30 @@ const ready = Promise.all([
   if (typeof legacy.apiKey === "string" && legacy.apiKey) {
     const current = await chrome.storage.session.get("apiKey");
     await chrome.storage.session.set({ apiKey: current.apiKey || legacy.apiKey, legacyMigrated: true });
+    await chrome.storage.local.set({ keyStorageMode: "session" });
   }
   await chrome.storage.local.remove("apiKey");
 });
 async function config() {
   await ready;
-  const local = await chrome.storage.local.get(["settings", "encryptedKey", "dataConsent"]);
+  const local = await chrome.storage.local.get(["settings", "encryptedKey", "deviceKey", "keyStorageMode", "dataConsent"]);
   const session = await chrome.storage.session.get(["apiKey", "legacyMigrated"]);
-  return { settings: { ...DEFAULTS, ...local.settings || {}, ...languagePreferences(local.settings || {}) }, apiKey: String(session.apiKey || ""), vault: local.encryptedKey, remember: !!local.encryptedKey, dataConsent: local.dataConsent === 1, migrated: !!session.legacyMigrated };
+  let apiKey = String(session.apiKey || ""), deviceError = false;
+  if (!apiKey && local.deviceKey) {
+    try {
+      apiKey = await decryptDeviceKey(local.deviceKey);
+    } catch {
+      deviceError = true;
+    }
+  }
+  return { settings: { ...DEFAULTS, ...local.settings || {}, ...languagePreferences(local.settings || {}) }, apiKey, deviceError, storageMode: local.deviceKey ? "device" : local.encryptedKey ? "encrypted" : typeof local.keyStorageMode === "string" && ["device", "session", "encrypted"].includes(local.keyStorageMode) ? local.keyStorageMode : session.apiKey ? "session" : "device", vault: local.encryptedKey, remember: !!local.encryptedKey, dataConsent: local.dataConsent === 1, migrated: !!session.legacyMigrated };
 }
 function trusted(sender) {
   return sender.id === chrome.runtime.id && ["options.html", "popup.html"].some((page) => sender.url?.split(/[?#]/)[0] === chrome.runtime.getURL(page));
 }
 async function publicConfig() {
   const c = await config();
-  return { settings: c.settings, hasKey: !!c.apiKey, hasVault: !!c.vault, remember: c.remember, dataConsent: c.dataConsent, migrated: c.migrated };
+  return { settings: c.settings, hasKey: !!c.apiKey, hasVault: !!c.vault, remember: c.remember, storageMode: c.storageMode, deviceError: c.deviceError, dataConsent: c.dataConsent, migrated: c.migrated };
 }
 let credentialQueue = Promise.resolve(void 0), credentialEpoch = 0;
 function mutateCredentials(action) {
@@ -143,12 +209,14 @@ function mutateCredentials(action) {
 async function credentialAction(msg) {
   const old = await config();
   if (msg.type === "lock") {
+    if (old.storageMode === "device") throw new Error("免解锁模式不使用密码锁定；请删除 Key，或改为加密保存。");
     await chrome.storage.session.remove(["apiKey", "legacyMigrated"]);
     return publicConfig();
   }
   if (msg.type === "deleteKey") {
-    await chrome.storage.local.remove(["encryptedKey", "apiKey"]);
+    await chrome.storage.local.remove(["encryptedKey", "deviceKey", "apiKey"]);
     await chrome.storage.session.remove(["apiKey", "legacyMigrated"]);
+    await removeDeviceKey();
     return publicConfig();
   }
   if (msg.type === "unlock") {
@@ -167,15 +235,24 @@ async function credentialAction(msg) {
     if (typeof msg.key !== "string" || !/^sk-[\x21-\x7e]{15,500}$/.test(msg.key.trim())) throw new Error("Key 格式不正确，请完整粘贴以 sk- 开头的 API Key。");
     apiKey = msg.key.trim();
   }
+  const storageMode = msg.storageMode ?? (msg.remember ? "encrypted" : "session");
+  if (!["session", "encrypted", "device"].includes(storageMode)) throw new Error("请选择有效的 Key 保存方式。");
+  if (storageMode === "device" && msg.deviceConsent !== true) throw new Error("请确认免解锁模式使用本机自动加密保存 Key。");
+  if (storageMode === "device" && !apiKey) throw new Error("请先解锁已保存的 Key，或重新填写 Key，再开启免解锁。");
   let vault = old.vault;
-  if (msg.remember && (!vault || msg.key || msg.password)) {
+  if (storageMode === "encrypted" && (!vault || msg.key || msg.password)) {
     if (!apiKey) throw new Error("请先填写 Key 或解锁已保存的 Key。");
     if (typeof msg.password !== "string" || msg.password !== msg.passwordConfirm) throw new Error("两次解锁密码不一致。");
     vault = await encryptKey(apiKey, msg.password);
   }
-  await chrome.storage.local.set({ settings, dataConsent: msg.dataConsent === true ? 1 : 0, ...msg.remember ? { encryptedKey: vault } : {} });
+  const deviceKey = storageMode === "device" ? await encryptDeviceKey(apiKey) : void 0;
+  await chrome.storage.local.set({ settings, keyStorageMode: storageMode, dataConsent: msg.dataConsent === true ? 1 : 0, ...storageMode === "encrypted" ? { encryptedKey: vault } : storageMode === "device" ? { deviceKey } : {} });
   if (apiKey) await chrome.storage.session.set({ apiKey });
-  if (!msg.remember) await chrome.storage.local.remove("encryptedKey");
+  if (storageMode !== "encrypted") await chrome.storage.local.remove("encryptedKey");
+  if (storageMode !== "device") {
+    await chrome.storage.local.remove("deviceKey");
+    await removeDeviceKey();
+  }
   await chrome.storage.session.remove("legacyMigrated");
   return publicConfig();
 }
@@ -306,6 +383,7 @@ chrome.runtime.onConnect.addListener((port) => {
       const c = await config();
       if (epoch !== credentialEpoch || closed) throw new Error("设置已变化，请重新操作。");
       if (!c.dataConsent) throw new Error("请先在设置中确认将选中文字发送给 OpenAI 的说明并保存。");
+      if (c.deviceError) throw new Error("本机凭据无法读取，请重新填写 API Key 并保存。");
       if (!c.apiKey && c.vault) throw new Error("Key 已锁定，请在设置中输入本机解锁密码。");
       if (!c.apiKey) throw new Error("请先打开设置，填写你的 OpenAI API Key。");
       if (sender.tab && c.settings.blockedHosts.includes(new URL(sender.url).hostname)) throw new Error("此站点已暂停 Lingo，请从扩展菜单重新启用。");

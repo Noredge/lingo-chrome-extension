@@ -1,4 +1,4 @@
-# Chrome Web Store 文案 · Lingo 1.3.0
+# Chrome Web Store 文案 · Lingo 1.4.0
 
 发布者：Noredge
 公开支持邮箱：hongbin.lei98@gmail.com
@@ -31,7 +31,7 @@ Lingo 把划词翻译和按需写作工具放在一个小浮窗里。选中文�
 数据与 Key：
 在你确认数据说明后，打开翻译窗口或点击写作操作会把选中文字、目标语言和必要修改要求直接发送给 OpenAI。API Key 用于验证该请求。扩展不自动上传整页或整封邮件，不记录文字历史，没有广告或分析服务。
 
-Key 默认仅在当前浏览器会话可用。你也可使用自己设置的密码加密保存到本机；浏览器重启或扩展重载后需要重新解锁。密码不会由扩展保存，忘记后需要删除加密副本并重新填写 Key。
+Key 默认记住并免解锁，使用随机本机 AES-256-GCM 密钥自动加密。自动解密密钥也在此浏览器中，不能防护完整浏览器配置被窃取，不等同于系统钥匙串。你也可选仅本次会话，或密码加密保存。密码模式在重启 Chrome 或重载扩展后解锁一次，普通划词无需重复解锁。
 
 网站授权由你决定：可以授权指定站点或所有普通网页，也可以从工具栏、右键菜单或快捷键临时调用。授权站点后请刷新已打开的页面。
 
@@ -62,7 +62,7 @@ Requires your own OpenAI API key, an accessible model and API quota. Installatio
 
 After you acknowledge the data disclosure, selected text, the target language and necessary editing instructions are sent directly to OpenAI. Your API key authenticates the request. Lingo does not automatically upload entire pages or emails, keep a text history, or include advertising or analytics.
 
-Keys are session-only by default. Optional local storage encrypts your key with a password you choose. Unlock again after restarting the browser or reloading the extension. The extension does not store your password and cannot recover it.
+Keys are remembered by default with automatic AES-256-GCM device encryption and no unlock prompt. The non-extractable automatic decryption key is also stored in this browser profile; this does not protect against theft of the complete profile and is not OS Keychain protection. Session-only storage and password encryption remain optional. Password mode requires unlocking once after browser restart or extension reload, not each time the popup opens.
 
 You control website access: selected sites, all ordinary sites, or temporary invocation from the toolbar/context menu. Refresh existing pages after granting persistent access.
 

@@ -54,11 +54,11 @@ try{
  await options.getByRole('checkbox',{name:'我同意将选中文字和修改要求发送给 OpenAI 处理',exact:true}).check();
  await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.getByText('Key 已配置',{exact:true}).waitFor();
  assert.equal(await options.getByLabel('API Key',{exact:true}).inputValue(),'');
- const storage=await worker.evaluate(async()=>({local:!!(await chrome.storage.local.get('apiKey')).apiKey,session:!!(await chrome.storage.session.get('apiKey')).apiKey}));
- assert.deepEqual(storage,{local:false,session:true});check('Key saved to session by default and cleared from visible input');
+ const storage=await worker.evaluate(async()=>({local:!!(await chrome.storage.local.get('deviceKey')).deviceKey,session:!!(await chrome.storage.session.get('apiKey')).apiKey}));
+ assert.deepEqual(storage,{local:true,session:true});check('Key remembered on device by default and cleared from visible input');
  const contentAccess=await worker.evaluate(async()=>{
   const [tab]=await chrome.tabs.query({url:'http://127.0.0.1/*'});
-  const result=await chrome.scripting.executeScript({target:{tabId:tab.id},func:async()=>{try{await chrome.storage.session.get('apiKey');return 'accessible';}catch{return 'blocked';}}});return result[0].result;
+  const result=await chrome.scripting.executeScript({target:{tabId:tab.id},func:async()=>{const blocked=[];for(const area of ['session','local']){try{await chrome.storage[area].get(null);blocked.push(false)}catch{blocked.push(true)}}return blocked.every(Boolean)?'blocked':'accessible';}});return result[0].result;
  });assert.equal(contentAccess,'blocked');check('content scripts cannot read secret storage');
  const credentialMutation=await worker.evaluate(async()=>{const [tab]=await chrome.tabs.query({url:'http://127.0.0.1/*'});const r=await chrome.scripting.executeScript({target:{tabId:tab.id},func:()=>chrome.runtime.sendMessage({type:'deleteKey'})});return r[0].result;});
  assert.match(credentialMutation.error,/设置页/);check('webpage content scripts cannot unlock, save, lock or delete credentials');
@@ -150,11 +150,11 @@ try{
  const passwordFallback=await worker.evaluate(async()=>{const [tab]=await chrome.tabs.query({url:'http://127.0.0.1/*'});return chrome.tabs.sendMessage(tab.id,{type:'open',fallback:'private-password'});});assert.equal(passwordFallback.ok,false);assert.equal(await host.locator('.panel').isVisible(),false);check('context-menu fallback cannot bypass password exclusion');
  await selectInput('#readonly',0,9);await done();assert.equal(await host.getByRole('button',{name:'替换选中文字',exact:true}).count(),0);check('read-only fields only offer copy');await close();
  await page.setViewportSize({width:390,height:740});await selectRead();await done();const bounds=await host.locator('.panel').boundingBox();assert(bounds.x>=0&&bounds.x+bounds.width<=390&&bounds.y+bounds.height<=741);await page.screenshot({path:path.join(evidence,'narrow-window.png')});check('overlay fits narrow viewport');await close();
- await options.getByRole('checkbox',{name:'加密保存到本机',exact:true}).check();
+ await options.locator('#storage-mode').selectOption('encrypted');
  await options.getByLabel('设置本机解锁密码（至少 12 个字符）',{exact:true}).fill('fixture-only password 2026');
  await options.getByLabel('再次输入解锁密码',{exact:true}).fill('fixture-only password 2026');
  await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.getByText('已加密保存到本机，本次会话已解锁。',{exact:true}).waitFor();
- const storage2=await worker.evaluate(async()=>{const l=await chrome.storage.local.get(null),s=await chrome.storage.session.get(null);return {plaintextLocal:!!l.apiKey,encrypted:!!l.encryptedKey,session:!!s.apiKey,leaked:JSON.stringify(l).includes('fixture-only password 2026')||JSON.stringify(l).includes('sk-test-fixture-not-a-real-secret')};});
+ const storage2=await worker.evaluate(async()=>{const l=await chrome.storage.local.get(null),s=await chrome.storage.session.get(null);return {plaintextLocal:!!l.apiKey||typeof l.deviceKey==='string',encrypted:!!l.encryptedKey,session:!!s.apiKey,leaked:JSON.stringify(l).includes('fixture-only password 2026')||JSON.stringify(l).includes('sk-test-fixture-not-a-real-secret')};});
  assert.deepEqual(storage2,{plaintextLocal:false,encrypted:true,session:true,leaked:false});check('password-encrypted vault persists without plaintext Key or password');
  const popup=await context.newPage();await popup.goto(`chrome-extension://${id}/popup.html`);await popup.screenshot({path:path.join(evidence,'popup.png')});check('popup renders and rejects unsupported extension pages');
  

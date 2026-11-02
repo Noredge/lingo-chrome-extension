@@ -1,4 +1,4 @@
-import "./ui-CxrvlWlw.js";
+import "./ui-BOAe4Mgc.js";
 const $ = (id) => document.getElementById(id);
 let tab, origin = "";
 function status(text, error = false) {
