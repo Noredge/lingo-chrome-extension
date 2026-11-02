@@ -28,13 +28,13 @@ function init() {
   }
   const modes: Mode[] = ['proofread','natural','professional','friendly','concise','precise'];
   modes.forEach(mode => { const b = document.createElement('button'); b.textContent = MODES[mode]; b.dataset.mode = mode; $('.presets').append(b); });
-  let settings: Settings = { ...DEFAULTS }, hasKey = false, snap: Snapshot | null = null;
+  let settings: Settings = { ...DEFAULTS }, hasKey = false, hasVault = false, snap: Snapshot | null = null;
   let candidate: Snapshot | null = null, generation = 0, selectedMode: Mode = 'proofread';
   let composing = false, lastPointer = { x: 30, y: 60 }, activeWriting = '', activeTranslation = '';
   type Result = { text: string; state: 'loading' | 'done' | 'error'; error?: string; mode: Mode; instruction: string; language: string; port?: chrome.runtime.Port; timer?: ReturnType<typeof setTimeout> };
   const results = new Map<string, Result>();
   async function config() {
-    try { const c = await chrome.runtime.sendMessage({ type: 'config' }); if (c?.settings) { settings = c.settings; hasKey = c.hasKey; } }
+    try { const c = await chrome.runtime.sendMessage({ type: 'config' }); if (c?.settings) { settings = c.settings; hasKey = c.hasKey; hasVault = c.hasVault; } }
     catch { notify('扩展已更新，请刷新网页后使用。'); }
     language.replaceChildren(...settings.languages.map(l => { const o = document.createElement('option'); o.value = o.textContent = l; return o; }));
     language.value = settings.language; $('.model').textContent = settings.model;
@@ -139,7 +139,7 @@ function init() {
     const result: Result = { text: '', state: 'loading', mode, instruction, language: language.value };
     results.set(k, result); render();
     const g = generation, id = crypto.randomUUID();
-    if (!hasKey) { result.state = 'error'; result.error = '首次使用，请打开设置并填写 OpenAI API Key。'; render(); return; }
+    if (!hasKey) { result.state = 'error'; result.error = hasVault ? 'Key 已锁定，请打开设置并输入本机解锁密码。' : '首次使用，请打开设置并填写 OpenAI API Key。'; render(); return; }
     try {
       const port = chrome.runtime.connect({ name: 'lingo-task' }); result.port = port;
       const finish = () => { clearTimeout(result.timer); result.port = undefined; port.disconnect(); };

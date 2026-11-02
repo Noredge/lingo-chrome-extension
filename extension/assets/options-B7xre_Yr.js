@@ -1,4 +1,4 @@
-import "./ui-Dpi6G00y.js";
+import "./ui-CxrvlWlw.js";
 const DEFAULTS = { languages: ["简体中文", "English"] };
 const LANGUAGES = ["简体中文", "繁體中文", "English", "日本語", "한국어", "Français", "Deutsch", "Español", "Português（葡萄牙语）", "Italiano（意大利语）", "Nederlands（荷兰语）", "Русский（俄语）", "Українська（乌克兰语）", "Polski（波兰语）", "Čeština（捷克语）", "Svenska（瑞典语）", "Dansk（丹麦语）", "Norsk（挪威语）", "Suomi（芬兰语）", "Ελληνικά（希腊语）", "Türkçe（土耳其语）", "العربية（阿拉伯语）", "עברית（希伯来语）", "فارسی（波斯语）", "हिन्दी（印地语）", "বাংলা（孟加拉语）", "ไทย（泰语）", "Tiếng Việt（越南语）", "Bahasa Indonesia（印尼语）", "Bahasa Melayu（马来语）", "Filipino（菲律宾语）"];
 const $ = (id) => document.getElementById(id);
@@ -60,10 +60,15 @@ function draw(c) {
   selectedLanguages = [...c.settings.languages];
   drawLanguages(c.settings.language);
   remember.checked = c.remember;
-  $("key-status").textContent = c.hasKey ? "Key 已配置" : "尚未配置 Key";
+  $("key-status").textContent = c.hasKey ? "Key 已配置" : c.hasVault ? "Key 已锁定" : "尚未配置 Key";
   $("key-status").classList.toggle("connected", c.hasKey);
   key.placeholder = c.hasKey ? "已保存 · 留空保留，输入新 Key 可替换" : "sk-…";
-  $("key-hint").textContent = c.hasKey ? `已保存在${c.remember ? "本机" : "本次浏览器会话"}。不会回显已有 Key。` : "Key 仅在扩展后台使用，不会传给网页脚本。";
+  $("key-hint").textContent = c.hasVault ? c.hasKey ? "已加密保存到本机，本次会话已解锁。" : "已加密保存到本机，请输入解锁密码。" : c.hasKey ? "仅保留在本次浏览器会话，不写入磁盘。" : "Key 仅在扩展后台使用，不会传给网页脚本。";
+  $("migration-note").hidden = !c.migrated;
+  $("unlock-section").hidden = !c.hasVault || c.hasKey;
+  $("password-fields").hidden = !remember.checked;
+  $("lock-key").disabled = !c.hasKey;
+  $("data-consent").checked = c.dataConsent;
   $("blocked").replaceChildren();
   if (c.settings.blockedHosts.length) {
     const title = document.createElement("p");
@@ -95,8 +100,10 @@ $("settings-form").addEventListener("submit", async (e) => {
   const b = document.querySelector('button[type="submit"]');
   b.disabled = true;
   try {
-    const c = await message({ type: "save", key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, remember: remember.checked });
+    const c = await message({ type: "save", key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, remember: remember.checked, password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
     key.value = "";
+    $("vault-password").value = "";
+    $("vault-confirm").value = "";
     key.type = "password";
     $("reveal").textContent = "显示";
     draw(c);
@@ -105,6 +112,30 @@ $("settings-form").addEventListener("submit", async (e) => {
     status("save-status", e2.message, true);
   } finally {
     b.disabled = false;
+  }
+});
+remember.addEventListener("change", () => {
+  $("password-fields").hidden = !remember.checked;
+});
+$("unlock-key").addEventListener("click", async () => {
+  const password = $("unlock-password"), button = $("unlock-key");
+  button.disabled = true;
+  try {
+    draw(await message({ type: "unlock", password: password.value }));
+    status("save-status", "已解锁，本次浏览器会话可用。");
+  } catch (e) {
+    status("save-status", e.message, true);
+  } finally {
+    password.value = "";
+    button.disabled = false;
+  }
+});
+$("lock-key").addEventListener("click", async () => {
+  try {
+    draw(await message({ type: "lock" }));
+    status("save-status", "已清除会话中的 Key 并停止正在进行的请求。");
+  } catch (e) {
+    status("save-status", e.message, true);
   }
 });
 $("reveal").addEventListener("click", () => {

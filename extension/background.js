@@ -74,22 +74,110 @@ function apiError(status, code) {
   if (status >= 500) return "OpenAI 服务暂时不可用，请稍后重试。";
   return `请求失败（HTTP ${status}），请检查模型设置后重试。`;
 }
+const ITERATIONS = 6e5;
+const aad = new TextEncoder().encode("Lingo/OpenAI-key/v1");
+const encode = (bytes) => btoa(String.fromCharCode(...bytes));
+function decode(value, max) {
+  if (typeof value !== "string" || value.length > max * 2 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) throw new Error("invalid vault");
+  return Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+}
+async function derive(password, salt, usage) {
+  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations: ITERATIONS }, material, { name: "AES-GCM", length: 256 }, false, usage);
+}
+async function encryptKey(apiKey, password) {
+  if (typeof password !== "string" || password.length < 12 || password.length > 1024) throw new Error("本机解锁密码需要 12–1,024 个字符。");
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await derive(password, salt, ["encrypt"]);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: aad }, key, new TextEncoder().encode(apiKey));
+  return { version: 1, algorithm: "AES-GCM", kdf: "PBKDF2-SHA256", iterations: ITERATIONS, salt: encode(salt), iv: encode(iv), ciphertext: encode(new Uint8Array(ciphertext)) };
+}
+async function decryptKey(input, password) {
+  try {
+    const vault = input;
+    if (typeof password !== "string" || !password.length || password.length > 1024 || !vault || vault.version !== 1 || vault.algorithm !== "AES-GCM" || vault.kdf !== "PBKDF2-SHA256" || vault.iterations !== ITERATIONS) throw new Error("invalid vault");
+    const salt = decode(vault.salt, 16), iv = decode(vault.iv, 12), ciphertext = decode(vault.ciphertext, 1024);
+    if (salt.length !== 16 || iv.length !== 12 || ciphertext.length < 16 || ciphertext.length > 1024) throw new Error("invalid vault");
+    const key = await derive(password, salt, ["decrypt"]);
+    return new TextDecoder("utf-8", { fatal: true }).decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: aad }, key, ciphertext));
+  } catch {
+    throw new Error("解锁失败：密码不正确，或加密数据已损坏。");
+  }
+}
 const ready = Promise.all([
   chrome.storage.local.setAccessLevel({ accessLevel: "TRUSTED_CONTEXTS" }),
   chrome.storage.session.setAccessLevel({ accessLevel: "TRUSTED_CONTEXTS" })
-]);
+]).then(async () => {
+  const legacy = await chrome.storage.local.get("apiKey");
+  if (typeof legacy.apiKey === "string" && legacy.apiKey) {
+    const current = await chrome.storage.session.get("apiKey");
+    await chrome.storage.session.set({ apiKey: current.apiKey || legacy.apiKey, legacyMigrated: true });
+  }
+  await chrome.storage.local.remove("apiKey");
+});
 async function config() {
   await ready;
-  const local = await chrome.storage.local.get(["settings", "apiKey"]);
-  const session = await chrome.storage.session.get("apiKey");
-  return { settings: { ...DEFAULTS, ...local.settings || {}, ...languagePreferences(local.settings || {}) }, apiKey: String(session.apiKey || local.apiKey || ""), remember: !!local.apiKey };
+  const local = await chrome.storage.local.get(["settings", "encryptedKey", "dataConsent"]);
+  const session = await chrome.storage.session.get(["apiKey", "legacyMigrated"]);
+  return { settings: { ...DEFAULTS, ...local.settings || {}, ...languagePreferences(local.settings || {}) }, apiKey: String(session.apiKey || ""), vault: local.encryptedKey, remember: !!local.encryptedKey, dataConsent: local.dataConsent === 1, migrated: !!session.legacyMigrated };
 }
 function trusted(sender) {
   return sender.id === chrome.runtime.id && ["options.html", "popup.html"].some((page) => sender.url?.split(/[?#]/)[0] === chrome.runtime.getURL(page));
 }
 async function publicConfig() {
   const c = await config();
-  return { settings: c.settings, hasKey: !!c.apiKey, remember: c.remember };
+  return { settings: c.settings, hasKey: !!c.apiKey, hasVault: !!c.vault, remember: c.remember, dataConsent: c.dataConsent, migrated: c.migrated };
+}
+let credentialQueue = Promise.resolve(void 0), credentialEpoch = 0;
+function mutateCredentials(action) {
+  const operation = credentialQueue.catch(() => {
+  }).then(async () => {
+    await ready;
+    credentialEpoch++;
+    running.forEach((controller) => controller.abort());
+    return action();
+  });
+  credentialQueue = operation;
+  return operation;
+}
+async function credentialAction(msg) {
+  const old = await config();
+  if (msg.type === "lock") {
+    await chrome.storage.session.remove(["apiKey", "legacyMigrated"]);
+    return publicConfig();
+  }
+  if (msg.type === "deleteKey") {
+    await chrome.storage.local.remove(["encryptedKey", "apiKey"]);
+    await chrome.storage.session.remove(["apiKey", "legacyMigrated"]);
+    return publicConfig();
+  }
+  if (msg.type === "unlock") {
+    if (!old.vault) throw new Error("尚未加密保存 Key。");
+    const apiKey2 = await decryptKey(old.vault, msg.password);
+    if (!/^sk-[\x21-\x7e]{15,500}$/.test(apiKey2)) throw new Error("加密数据中的 Key 格式不正确，请重新保存。");
+    await chrome.storage.session.set({ apiKey: apiKey2 });
+    return publicConfig();
+  }
+  if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(msg.model || "") || !LANGUAGES.includes(msg.language)) throw new Error("请填写有效模型名称并选择目标语言。");
+  const languages = msg.languages ?? old.settings.languages;
+  if (!Array.isArray(languages) || !languages.length || languages.length > LANGUAGES.length || languages.some((l) => typeof l !== "string" || !LANGUAGES.includes(l)) || !languages.includes(msg.language)) throw new Error("请至少保留一种浮窗语言，并从中选择默认语言。");
+  const settings = { ...old.settings, model: msg.model, language: msg.language, languages: [...new Set(languages)] };
+  let apiKey = old.apiKey;
+  if (msg.key !== void 0 && msg.key !== "") {
+    if (typeof msg.key !== "string" || !/^sk-[\x21-\x7e]{15,500}$/.test(msg.key.trim())) throw new Error("Key 格式不正确，请完整粘贴以 sk- 开头的 API Key。");
+    apiKey = msg.key.trim();
+  }
+  let vault = old.vault;
+  if (msg.remember && (!vault || msg.key || msg.password)) {
+    if (!apiKey) throw new Error("请先填写 Key 或解锁已保存的 Key。");
+    if (typeof msg.password !== "string" || msg.password !== msg.passwordConfirm) throw new Error("两次解锁密码不一致。");
+    vault = await encryptKey(apiKey, msg.password);
+  }
+  await chrome.storage.local.set({ settings, dataConsent: msg.dataConsent === true ? 1 : 0, ...msg.remember ? { encryptedKey: vault } : {} });
+  if (apiKey) await chrome.storage.session.set({ apiKey });
+  if (!msg.remember) await chrome.storage.local.remove("encryptedKey");
+  await chrome.storage.session.remove("legacyMigrated");
+  return publicConfig();
 }
 let registration = Promise.resolve();
 function syncScripts() {
@@ -142,32 +230,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       return { ok: true };
     }
     if (!trusted(sender)) throw new Error("此操作只能从扩展设置页执行。");
-    if (msg.type === "save") {
-      const old = await config();
-      if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(msg.model || "") || !LANGUAGES.includes(msg.language)) throw new Error("请填写有效模型名称并选择目标语言。");
-      const languages = msg.languages ?? old.settings.languages;
-      if (!Array.isArray(languages) || !languages.length || languages.length > LANGUAGES.length || languages.some((l) => typeof l !== "string" || !LANGUAGES.includes(l)) || !languages.includes(msg.language)) throw new Error("请至少保留一种浮窗语言，并从中选择默认语言。");
-      const settings = { ...old.settings, model: msg.model, language: msg.language, languages: [...new Set(languages)] };
-      let apiKey = old.apiKey;
-      if (msg.key !== void 0 && msg.key !== "") {
-        if (typeof msg.key !== "string" || !/^sk-[\x21-\x7e]{15,500}$/.test(msg.key.trim())) throw new Error("Key 格式不正确，请完整粘贴以 sk- 开头的 API Key。");
-        apiKey = msg.key.trim();
-      }
-      await chrome.storage.local.set({ settings });
-      if (msg.remember) {
-        await chrome.storage.local.set({ apiKey });
-        await chrome.storage.session.remove("apiKey");
-      } else {
-        await chrome.storage.session.set({ apiKey });
-        await chrome.storage.local.remove("apiKey");
-      }
-      return publicConfig();
-    }
-    if (msg.type === "deleteKey") {
-      await chrome.storage.local.remove("apiKey");
-      await chrome.storage.session.remove("apiKey");
-      return publicConfig();
-    }
+    if (["save", "unlock", "lock", "deleteKey"].includes(msg.type)) return mutateCredentials(() => credentialAction(msg));
     if (msg.type === "syncSites") {
       await syncScripts();
       return { ok: true };
@@ -237,7 +300,13 @@ chrome.runtime.onConnect.addListener((port) => {
     let idle;
     let timedOut = false;
     try {
+      await credentialQueue.catch(() => {
+      });
+      const epoch = credentialEpoch;
       const c = await config();
+      if (epoch !== credentialEpoch || closed) throw new Error("设置已变化，请重新操作。");
+      if (!c.dataConsent) throw new Error("请先在设置中确认将选中文字发送给 OpenAI 的说明并保存。");
+      if (!c.apiKey && c.vault) throw new Error("Key 已锁定，请在设置中输入本机解锁密码。");
       if (!c.apiKey) throw new Error("请先打开设置，填写你的 OpenAI API Key。");
       if (sender.tab && c.settings.blockedHosts.includes(new URL(sender.url).hostname)) throw new Error("此站点已暂停 Lingo，请从扩展菜单重新启用。");
       const request = buildRequest(task, c.settings.model);

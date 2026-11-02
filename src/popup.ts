@@ -5,7 +5,7 @@ function status(text: string, error = false) { $('status').textContent = text; $
 async function refresh() {
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const c = await chrome.runtime.sendMessage({ type: 'config' });
-  $('key-state').textContent = c.hasKey ? `已连接 · ${c.settings.model}` : '首次使用：请在设置中填写 API Key';
+  $('key-state').textContent = !c.dataConsent ? '请在设置中确认数据处理说明' : c.hasKey ? `Key 已就绪 · ${c.settings.model}` : c.hasVault ? 'Key 已锁定，请打开设置解锁' : '首次使用：请在设置中填写 API Key';
   const supported = !!tab?.url && /^https?:/.test(tab.url);
   if (supported) {
     const u = new URL(tab!.url!); origin = `${u.protocol}//${u.hostname}/*`; $('host').textContent = u.hostname;

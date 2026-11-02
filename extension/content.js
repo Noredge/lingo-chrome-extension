@@ -222,7 +222,7 @@
       b.dataset.mode = mode;
       $(".presets").append(b);
     });
-    let settings = { ...DEFAULTS }, hasKey = false, snap = null;
+    let settings = { ...DEFAULTS }, hasKey = false, hasVault = false, snap = null;
     let candidate = null, generation = 0, selectedMode = "proofread";
     let composing = false, lastPointer = { x: 30 }, activeWriting = "", activeTranslation = "";
     const results = /* @__PURE__ */ new Map();
@@ -232,6 +232,7 @@
         if (c?.settings) {
           settings = c.settings;
           hasKey = c.hasKey;
+          hasVault = c.hasVault;
         }
       } catch {
         notify("扩展已更新，请刷新网页后使用。");
@@ -415,7 +416,7 @@
       const g = generation, id = crypto.randomUUID();
       if (!hasKey) {
         result.state = "error";
-        result.error = "首次使用，请打开设置并填写 OpenAI API Key。";
+        result.error = hasVault ? "Key 已锁定，请打开设置并输入本机解锁密码。" : "首次使用，请打开设置并填写 OpenAI API Key。";
         render();
         return;
       }

@@ -1,0 +1,3 @@
+import {chromium} from 'playwright';import{writeFile}from'node:fs/promises';
+const browser=await chromium.launch({headless:true});
+try{const page=await browser.newPage();const png=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle='#234f3f';x.beginPath();x.roundRect(16,16,96,96,25);x.fill();x.fillStyle='#fff';x.font='64px "Songti SC", serif';x.textAlign='center';x.textBaseline='middle';x.fillText('文',64,67);return c.toDataURL('image/png').split(',')[1]});await writeFile('public/icons/128.png',Buffer.from(png,'base64'));}finally{await browser.close()}

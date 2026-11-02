@@ -1,0 +1,18 @@
+{
+  "checks": [
+    "legacy plaintext migrates to session and preserves old language before persistent deletion",
+    "no API request before explicit data-processing consent",
+    "invalid save preserves existing session key",
+    "encrypted persistent vault contains no plaintext key or password",
+    "lock clears session key while retaining encrypted vault",
+    "wrong password does not unlock vault",
+    "language/settings can be saved while vault stays locked",
+    "browser restart keeps vault locked and removes decrypted session key",
+    "correct password unlocks after browser restart",
+    "public config never returns decrypted key, ciphertext, password or salt",
+    "session-only mode removes the encrypted persistent copy",
+    "delete clears both credential stores"
+  ],
+  "apiRequests": 0,
+  "fixtureOnly": true
+}

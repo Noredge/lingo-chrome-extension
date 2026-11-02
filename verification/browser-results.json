@@ -5,6 +5,7 @@
     "missing Key shows setup action and sends no request",
     "Key saved to session by default and cleared from visible input",
     "content scripts cannot read secret storage",
+    "webpage content scripts cannot unlock, save, lock or delete credentials",
     "site-authorized selection launcher and streamed translation",
     "copy writes the complete result to clipboard",
     "rewrite receives original text instead of translation",
@@ -38,7 +39,7 @@
     "context-menu fallback cannot bypass password exclusion",
     "read-only fields only offer copy",
     "overlay fits narrow viewport",
-    "remember-to-local migrates the Key without duplicate storage",
+    "password-encrypted vault persists without plaintext Key or password",
     "popup renders and rejects unsupported extension pages",
     "Gmail Smart Compose hints are excluded and hint removal does not shift replacement",
     "no uncaught page errors"

@@ -27,9 +27,14 @@ async function message(data: object) { const result = await chrome.runtime.sendM
 function status(id: string, text: string, error = false) { $(id).textContent = text; $(id).classList.toggle('error', error); }
 function draw(c: any) {
   model.value = c.settings.model; selectedLanguages = [...c.settings.languages]; drawLanguages(c.settings.language); remember.checked = c.remember;
-  $('key-status').textContent = c.hasKey ? 'Key 已配置' : '尚未配置 Key'; $('key-status').classList.toggle('connected', c.hasKey);
+  $('key-status').textContent = c.hasKey ? 'Key 已配置' : c.hasVault ? 'Key 已锁定' : '尚未配置 Key'; $('key-status').classList.toggle('connected', c.hasKey);
   key.placeholder = c.hasKey ? '已保存 · 留空保留，输入新 Key 可替换' : 'sk-…';
-  $('key-hint').textContent = c.hasKey ? `已保存在${c.remember ? '本机' : '本次浏览器会话'}。不会回显已有 Key。` : 'Key 仅在扩展后台使用，不会传给网页脚本。';
+  $('key-hint').textContent = c.hasVault ? (c.hasKey ? '已加密保存到本机，本次会话已解锁。' : '已加密保存到本机，请输入解锁密码。') : c.hasKey ? '仅保留在本次浏览器会话，不写入磁盘。' : 'Key 仅在扩展后台使用，不会传给网页脚本。';
+  $('migration-note').hidden = !c.migrated;
+  $('unlock-section').hidden = !c.hasVault || c.hasKey;
+  $('password-fields').hidden = !remember.checked;
+  $<HTMLButtonElement>('lock-key').disabled = !c.hasKey;
+  $<HTMLInputElement>('data-consent').checked = c.dataConsent;
   $('blocked').replaceChildren();
   if (c.settings.blockedHosts.length) {
     const title = document.createElement('p'); title.className = 'help'; title.textContent = '已暂停的站点'; $('blocked').append(title);
@@ -44,8 +49,19 @@ async function load() { draw(await message({ type: 'config' })); await sites(); 
 void load().catch(e => status('save-status', e.message, true));
 $('settings-form').addEventListener('submit', async e => {
   e.preventDefault(); const b = document.querySelector<HTMLButtonElement>('button[type="submit"]')!; b.disabled = true;
-  try { const c = await message({ type: 'save', key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, remember: remember.checked }); key.value = ''; key.type = 'password'; $('reveal').textContent = '显示'; draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
+  try { const c = await message({ type: 'save', key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, remember: remember.checked, password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); key.value = ''; $<HTMLInputElement>('vault-password').value = ''; $<HTMLInputElement>('vault-confirm').value = ''; key.type = 'password'; $('reveal').textContent = '显示'; draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
   catch (e) { status('save-status', (e as Error).message, true); } finally { b.disabled = false; }
+});
+remember.addEventListener('change', () => { $('password-fields').hidden = !remember.checked; });
+$('unlock-key').addEventListener('click', async () => {
+  const password = $<HTMLInputElement>('unlock-password'), button = $<HTMLButtonElement>('unlock-key'); button.disabled = true;
+  try { draw(await message({type:'unlock',password:password.value})); status('save-status','已解锁，本次浏览器会话可用。'); }
+  catch (e) { status('save-status',(e as Error).message,true); }
+  finally { password.value = ''; button.disabled = false; }
+});
+$('lock-key').addEventListener('click', async () => {
+  try { draw(await message({type:'lock'})); status('save-status','已清除会话中的 Key 并停止正在进行的请求。'); }
+  catch(e) { status('save-status',(e as Error).message,true); }
 });
 $('reveal').addEventListener('click', () => { key.type = key.type === 'password' ? 'text' : 'password'; $('reveal').textContent = key.type === 'password' ? '显示' : '隐藏'; });
 $('delete-key').addEventListener('click', async () => {

@@ -1,4 +1,4 @@
-# Lingo 1.2.0 · 划词翻译与写作
+# Lingo 1.3.0 · 划词翻译与写作
 
 个人使用的 Chrome Manifest V3 扩展。选中文字，点击「文」，先看翻译，再按需校对、改写、复制或替换。
 
@@ -9,7 +9,7 @@
 1. 解压完整包，并把整个文件夹保留在一个固定位置。
 2. Chrome 地址栏输入 `chrome://extensions`，打开右上角「开发者模式」。
 3. 点击「加载已解压的扩展程序」，选择交付包里的 **extension 文件夹**（其中直接包含 `manifest.json`）。不要选择 ZIP 或上一级文件夹。
-4. 从工具栏拼图菜单打开 Lingo，点击「设置」，填写自己的 OpenAI API Key 并保存。默认模型是 `gpt-6-luna`，可改为支持 Responses API 和流式输出的模型。
+4. 从工具栏拼图菜单打开 Lingo，点击「设置」，填写自己的 OpenAI API Key，阅读并确认数据处理说明后保存。默认模型是 `gpt-6-luna`，可改为支持 Responses API 和流式输出的模型。
 5. 可点击「测试连接」。这会使用已保存的 Key 和模型翻译一句固定示例，产生少量 API 用量。连接通过后即可实际使用。
 6. 首次安装会打开设置页。在「浮窗翻译语言」选择默认目标语言并保存；在「在哪里使用」点击「一键授权所有普通网页」并在 Chrome 中确认，或添加指定站点。刷新已打开的网页，选中文字，点击旁边的「文」。
 
@@ -44,7 +44,7 @@
 | 标准 textarea、文本 / 搜索 / 电话 / URL 输入框 | 支持选区替换与原生撤销 |
 | 只读输入框 | 仅复制结果 |
 | 简单 contenteditable | 支持符合安全检查的选区替换；周围格式保留 |
-| Gmail 正文 | 基于标准 contenteditable 支持简单正文；已增加 Gmail 换行、语法标记和 Smart Compose 提示层适配；真实测试记录见 verification/LIVE-CHROME-GMAIL.md（该记录对应 1.0.0；1.2.0 回归另见 VERIFICATION.md） |
+| Gmail 正文 | 基于标准 contenteditable 支持简单正文；已增加 Gmail 换行、语法标记和 Smart Compose 提示层适配；真实测试记录见 verification/LIVE-CHROME-GMAIL.md（该记录对应 1.0.0；1.3.0 回归另见 VERIFICATION.md） |
 | ProseMirror、Lexical、Slate、Quill、Monaco、CodeMirror、Google Docs 等复杂编辑器 | 不直接替换；可获取选区时提供复制 |
 | 带图片、表格或不可编辑嵌入块的富文本编辑区（已识别的 Gmail 提示层除外） | 为避免破坏结构，仅复制 |
 | iframe | 已授权的普通网页框架可注入；跨域框架需要相应站点授权，临时工具栏调用主要处理顶层选区 |
@@ -56,13 +56,16 @@
 
 - 发布目录和源码都不内置真实 Key。由用户在扩展设置中自行填写。
 - 默认仅存于 `chrome.storage.session`；浏览器会话结束、扩展重载/停用后需要重新填写。
-- 勾选「记住到本机」后存于 `chrome.storage.local`，不使用浏览器云同步。它不是系统钥匙串加密。
+- 可选择「加密保存到本机」：设置至少 12 字符的本机解锁密码，使用 AES-256-GCM 加密，PBKDF2-SHA-256 600,000 次派生。只持久化密文、盐值、IV 与算法参数，不保存密码或解密密钥。重启/重载后需要解锁。忘记密码无法恢复，只能删除加密副本并重新填写 Key。
+- 旧版持久明文 Key 自动转入本次会话后删除持久字段，等待用户主动加密保存。立即锁定清除会话 Key 并停止正在进行的请求；删除 Key 清除会话与加密副本。
+- 首次或升级后必须阅读并确认数据处理说明；撤销确认并保存会阻止后续 API 请求。
 - 两种存储均限制为 `TRUSTED_CONTEXTS`。网页 Content Script 不可读取 Key；设置页不回显已保存的 Key。
 - 所有请求固定发往 `https://api.openai.com/v1/responses`，由 Service Worker 发起。只发送选中文字、操作所需指令、目标语言和用户自定义要求。
-- 不发送完整网页、网页 URL、浏览历史或整封邮件；不做输入监听上传、不使用分析或遥测服务。
+- 不自动上传整页、整封邮件、页面 URL 或浏览历史；若用户主动选取整封邮件或含网址的文字，这些选区内容仍会发送。不做输入监听上传，不使用分析或遥测服务。
 - 使用 `store:false`，不主动建立 Responses 会话历史。这不等于 OpenAI 服务端零保留，服务端数据政策以账户条款为准。
 - 原文与结果仅用于当前悬浮窗口，不写入历史记录。模型输出以纯文本渲染，不执行 HTML 或脚本。
-- 这是用户自带 Key 的本机直连方式；本机高权限软件或访问浏览器配置文件的人仍可能取得持久保存的 Key。适用于个人使用，不应打包共享密钥。
+- 本机加密无法防护已控制浏览器/系统的恶意软件，也无法保证删除旧版备份中的历史残留。不要打包或共享真实 Key。
+- 隐私政策：https://noredge.github.io/lingo-chrome-extension/privacy.html；扩展内附有离线副本。支持邮箱：hongbin.lei98@gmail.com。
 
 ## 常见问题
 
@@ -92,7 +95,9 @@ npm run build
 ```sh
 npx playwright install chromium
 npm run test:browser
+npm run test:security
 node tests/release-smoke.mjs
+npm run package:store
 ```
 
 浏览器测试使用隔离的临时配置文件和受控模拟的 API 响应。测试副本额外预授权本地测试站点和被拦截的 Gmail 测试地址；不会创建/使用真实 API Key，测试完成后删除临时配置文件。`release-smoke.mjs` 使用原样生产 manifest 确认可加载且没有预置 Key。截图与结果写入源码目录上一级的 `evidence/`。
@@ -108,3 +113,7 @@ node tests/release-smoke.mjs
 - `tests/`：核心测试、Chrome 流程测试及本地编辑器样例。
 
 实现参考：[Chrome 扩展存储](https://developer.chrome.com/docs/extensions/reference/api/storage)、[动态脚本注入](https://developer.chrome.com/docs/extensions/reference/api/scripting)、[后台生命周期](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle)、[OpenAI 流式响应](https://developers.openai.com/api/docs/guides/streaming-responses)。
+
+## Unlisted 商店发布
+
+上架材料位于 `store/`，先阅读 `store/SUBMISSION-GUIDE.md`。`npm run package:store` 生成 manifest 位于根目录的运行时 ZIP。源码与隐私支持文档统一放在公开的 `Noredge/lingo-chrome-extension` 仓库。本项目不包含真实 API Key 或审核凭据。

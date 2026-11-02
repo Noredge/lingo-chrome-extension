@@ -3,3 +3,5 @@
 .setup-banner{border:1px solid #d3e1c8;border-radius:12px;padding:16px 20px;background:#eef4e7;margin-bottom:20px;font-size:12px}.setup-banner p{color:#78886a;margin:5px 0}.setup-banner a{font-weight:600}#website-access{scroll-margin-top:20px}
 
 .language-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}.language-chip{display:inline-flex;align-items:center;gap:5px;background:#edf3e6;border:1px solid #d8e3ce;border-radius:8px;padding:3px 6px 3px 10px;font-size:12px}.language-chip button{background:transparent;border:0;font-size:17px;padding:0 5px}.language-add{display:flex;gap:8px;margin-bottom:20px}.language-add button{flex-shrink:0}
+
+[hidden]{display:none!important}.disclosure{margin:20px 0;padding:16px;border:1px solid #d5e1cb;background:#f1f6ec;border-radius:10px;font-size:12px}.disclosure p{font-size:12px;margin:8px 0;line-height:1.8}.disclosure a{font-size:12px}#password-fields label{margin-top:12px}
