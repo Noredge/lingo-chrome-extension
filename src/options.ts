@@ -1,12 +1,32 @@
 import './ui.css';
-import { LANGUAGES } from './core';
+import { LANGUAGES, DEFAULTS } from './core';
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const key = $<HTMLInputElement>('api-key'), model = $<HTMLInputElement>('model'), language = $<HTMLSelectElement>('language'), remember = $<HTMLInputElement>('remember');
-LANGUAGES.forEach(l => { const o = document.createElement('option'); o.value = o.textContent = l; language.append(o); });
+let selectedLanguages = [...DEFAULTS.languages];
+function drawLanguages(preferred = language.value) {
+  language.replaceChildren(); $('language-list').replaceChildren();
+  for (const l of selectedLanguages) {
+    const o = document.createElement('option'); o.value = o.textContent = l; language.append(o);
+    const chip = document.createElement('span'); chip.className = 'language-chip';
+    const text = document.createElement('span'); text.textContent = l;
+    const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '×'; remove.setAttribute('aria-label', `移除 ${l}`); remove.disabled = selectedLanguages.length === 1;
+    remove.addEventListener('click', () => { const current = language.value; selectedLanguages = selectedLanguages.filter(x => x !== l); drawLanguages(current); });
+    chip.append(text, remove); $('language-list').append(chip);
+  }
+  language.value = selectedLanguages.includes(preferred) ? preferred : selectedLanguages[0];
+  const add = $<HTMLSelectElement>('add-language'); add.replaceChildren();
+  LANGUAGES.filter(l => !selectedLanguages.includes(l)).forEach(l => { const o = document.createElement('option'); o.value = o.textContent = l; add.append(o); });
+  add.disabled = selectedLanguages.length === LANGUAGES.length;
+  $<HTMLButtonElement>('add-language-button').disabled = add.disabled;
+}
+$('add-language-button').addEventListener('click', () => {
+  const value = $<HTMLSelectElement>('add-language').value;
+  if (value && !selectedLanguages.includes(value)) { selectedLanguages.push(value); drawLanguages(); }
+});
 async function message(data: object) { const result = await chrome.runtime.sendMessage(data); if (result.error) throw new Error(result.error); return result; }
 function status(id: string, text: string, error = false) { $(id).textContent = text; $(id).classList.toggle('error', error); }
 function draw(c: any) {
-  model.value = c.settings.model; language.value = c.settings.language; remember.checked = c.remember;
+  model.value = c.settings.model; selectedLanguages = [...c.settings.languages]; drawLanguages(c.settings.language); remember.checked = c.remember;
   $('key-status').textContent = c.hasKey ? 'Key 已配置' : '尚未配置 Key'; $('key-status').classList.toggle('connected', c.hasKey);
   key.placeholder = c.hasKey ? '已保存 · 留空保留，输入新 Key 可替换' : 'sk-…';
   $('key-hint').textContent = c.hasKey ? `已保存在${c.remember ? '本机' : '本次浏览器会话'}。不会回显已有 Key。` : 'Key 仅在扩展后台使用，不会传给网页脚本。';
@@ -24,7 +44,7 @@ async function load() { draw(await message({ type: 'config' })); await sites(); 
 void load().catch(e => status('save-status', e.message, true));
 $('settings-form').addEventListener('submit', async e => {
   e.preventDefault(); const b = document.querySelector<HTMLButtonElement>('button[type="submit"]')!; b.disabled = true;
-  try { const c = await message({ type: 'save', key: key.value.trim(), model: model.value.trim(), language: language.value, remember: remember.checked }); key.value = ''; key.type = 'password'; $('reveal').textContent = '显示'; draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
+  try { const c = await message({ type: 'save', key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, remember: remember.checked }); key.value = ''; key.type = 'password'; $('reveal').textContent = '显示'; draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
   catch (e) { status('save-status', (e as Error).message, true); } finally { b.disabled = false; }
 });
 $('reveal').addEventListener('click', () => { key.type = key.type === 'password' ? 'text' : 'password'; $('reveal').textContent = key.type === 'password' ? '显示' : '隐藏'; });

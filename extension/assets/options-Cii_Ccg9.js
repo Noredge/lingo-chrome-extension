@@ -1,11 +1,50 @@
-import "./ui-B1o-FF6-.js";
+import "./ui-Dpi6G00y.js";
+const DEFAULTS = { languages: ["简体中文", "English"] };
 const LANGUAGES = ["简体中文", "繁體中文", "English", "日本語", "한국어", "Français", "Deutsch", "Español", "Português（葡萄牙语）", "Italiano（意大利语）", "Nederlands（荷兰语）", "Русский（俄语）", "Українська（乌克兰语）", "Polski（波兰语）", "Čeština（捷克语）", "Svenska（瑞典语）", "Dansk（丹麦语）", "Norsk（挪威语）", "Suomi（芬兰语）", "Ελληνικά（希腊语）", "Türkçe（土耳其语）", "العربية（阿拉伯语）", "עברית（希伯来语）", "فارسی（波斯语）", "हिन्दी（印地语）", "বাংলা（孟加拉语）", "ไทย（泰语）", "Tiếng Việt（越南语）", "Bahasa Indonesia（印尼语）", "Bahasa Melayu（马来语）", "Filipino（菲律宾语）"];
 const $ = (id) => document.getElementById(id);
 const key = $("api-key"), model = $("model"), language = $("language"), remember = $("remember");
-LANGUAGES.forEach((l) => {
-  const o = document.createElement("option");
-  o.value = o.textContent = l;
-  language.append(o);
+let selectedLanguages = [...DEFAULTS.languages];
+function drawLanguages(preferred = language.value) {
+  language.replaceChildren();
+  $("language-list").replaceChildren();
+  for (const l of selectedLanguages) {
+    const o = document.createElement("option");
+    o.value = o.textContent = l;
+    language.append(o);
+    const chip = document.createElement("span");
+    chip.className = "language-chip";
+    const text = document.createElement("span");
+    text.textContent = l;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", `移除 ${l}`);
+    remove.disabled = selectedLanguages.length === 1;
+    remove.addEventListener("click", () => {
+      const current = language.value;
+      selectedLanguages = selectedLanguages.filter((x) => x !== l);
+      drawLanguages(current);
+    });
+    chip.append(text, remove);
+    $("language-list").append(chip);
+  }
+  language.value = selectedLanguages.includes(preferred) ? preferred : selectedLanguages[0];
+  const add = $("add-language");
+  add.replaceChildren();
+  LANGUAGES.filter((l) => !selectedLanguages.includes(l)).forEach((l) => {
+    const o = document.createElement("option");
+    o.value = o.textContent = l;
+    add.append(o);
+  });
+  add.disabled = selectedLanguages.length === LANGUAGES.length;
+  $("add-language-button").disabled = add.disabled;
+}
+$("add-language-button").addEventListener("click", () => {
+  const value = $("add-language").value;
+  if (value && !selectedLanguages.includes(value)) {
+    selectedLanguages.push(value);
+    drawLanguages();
+  }
 });
 async function message(data) {
   const result = await chrome.runtime.sendMessage(data);
@@ -18,7 +57,8 @@ function status(id, text, error = false) {
 }
 function draw(c) {
   model.value = c.settings.model;
-  language.value = c.settings.language;
+  selectedLanguages = [...c.settings.languages];
+  drawLanguages(c.settings.language);
   remember.checked = c.remember;
   $("key-status").textContent = c.hasKey ? "Key 已配置" : "尚未配置 Key";
   $("key-status").classList.toggle("connected", c.hasKey);
@@ -55,7 +95,7 @@ $("settings-form").addEventListener("submit", async (e) => {
   const b = document.querySelector('button[type="submit"]');
   b.disabled = true;
   try {
-    const c = await message({ type: "save", key: key.value.trim(), model: model.value.trim(), language: language.value, remember: remember.checked });
+    const c = await message({ type: "save", key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, remember: remember.checked });
     key.value = "";
     key.type = "password";
     $("reveal").textContent = "显示";

@@ -1,6 +1,7 @@
-import { DEFAULTS, LANGUAGES, MODES, MAX_TEXT, type Mode, type Settings } from './core';
+import { DEFAULTS, MODES, MAX_TEXT, type Mode, type Settings } from './core';
 import { capture, canReplace, replaceSelection, sensitiveFieldActive, type Snapshot } from './selection';
 import css from './overlay.css?inline';
+import { resizeBounds, type Edge } from './layout';
 
 declare global { interface Window { __lingoInstalled?: boolean } }
 if (!window.__lingoInstalled) { window.__lingoInstalled = true; init(); }
@@ -12,14 +13,19 @@ function init() {
   const launcher = document.createElement('button'); launcher.className = 'launcher'; launcher.textContent = '文'; launcher.title = 'Lingo · 翻译与修改'; launcher.setAttribute('aria-label', '用 Lingo 翻译选中文字'); launcher.hidden = true; root.append(launcher);
   const panel = document.createElement('section'); panel.className = 'panel'; panel.hidden = true; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Lingo 翻译与写作'); root.append(panel);
   // Constant markup only. Selected text and model output are always assigned using textContent.
-  panel.innerHTML = `<header class="drag-handle" tabindex="0" role="group" aria-label="移动浮窗：拖动标题栏，或聚焦后用方向键移动" title="拖动标题栏移动浮窗"><div class="brand"><span class="logo">文</span><div><strong>Lingo</strong><small>拖动标题栏 · 右下角缩放</small></div></div><div class="header-actions"><button data-action="reset-layout" class="icon" title="恢复默认位置和大小" aria-label="恢复默认位置和大小">↺</button><button data-action="settings" class="icon" title="打开设置" aria-label="打开设置">⚙</button><button data-action="close" class="icon" title="关闭 · Esc" aria-label="关闭">×</button></div></header>
+  panel.innerHTML = `<header class="drag-handle" tabindex="0" role="group" aria-label="移动浮窗：拖动标题栏，或聚焦后用方向键移动" title="拖动标题栏移动浮窗"><div class="brand"><span class="logo">文</span><div><strong>Lingo</strong><small>读懂，也写得更好</small></div></div><div class="header-actions"><button data-action="reset-layout" class="icon" title="恢复默认位置和大小" aria-label="恢复默认位置和大小">↺</button><button data-action="settings" class="icon" title="打开设置" aria-label="打开设置">⚙</button><button data-action="close" class="icon" title="关闭 · Esc" aria-label="关闭">×</button></div></header>
     <div class="body"><details class="source"><summary>选中的原文 <span class="count"></span></summary><div class="source-text" dir="auto"></div></details>
     <section class="translation"><div class="section-title"><span class="eyebrow">翻译</span><select aria-label="翻译目标语言" class="language"></select></div><div class="result translate-text" dir="auto"></div><div class="result-status translate-status" role="status" aria-live="polite"></div><div class="result-actions translate-actions"></div></section>
     <section class="writing"><div class="section-title"><span class="eyebrow">写作工具</span><span class="hint">始终基于原文</span></div><div class="presets"></div><form class="custom"><input aria-label="自定义修改要求" maxlength="1000" placeholder="试试：更委婉一点…"><button type="submit" aria-label="执行自定义改写">↗</button></form><div class="write-output" hidden><div class="write-label"></div><div class="result write-text" dir="auto"></div><div class="result-status write-status" role="status" aria-live="polite"></div><div class="result-actions write-actions"></div></div></section></div>
-    <footer><span class="notice" role="status">仅发送选中文字</span><span class="model"></span></footer><button class="resize-handle" aria-label="调整浮窗大小" title="拖动调整大小，或聚焦后用方向键调整"></button>`;
+    <footer><span class="notice" role="status">仅发送选中文字</span><span class="model"></span></footer>`;
   const $ = <T extends Element = HTMLElement>(s: string) => panel.querySelector<T>(s)!;
   const language = $<HTMLSelectElement>('.language');
-  LANGUAGES.forEach(l => { const option = document.createElement('option'); option.value = l; option.textContent = l; language.append(option); });
+  const edges: Edge[] = ['n','s','e','w','ne','nw','se','sw'];
+  const edgeNames = { n: '上边', s: '下边', e: '右边', w: '左边', ne: '右上角', nw: '左上角', se: '右下角', sw: '左下角' };
+  for (const edge of edges) {
+    const handle = document.createElement('button'); handle.className = 'resize-handle'; handle.dataset.edge = edge;
+    handle.setAttribute('aria-label', `调整浮窗大小：${edgeNames[edge]}`); handle.tabIndex = edge === 'se' ? 0 : -1; panel.append(handle);
+  }
   const modes: Mode[] = ['proofread','natural','professional','friendly','concise','precise'];
   modes.forEach(mode => { const b = document.createElement('button'); b.textContent = MODES[mode]; b.dataset.mode = mode; $('.presets').append(b); });
   let settings: Settings = { ...DEFAULTS }, hasKey = false, snap: Snapshot | null = null;
@@ -30,6 +36,7 @@ function init() {
   async function config() {
     try { const c = await chrome.runtime.sendMessage({ type: 'config' }); if (c?.settings) { settings = c.settings; hasKey = c.hasKey; } }
     catch { notify('扩展已更新，请刷新网页后使用。'); }
+    language.replaceChildren(...settings.languages.map(l => { const o = document.createElement('option'); o.value = o.textContent = l; return o; }));
     language.value = settings.language; $('.model').textContent = settings.model;
     if (settings.blockedHosts.includes(location.hostname)) close();
   }
@@ -39,7 +46,7 @@ function init() {
   function notify(text: string) { $('.notice').textContent = text; }
   // Layout belongs to this page session, never to the selected text or API request.
   let moved = false;
-  type Gesture = { id: number; kind: 'move' | 'resize'; x: number; y: number; left: number; top: number; width: number; height: number };
+  type Gesture = { id: number; kind: 'move' | Edge; x: number; y: number; left: number; top: number; width: number; height: number };
   let gesture: Gesture | null = null;
   const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(n, Math.max(min, max)));
   function fitPanel() {
@@ -57,17 +64,16 @@ function init() {
     if (top + height > innerHeight - 10) top = rect.top - height - 9;
     el.style.left = `${left}px`; el.style.top = `${clamp(top, 10, innerHeight - height - 10)}px`;
   }
-  function resizeTo(width: number, height: number) {
-    const r = panel.getBoundingClientRect();
-    panel.style.width = `${clamp(width, Math.min(300, innerWidth - 20), Math.min(900, innerWidth - r.left - 10))}px`;
-    panel.style.height = `${clamp(height, Math.min(240, innerHeight - 20), innerHeight - r.top - 10)}px`;
-    fitPanel();
+  function resizeFrom(bounds: { left: number; top: number; width: number; height: number }, edge: Edge, dx: number, dy: number) {
+    const r = resizeBounds(bounds, edge, dx, dy, { width: innerWidth, height: innerHeight });
+    panel.style.left = `${r.left}px`; panel.style.top = `${r.top}px`;
+    panel.style.width = `${r.width}px`; panel.style.height = `${r.height}px`;
   }
   function resetLayout() {
     moved = false; panel.style.width = ''; panel.style.height = '';
     if (snap) position(panel, snap.rect);
   }
-  function layoutControl(el: HTMLElement, kind: 'move' | 'resize') {
+  function layoutControl(el: HTMLElement, kind: 'move' | Edge) {
     el.addEventListener('pointerdown', e => {
       if (e.button !== 0 || (kind === 'move' && (e.target as Element).closest('button'))) return;
       e.preventDefault(); e.stopPropagation();
@@ -81,7 +87,7 @@ function init() {
       if (g.kind === 'move') {
         panel.style.left = `${clamp(g.left + dx, 10, innerWidth - panel.offsetWidth - 10)}px`;
         panel.style.top = `${clamp(g.top + dy, 10, innerHeight - panel.offsetHeight - 10)}px`;
-      } else resizeTo(g.width + dx, g.height + dy);
+      } else resizeFrom(g, g.kind, dx, dy);
     });
     const finish = () => { gesture = null; panel.classList.remove('adjusting'); };
     el.addEventListener('pointerup', finish); el.addEventListener('pointercancel', finish); el.addEventListener('lostpointercapture', finish);
@@ -91,11 +97,12 @@ function init() {
       const step = e.shiftKey ? 40 : 10, r = panel.getBoundingClientRect();
       const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
       const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
-      if (kind === 'resize') resizeTo(r.width + dx, r.height + dy);
+      if (kind !== 'move') resizeFrom(r, kind, dx, dy);
       else { panel.style.left = `${r.left + dx}px`; panel.style.top = `${r.top + dy}px`; fitPanel(); }
     });
   }
-  layoutControl($('.drag-handle'), 'move'); layoutControl($('.resize-handle'), 'resize');
+  layoutControl($('.drag-handle'), 'move');
+  for (const edge of edges) layoutControl($(`[data-edge="${edge}"]`), edge);
   new ResizeObserver(() => { if (!panel.hidden && snap) position(panel, snap.rect); }).observe(panel);
   function stopAll() { results.forEach(r => { clearTimeout(r.timer); r.port?.disconnect(); }); results.clear(); }
   function close() {

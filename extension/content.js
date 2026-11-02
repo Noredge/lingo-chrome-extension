@@ -1,7 +1,6 @@
 (function() {
   "use strict";
-  const DEFAULTS = { model: "gpt-6-luna", language: "简体中文", blockedHosts: [] };
-  const LANGUAGES = ["简体中文", "繁體中文", "English", "日本語", "한국어", "Français", "Deutsch", "Español", "Português（葡萄牙语）", "Italiano（意大利语）", "Nederlands（荷兰语）", "Русский（俄语）", "Українська（乌克兰语）", "Polski（波兰语）", "Čeština（捷克语）", "Svenska（瑞典语）", "Dansk（丹麦语）", "Norsk（挪威语）", "Suomi（芬兰语）", "Ελληνικά（希腊语）", "Türkçe（土耳其语）", "العربية（阿拉伯语）", "עברית（希伯来语）", "فارسی（波斯语）", "हिन्दी（印地语）", "বাংলা（孟加拉语）", "ไทย（泰语）", "Tiếng Việt（越南语）", "Bahasa Indonesia（印尼语）", "Bahasa Melayu（马来语）", "Filipino（菲律宾语）"];
+  const DEFAULTS = { model: "gpt-6-luna", language: "简体中文", languages: ["简体中文", "English"], blockedHosts: [] };
   const MODES = { translate: "翻译", proofread: "校对", natural: "自然", professional: "专业", friendly: "友好", concise: "简洁", precise: "精准", custom: "自定义" };
   const MAX_TEXT = 16e3;
   function sensitiveFieldActive() {
@@ -161,7 +160,19 @@
     }
     s.cleanup?.();
   }
-  const css = ':host{all:initial;font-size:14px;color:#253a34;color-scheme:light}.panel,.launcher{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;line-height:1.5}\n*{box-sizing:border-box} [hidden]{display:none!important} button,input,select{font:inherit}button,select{cursor:pointer}button{border:1px solid #dce5df;background:#fff;color:#344b41;border-radius:9px;padding:7px 12px;line-height:1.4}button:hover{background:#eef4ef;border-color:#c0d1c6}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid #578e70;outline-offset:3px}button:disabled{opacity:.4;cursor:not-allowed}button:active{transform:translateY(1px)}\n.launcher{position:fixed;width:34px;height:34px;padding:0;background:#234f3f;color:white;border:2px solid #fff;border-radius:11px;box-shadow:0 3px 14px #173d3333;font-size:17px;font-weight:600}.launcher:hover{background:#35694f;color:white}\n.panel{position:fixed;width:390px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);display:flex;flex-direction:column;background:#fffefa;border:1px solid #d9e1d8;border-radius:18px;box-shadow:0 16px 60px #152e3326,0 3px 9px #152e3310;overflow:hidden;font-size:13px;text-align:left;letter-spacing:normal}\nheader{display:flex;align-items:center;justify-content:space-between;padding:17px 18px 15px;border-bottom:1px solid #e9ede5;background:#f5f7ef;flex-shrink:0}.brand{display:flex;gap:10px;align-items:center}.logo{display:grid;place-items:center;width:35px;height:35px;background:#234f3f;color:#fff;border-radius:11px;font-size:20px}.brand strong{font-size:17px;letter-spacing:-.4px;font-weight:650;display:block}.brand small{font-size:10px;color:#7a887d;display:block;margin-top:1px}.header-actions{display:flex;gap:4px}.icon{background:transparent;border:0;font-size:21px;width:30px;height:30px;padding:0;color:#738277}\n.body{overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}.source{margin:14px 18px 0;color:#778379}.source summary{font-size:11px;cursor:pointer;user-select:none}.count{float:right;font-variant-numeric:tabular-nums;font-size:10px;color:#98a097}.source-text{max-height:130px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5ef;padding:10px;border-radius:8px;margin-top:8px;color:#56615b;font-size:12px}\n.translation,.writing{padding:16px 18px}.writing{border-top:1px solid #e6eae2;padding-top:17px;background:#fdfcf8}.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.eyebrow{font-size:11px;font-weight:650;color:#627c69;letter-spacing:1px}.language{border:0;background:#edf2e9;border-radius:6px;color:#566d5d;padding:3px 6px;font-size:11px;max-width:145px}.hint{font-size:10px;color:#92998e}.result{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.8;user-select:text;max-height:240px;overflow:auto;color:#253a34}.result.loading{height:42px;background:linear-gradient(110deg,#f0f2e9 25%,#fafbf6 45%,#f0f2e9 65%);background-size:200% 100%;border-radius:6px;animation:shimmer 1.8s infinite}.result-status{font-size:11px;color:#8a968a;margin-top:8px}.result-status:empty{display:none}.result-status.error{color:#a4573f;background:#fff2e9;padding:9px 10px;border-radius:8px;line-height:1.6}.result-actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}.result-actions:empty{display:none}.result-actions button{font-size:11px;padding:5px 10px}.primary{background:#234f3f;color:white;border-color:#234f3f}.primary:hover{background:#35694f;color:white;border-color:#35694f}\n.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.presets button{font-size:12px;background:#fffefa;padding:8px 3px}.presets button.selected{background:#e6eee2;border-color:#afc4ad;color:#244f36;font-weight:600}.custom{display:flex;gap:6px;border:1px solid #dce3d8;border-radius:9px;background:white;padding:4px;margin:12px 0 0}.custom input{width:100%;min-width:0;border:0;background:transparent;font-size:12px;padding:5px 7px;color:#344b41}.custom input::placeholder{color:#9bA297}.custom button{padding:3px 10px;background:#eff3e9;border:0;color:#507347;font-size:19px}.write-output{border-top:1px dashed #dce3d6;margin-top:16px;padding-top:14px}.write-label{font-size:11px;color:#6d876a;margin-bottom:8px;font-weight:600}footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;background:#f5f6f0;border-top:1px solid #e6eae0;flex-shrink:0;line-height:1.5}.notice{font-size:10px;color:#788477}.model{font-size:9px;color:#8d9888;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}\n@keyframes shimmer{to{background-position:-200% 0}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}\n\n.drag-handle{cursor:grab;touch-action:none;user-select:none}.drag-handle:focus-visible{outline:2px solid #578e70;outline-offset:-4px}.adjusting .drag-handle{cursor:grabbing}.adjusting{user-select:none}.body{flex:1;min-height:0}.resize-handle{position:absolute;bottom:0;right:0;width:24px;height:24px;padding:0;border:0;border-radius:0 0 17px 0;background:linear-gradient(135deg,transparent 48%,#9baa98 49%,#9baa98 54%,transparent 55%,transparent 65%,#9baa98 66%,#9baa98 71%,transparent 72%) 7px 7px/12px 12px no-repeat;cursor:nwse-resize;touch-action:none}.resize-handle:hover{background-color:#eaf0e5}.resize-handle:active{transform:none}footer{padding-right:30px}\n\n.resize-handle::after{content:"";position:absolute;right:6px;bottom:6px;width:9px;height:9px;border-right:2px solid #82967b;border-bottom:2px solid #82967b;pointer-events:none}\n';
+  const css = ':host{all:initial;font-size:14px;color:#253a34;color-scheme:light}.panel,.launcher{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;line-height:1.5}\n*{box-sizing:border-box} [hidden]{display:none!important} button,input,select{font:inherit}button,select{cursor:pointer}button{border:1px solid #dce5df;background:#fff;color:#344b41;border-radius:9px;padding:7px 12px;line-height:1.4}button:hover{background:#eef4ef;border-color:#c0d1c6}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid #578e70;outline-offset:3px}button:disabled{opacity:.4;cursor:not-allowed}button:active{transform:translateY(1px)}\n.launcher{position:fixed;width:34px;height:34px;padding:0;background:#234f3f;color:white;border:2px solid #fff;border-radius:11px;box-shadow:0 3px 14px #173d3333;font-size:17px;font-weight:600}.launcher:hover{background:#35694f;color:white}\n.panel{position:fixed;width:390px;min-width:min(320px,calc(100vw - 20px));min-height:min(300px,calc(100vh - 20px));max-width:min(900px,calc(100vw - 20px));max-height:calc(100vh - 20px);display:flex;flex-direction:column;background:#fffefa;border:1px solid #d9e1d8;border-radius:18px;box-shadow:0 16px 60px #152e3326,0 3px 9px #152e3310;overflow:hidden;font-size:13px;text-align:left;letter-spacing:normal}\nheader{display:flex;align-items:center;justify-content:space-between;padding:17px 18px 15px;border-bottom:1px solid #e9ede5;background:#f5f7ef;flex-shrink:0}.brand{display:flex;gap:10px;align-items:center}.logo{display:grid;place-items:center;width:35px;height:35px;background:#234f3f;color:#fff;border-radius:11px;font-size:20px}.brand strong{font-size:17px;letter-spacing:-.4px;font-weight:650;display:block}.brand small{font-size:10px;color:#7a887d;display:block;margin-top:1px}.header-actions{display:flex;gap:4px}.icon{background:transparent;border:0;font-size:21px;width:30px;height:30px;padding:0;color:#738277}\n.body{overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}.source{margin:14px 18px 0;color:#778379}.source summary{font-size:11px;cursor:pointer;user-select:none}.count{float:right;font-variant-numeric:tabular-nums;font-size:10px;color:#98a097}.source-text{max-height:130px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5ef;padding:10px;border-radius:8px;margin-top:8px;color:#56615b;font-size:12px}\n.translation,.writing{padding:16px 18px}.writing{border-top:1px solid #e6eae2;padding-top:17px;background:#fdfcf8}.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.eyebrow{font-size:11px;font-weight:650;color:#627c69;letter-spacing:1px}.language{border:0;background:#edf2e9;border-radius:6px;color:#566d5d;padding:3px 6px;font-size:11px;max-width:145px}.hint{font-size:10px;color:#92998e}.result{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.8;user-select:text;max-height:240px;overflow:auto;color:#253a34}.result.loading{height:42px;background:linear-gradient(110deg,#f0f2e9 25%,#fafbf6 45%,#f0f2e9 65%);background-size:200% 100%;border-radius:6px;animation:shimmer 1.8s infinite}.result-status{font-size:11px;color:#8a968a;margin-top:8px}.result-status:empty{display:none}.result-status.error{color:#a4573f;background:#fff2e9;padding:9px 10px;border-radius:8px;line-height:1.6}.result-actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}.result-actions:empty{display:none}.result-actions button{font-size:11px;padding:5px 10px}.primary{background:#234f3f;color:white;border-color:#234f3f}.primary:hover{background:#35694f;color:white;border-color:#35694f}\n.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.presets button{font-size:12px;background:#fffefa;padding:8px 3px}.presets button.selected{background:#e6eee2;border-color:#afc4ad;color:#244f36;font-weight:600}.custom{display:flex;gap:6px;border:1px solid #dce3d8;border-radius:9px;background:white;padding:4px;margin:12px 0 0}.custom input{width:100%;min-width:0;border:0;background:transparent;font-size:12px;padding:5px 7px;color:#344b41}.custom input::placeholder{color:#9bA297}.custom button{padding:3px 10px;background:#eff3e9;border:0;color:#507347;font-size:19px}.write-output{border-top:1px dashed #dce3d6;margin-top:16px;padding-top:14px}.write-label{font-size:11px;color:#6d876a;margin-bottom:8px;font-weight:600}footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;background:#f5f6f0;border-top:1px solid #e6eae0;flex-shrink:0;line-height:1.5}.notice{font-size:10px;color:#788477}.model{font-size:9px;color:#8d9888;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis}\n@keyframes shimmer{to{background-position:-200% 0}}@media(prefers-reduced-motion:reduce){*{animation:none!important}}\n\n.drag-handle{cursor:grab;touch-action:none;user-select:none}.drag-handle:focus-visible{outline:2px solid #578e70;outline-offset:-4px}.adjusting .drag-handle{cursor:grabbing}.adjusting{user-select:none}.body{flex:1;min-height:0}\n.resize-handle,.resize-handle:hover,.resize-handle:active{position:absolute;z-index:3;padding:0;border:0;border-radius:0;background:transparent;transform:none;touch-action:none;box-shadow:none}\n.resize-handle[data-edge="n"],.resize-handle[data-edge="s"]{left:16px;right:16px;height:7px;cursor:ns-resize}\n.resize-handle[data-edge="n"]{top:0}.resize-handle[data-edge="s"]{bottom:0}\n.resize-handle[data-edge="e"],.resize-handle[data-edge="w"]{top:16px;bottom:16px;width:7px;cursor:ew-resize}\n.resize-handle[data-edge="e"]{right:0}.resize-handle[data-edge="w"]{left:0}\n.resize-handle[data-edge="ne"],.resize-handle[data-edge="nw"],.resize-handle[data-edge="se"],.resize-handle[data-edge="sw"]{width:16px;height:16px}\n.resize-handle[data-edge="ne"]{top:0;right:0;cursor:nesw-resize}.resize-handle[data-edge="nw"]{top:0;left:0;cursor:nwse-resize}\n.resize-handle[data-edge="se"]{bottom:0;right:0;cursor:nwse-resize}.resize-handle[data-edge="sw"]{bottom:0;left:0;cursor:nesw-resize}\n.resize-handle:focus-visible{outline:2px solid #578e70;outline-offset:-3px}\n';
+  const MIN_WIDTH = 320, MIN_HEIGHT = 300, MAX_WIDTH = 900, MARGIN = 10;
+  const clamp = (n, lo, hi) => Math.max(lo, Math.min(n, Math.max(lo, hi)));
+  function resizeBounds(b, edge, dx, dy, viewport) {
+    const minW = Math.min(MIN_WIDTH, Math.max(1, viewport.width - 2 * MARGIN));
+    const minH = Math.min(MIN_HEIGHT, Math.max(1, viewport.height - 2 * MARGIN));
+    let left = b.left, top = b.top, right = b.left + b.width, bottom = b.top + b.height;
+    if (edge.includes("w")) left = clamp(left + dx, Math.max(MARGIN, right - MAX_WIDTH), right - minW);
+    if (edge.includes("e")) right = clamp(right + dx, left + minW, Math.min(viewport.width - MARGIN, left + MAX_WIDTH));
+    if (edge.includes("n")) top = clamp(top + dy, MARGIN, bottom - minH);
+    if (edge.includes("s")) bottom = clamp(bottom + dy, top + minH, viewport.height - MARGIN);
+    return { left, top, width: right - left, height: bottom - top };
+  }
   if (!window.__lingoInstalled) {
     window.__lingoInstalled = true;
     init();
@@ -187,19 +198,23 @@
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-label", "Lingo 翻译与写作");
     root.append(panel);
-    panel.innerHTML = `<header class="drag-handle" tabindex="0" role="group" aria-label="移动浮窗：拖动标题栏，或聚焦后用方向键移动" title="拖动标题栏移动浮窗"><div class="brand"><span class="logo">文</span><div><strong>Lingo</strong><small>拖动标题栏 · 右下角缩放</small></div></div><div class="header-actions"><button data-action="reset-layout" class="icon" title="恢复默认位置和大小" aria-label="恢复默认位置和大小">↺</button><button data-action="settings" class="icon" title="打开设置" aria-label="打开设置">⚙</button><button data-action="close" class="icon" title="关闭 · Esc" aria-label="关闭">×</button></div></header>
+    panel.innerHTML = `<header class="drag-handle" tabindex="0" role="group" aria-label="移动浮窗：拖动标题栏，或聚焦后用方向键移动" title="拖动标题栏移动浮窗"><div class="brand"><span class="logo">文</span><div><strong>Lingo</strong><small>读懂，也写得更好</small></div></div><div class="header-actions"><button data-action="reset-layout" class="icon" title="恢复默认位置和大小" aria-label="恢复默认位置和大小">↺</button><button data-action="settings" class="icon" title="打开设置" aria-label="打开设置">⚙</button><button data-action="close" class="icon" title="关闭 · Esc" aria-label="关闭">×</button></div></header>
     <div class="body"><details class="source"><summary>选中的原文 <span class="count"></span></summary><div class="source-text" dir="auto"></div></details>
     <section class="translation"><div class="section-title"><span class="eyebrow">翻译</span><select aria-label="翻译目标语言" class="language"></select></div><div class="result translate-text" dir="auto"></div><div class="result-status translate-status" role="status" aria-live="polite"></div><div class="result-actions translate-actions"></div></section>
     <section class="writing"><div class="section-title"><span class="eyebrow">写作工具</span><span class="hint">始终基于原文</span></div><div class="presets"></div><form class="custom"><input aria-label="自定义修改要求" maxlength="1000" placeholder="试试：更委婉一点…"><button type="submit" aria-label="执行自定义改写">↗</button></form><div class="write-output" hidden><div class="write-label"></div><div class="result write-text" dir="auto"></div><div class="result-status write-status" role="status" aria-live="polite"></div><div class="result-actions write-actions"></div></div></section></div>
-    <footer><span class="notice" role="status">仅发送选中文字</span><span class="model"></span></footer><button class="resize-handle" aria-label="调整浮窗大小" title="拖动调整大小，或聚焦后用方向键调整"></button>`;
+    <footer><span class="notice" role="status">仅发送选中文字</span><span class="model"></span></footer>`;
     const $ = (s) => panel.querySelector(s);
     const language = $(".language");
-    LANGUAGES.forEach((l) => {
-      const option = document.createElement("option");
-      option.value = l;
-      option.textContent = l;
-      language.append(option);
-    });
+    const edges = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
+    const edgeNames = { n: "上边", s: "下边", e: "右边", w: "左边", ne: "右上角", nw: "左上角", se: "右下角", sw: "左下角" };
+    for (const edge of edges) {
+      const handle = document.createElement("button");
+      handle.className = "resize-handle";
+      handle.dataset.edge = edge;
+      handle.setAttribute("aria-label", `调整浮窗大小：${edgeNames[edge]}`);
+      handle.tabIndex = edge === "se" ? 0 : -1;
+      panel.append(handle);
+    }
     const modes = ["proofread", "natural", "professional", "friendly", "concise", "precise"];
     modes.forEach((mode) => {
       const b = document.createElement("button");
@@ -221,6 +236,11 @@
       } catch {
         notify("扩展已更新，请刷新网页后使用。");
       }
+      language.replaceChildren(...settings.languages.map((l) => {
+        const o = document.createElement("option");
+        o.value = o.textContent = l;
+        return o;
+      }));
       language.value = settings.language;
       $(".model").textContent = settings.model;
       if (settings.blockedHosts.includes(location.hostname)) close();
@@ -237,12 +257,12 @@
     }
     let moved = false;
     let gesture = null;
-    const clamp = (n, min, max) => Math.max(min, Math.min(n, Math.max(min, max)));
+    const clamp2 = (n, min, max) => Math.max(min, Math.min(n, Math.max(min, max)));
     function fitPanel() {
       if (panel.hidden) return;
       const r = panel.getBoundingClientRect();
-      panel.style.left = `${clamp(r.left, 10, innerWidth - r.width - 10)}px`;
-      panel.style.top = `${clamp(r.top, 10, innerHeight - r.height - 10)}px`;
+      panel.style.left = `${clamp2(r.left, 10, innerWidth - r.width - 10)}px`;
+      panel.style.top = `${clamp2(r.top, 10, innerHeight - r.height - 10)}px`;
     }
     function position(el, rect) {
       if (el === panel && moved) {
@@ -251,17 +271,18 @@
       }
       const width = el === launcher ? 34 : panel.offsetWidth;
       const height = el === launcher ? 34 : panel.offsetHeight;
-      const left = clamp(rect.left || lastPointer.x, 10, innerWidth - width - 10);
+      const left = clamp2(rect.left || lastPointer.x, 10, innerWidth - width - 10);
       let top = rect.bottom + 9;
       if (top + height > innerHeight - 10) top = rect.top - height - 9;
       el.style.left = `${left}px`;
-      el.style.top = `${clamp(top, 10, innerHeight - height - 10)}px`;
+      el.style.top = `${clamp2(top, 10, innerHeight - height - 10)}px`;
     }
-    function resizeTo(width, height) {
-      const r = panel.getBoundingClientRect();
-      panel.style.width = `${clamp(width, Math.min(300, innerWidth - 20), Math.min(900, innerWidth - r.left - 10))}px`;
-      panel.style.height = `${clamp(height, Math.min(240, innerHeight - 20), innerHeight - r.top - 10)}px`;
-      fitPanel();
+    function resizeFrom(bounds, edge, dx, dy) {
+      const r = resizeBounds(bounds, edge, dx, dy, { width: innerWidth, height: innerHeight });
+      panel.style.left = `${r.left}px`;
+      panel.style.top = `${r.top}px`;
+      panel.style.width = `${r.width}px`;
+      panel.style.height = `${r.height}px`;
     }
     function resetLayout() {
       moved = false;
@@ -284,9 +305,9 @@
         if (!gesture || gesture.id !== e.pointerId) return;
         const g = gesture, dx = e.clientX - g.x, dy = e.clientY - g.y;
         if (g.kind === "move") {
-          panel.style.left = `${clamp(g.left + dx, 10, innerWidth - panel.offsetWidth - 10)}px`;
-          panel.style.top = `${clamp(g.top + dy, 10, innerHeight - panel.offsetHeight - 10)}px`;
-        } else resizeTo(g.width + dx, g.height + dy);
+          panel.style.left = `${clamp2(g.left + dx, 10, innerWidth - panel.offsetWidth - 10)}px`;
+          panel.style.top = `${clamp2(g.top + dy, 10, innerHeight - panel.offsetHeight - 10)}px`;
+        } else resizeFrom(g, g.kind, dx, dy);
       });
       const finish = () => {
         gesture = null;
@@ -303,7 +324,7 @@
         const step = e.shiftKey ? 40 : 10, r = panel.getBoundingClientRect();
         const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
         const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
-        if (kind === "resize") resizeTo(r.width + dx, r.height + dy);
+        if (kind !== "move") resizeFrom(r, kind, dx, dy);
         else {
           panel.style.left = `${r.left + dx}px`;
           panel.style.top = `${r.top + dy}px`;
@@ -312,7 +333,7 @@
       });
     }
     layoutControl($(".drag-handle"), "move");
-    layoutControl($(".resize-handle"), "resize");
+    for (const edge of edges) layoutControl($(`[data-edge="${edge}"]`), edge);
     new ResizeObserver(() => {
       if (!panel.hidden && snap) position(panel, snap.rect);
     }).observe(panel);

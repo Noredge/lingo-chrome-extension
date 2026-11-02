@@ -1,5 +1,12 @@
-const DEFAULTS = { model: "gpt-6-luna", language: "简体中文", blockedHosts: [] };
+const DEFAULTS = { model: "gpt-6-luna", language: "简体中文", languages: ["简体中文", "English"], blockedHosts: [] };
 const LANGUAGES = ["简体中文", "繁體中文", "English", "日本語", "한국어", "Français", "Deutsch", "Español", "Português（葡萄牙语）", "Italiano（意大利语）", "Nederlands（荷兰语）", "Русский（俄语）", "Українська（乌克兰语）", "Polski（波兰语）", "Čeština（捷克语）", "Svenska（瑞典语）", "Dansk（丹麦语）", "Norsk（挪威语）", "Suomi（芬兰语）", "Ελληνικά（希腊语）", "Türkçe（土耳其语）", "العربية（阿拉伯语）", "עברית（希伯来语）", "فارسی（波斯语）", "हिन्दी（印地语）", "বাংলা（孟加拉语）", "ไทย（泰语）", "Tiếng Việt（越南语）", "Bahasa Indonesia（印尼语）", "Bahasa Melayu（马来语）", "Filipino（菲律宾语）"];
+function languagePreferences(saved) {
+  const language = typeof saved.language === "string" && LANGUAGES.includes(saved.language) ? saved.language : DEFAULTS.language;
+  let languages = Array.isArray(saved.languages) ? [...new Set(saved.languages.filter((l) => typeof l === "string" && LANGUAGES.includes(l)))] : [];
+  if (!languages.length) languages = [.../* @__PURE__ */ new Set([language, ...DEFAULTS.languages])];
+  if (!languages.includes(language)) languages.unshift(language);
+  return { language, languages };
+}
 const MODES = { translate: "翻译", proofread: "校对", natural: "自然", professional: "专业", friendly: "友好", concise: "简洁", precise: "精准", custom: "自定义" };
 const MAX_TEXT = 16e3;
 function validateTask(t) {
@@ -75,7 +82,7 @@ async function config() {
   await ready;
   const local = await chrome.storage.local.get(["settings", "apiKey"]);
   const session = await chrome.storage.session.get("apiKey");
-  return { settings: { ...DEFAULTS, ...local.settings || {} }, apiKey: String(session.apiKey || local.apiKey || ""), remember: !!local.apiKey };
+  return { settings: { ...DEFAULTS, ...local.settings || {}, ...languagePreferences(local.settings || {}) }, apiKey: String(session.apiKey || local.apiKey || ""), remember: !!local.apiKey };
 }
 function trusted(sender) {
   return sender.id === chrome.runtime.id && ["options.html", "popup.html"].some((page) => sender.url?.split(/[?#]/)[0] === chrome.runtime.getURL(page));
@@ -138,7 +145,9 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     if (msg.type === "save") {
       const old = await config();
       if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(msg.model || "") || !LANGUAGES.includes(msg.language)) throw new Error("请填写有效模型名称并选择目标语言。");
-      const settings = { ...old.settings, model: msg.model, language: msg.language };
+      const languages = msg.languages ?? old.settings.languages;
+      if (!Array.isArray(languages) || !languages.length || languages.length > LANGUAGES.length || languages.some((l) => typeof l !== "string" || !LANGUAGES.includes(l)) || !languages.includes(msg.language)) throw new Error("请至少保留一种浮窗语言，并从中选择默认语言。");
+      const settings = { ...old.settings, model: msg.model, language: msg.language, languages: [...new Set(languages)] };
       let apiKey = old.apiKey;
       if (msg.key !== void 0 && msg.key !== "") {
         if (typeof msg.key !== "string" || !/^sk-[\x21-\x7e]{15,500}$/.test(msg.key.trim())) throw new Error("Key 格式不正确，请完整粘贴以 sk- 开头的 API Key。");

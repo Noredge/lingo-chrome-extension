@@ -1,18 +1,18 @@
-# Lingo 1.1.0 验证记录
+# Lingo 1.2.0 验证记录
 
 2026-11-02
 
 - TypeScript 严格检查、生产构建通过。
-- 核心测试 6/6；Chrome for Testing 浏览器检查 38/38，无未捕获页面错误。
-- 验证拖动、缩放、结果生成后布局稳定、同页重新打开记住布局、键盘缩放、视口缩小时保持可见、恢复默认布局。
-- 验证移动/缩放后替换原有选区、原生撤销、过期保护和 Gmail 特殊 DOM 回归。
-- 验证设置页 31 种语言、保存默认值后新浮窗与 API 请求使用该值；权限引导反映实际授权。
-- 原样 manifest 加载通过，初始仅有 OpenAI API 主机权限，没有嵌入 Key 或默认全站权限。
-- 用户日常 Chrome 已重载 1.1.0；在真实 Gmail 中将浮窗拖到正文右侧，并由 390px 宽缩放到 490px 宽、约 546px 高；原选中文字和其余正文保持不变，真实翻译正常返回。所有站点授权仍由用户在 Chrome 提示中确认。
+- 核心和尺寸计算测试 10/10；Chrome for Testing 浏览器流程 41/41，无未捕获页面错误。
+- 新增语言列表的添加/移除、默认项迁移、保存重开、浮窗与 API 请求目标一致性检查；最后一种语言不能移除。
+- 新增四边/四角真实指针缩放检查，对边保持固定，320 × 300 最小尺寸与小视口适配通过。
+- 延续选区替换、原生撤销、源文本过期保护和 Gmail 特殊 DOM 回归。
+- 生产 manifest 加载通过，没有嵌入 Key 或默认全站授权。
+- 用户日常 Chrome 已重载并显示 1.2.0；保留原扩展 ID 和本地配置。本轮八方向缩放及语言管理的功能验收来自隔离 Chrome 自动化，未重复真实 API/Gmail 修改测试。
 
-## 边界
+## 验证边界
 
-38 项自动化检查使用模拟 API、隔离配置文件、本地/被拦截的 Gmail 样例，不访问真实邮箱。设置截图无 Key，写作截图为模拟结果。既有真实 API/Gmail 1.0.0 测试见 LIVE-CHROME-GMAIL.md；对应包含个人账号的截图仅保存在原本机交付包，未同步仓库。尚未全面测试复杂编辑器、邮件图片/表格/签名、跨域框架和所有网站。
+自动化浏览器检查使用模拟 API 和隔离配置文件，本地/被拦截的 Gmail 样例，不读取真实邮箱或真实 Key。设置截图无 Key，写作截图为模拟结果。既有真实 API/Gmail 记录见 LIVE-CHROME-GMAIL.md。复杂编辑器、邮件图片/表格/签名和所有网站尚未全面验收。
 
 ## 浏览器检查
 
@@ -26,11 +26,14 @@
 - same-selection completed results reused without duplicate request
 - custom instruction stays separate from source
 - target language changes trigger translation
-- 31 languages available; saved default reaches new overlay and API request
+- settings add and remove languages; persisted shortlist and default reach overlay and API
 - drag and resize retain source selection; generated content does not move or resize manual layout
+- all four edges and corners resize with the opposite edge anchored
+- readable 320x300 minimum enforced without visible resize decoration
 - manual layout retained when reopening on the same page
 - keyboard resize and viewport shrink keep the window reachable
 - reset restores automatic layout and default width
+- removing default chooses remaining language and final language cannot be removed
 - permission onboarding reflects actual grants and offers explicit all-sites action
 - textarea replacement changes only original selection and emits native input
 - native undo restores textarea edit

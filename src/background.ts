@@ -1,4 +1,4 @@
-import { DEFAULTS, LANGUAGES, buildRequest, consumeSSE, apiError, type Settings, type Task } from './core';
+import { DEFAULTS, LANGUAGES, languagePreferences, buildRequest, consumeSSE, apiError, type Settings, type Task } from './core';
 
 const ready = Promise.all([
   chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }),
@@ -8,7 +8,7 @@ async function config() {
   await ready;
   const local = await chrome.storage.local.get(['settings', 'apiKey']);
   const session = await chrome.storage.session.get('apiKey');
-  return { settings: { ...DEFAULTS, ...(local.settings as Partial<Settings> || {}) } as Settings, apiKey: String(session.apiKey || local.apiKey || ''), remember: !!local.apiKey };
+  return { settings: { ...DEFAULTS, ...(local.settings as Partial<Settings> || {}), ...languagePreferences(local.settings || {}) } as Settings, apiKey: String(session.apiKey || local.apiKey || ''), remember: !!local.apiKey };
 }
 function trusted(sender: chrome.runtime.MessageSender) {
   // An options page opened in a tab also has sender.tab; trust its extension URL.
@@ -60,7 +60,9 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     if (msg.type === 'save') {
       const old = await config();
       if (!/^[a-zA-Z0-9._:-]{1,120}$/.test(msg.model || '') || !LANGUAGES.includes(msg.language)) throw new Error('请填写有效模型名称并选择目标语言。');
-      const settings = { ...old.settings, model: msg.model, language: msg.language };
+      const languages = msg.languages ?? old.settings.languages;
+      if (!Array.isArray(languages) || !languages.length || languages.length > LANGUAGES.length || languages.some(l => typeof l !== 'string' || !LANGUAGES.includes(l)) || !languages.includes(msg.language)) throw new Error('请至少保留一种浮窗语言，并从中选择默认语言。');
+      const settings = { ...old.settings, model: msg.model, language: msg.language, languages: [...new Set<string>(languages)] };
       let apiKey = old.apiKey;
       if (msg.key !== undefined && msg.key !== '') {
         if (typeof msg.key !== 'string' || !/^sk-[\x21-\x7e]{15,500}$/.test(msg.key.trim())) throw new Error('Key 格式不正确，请完整粘贴以 sk- 开头的 API Key。');
