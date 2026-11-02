@@ -1,0 +1,5 @@
+{
+  "name":"lingo-chrome-extension","version":"1.1.0","private":true,"type":"module",
+  "scripts":{"build":"node build.mjs","typecheck":"tsc --noEmit","test":"node --import tsx --test tests/core.test.ts","test:browser":"node tests/browser.mjs"},
+  "devDependencies":{"@types/chrome":"^0.1.0","typescript":"^5.9.0","vite":"^7.2.0","tsx":"^4.20.0","playwright":"^1.56.0"}
+}

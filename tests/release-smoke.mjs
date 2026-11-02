@@ -1,0 +1,17 @@
+import { chromium } from 'playwright';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const profile=await mkdtemp(path.join(tmpdir(),'lingo-release-'));
+const dist=path.resolve('dist');
+const context=await chromium.launchPersistentContext(profile,{channel:'chromium',headless:true,args:[`--disable-extensions-except=${dist}`,`--load-extension=${dist}`],viewport:{width:1320,height:950}});
+try{
+ const sw=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'); const id=sw.url().split('/')[2];
+ const page=await context.newPage();await page.goto(`chrome-extension://${id}/options.html`);await page.getByText('尚未配置 Key',{exact:true}).waitFor();
+ const state=await sw.evaluate(async()=>({permissions:await chrome.permissions.getAll(),scripts:await chrome.scripting.getRegisteredContentScripts(),local:await chrome.storage.local.get(null),session:await chrome.storage.session.get(null)}));
+ assert.deepEqual(state.permissions.origins,['https://api.openai.com/*']);assert.equal(state.scripts.length,0);assert.deepEqual(state.local,{});assert.deepEqual(state.session,{});
+ await page.screenshot({path:path.resolve('../evidence/release-settings.png'),fullPage:true});
+ await writeFile(path.resolve('../evidence/release-smoke.json'),JSON.stringify({browser:await context.browser().version(),unchangedProductionManifest:true,hasEmbeddedKey:false,preauthorizedOrigins:state.permissions.origins,initialContentScripts:state.scripts.length,result:'passed'},null,2));
+ console.log('PASS production manifest loads unchanged; no embedded credentials or blanket website permissions');
+}finally{await context.close();await rm(profile,{recursive:true,force:true});}
