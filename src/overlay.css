@@ -21,3 +21,5 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
 
 .language{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m2 4 4 4 4-4' fill='none' stroke='%23566d5d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 12px;padding-right:32px;padding-left:12px}
 @media(forced-colors:active){.language{appearance:auto;-webkit-appearance:auto;background-image:none;padding-right:8px}}
+
+.source-editor{display:block;width:100%;margin-top:10px;min-height:90px;max-height:300px;resize:vertical;border:1px solid #dce3d8;border-radius:8px;background:#f4f5ef;padding:10px;color:#344b41;font:12px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.source-editor:focus-visible{outline:2px solid #578e70;outline-offset:2px}.source-actions{display:flex;justify-content:flex-end;margin-top:8px}.source-actions button{font-size:11px}

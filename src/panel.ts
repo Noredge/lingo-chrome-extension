@@ -20,6 +20,22 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     <footer><span class="notice" role="status">仅发送选中文字</span><span class="model" translate="no"></span></footer>`;
   const $ = <T extends Element = HTMLElement>(s: string) => panel.querySelector<T>(s)!;
   const language = $<HTMLSelectElement>('.language');
+  const sourceEditor=docked?document.createElement('textarea'):null;
+  if(sourceEditor){
+    sourceEditor.className='source-editor';sourceEditor.rows=5;sourceEditor.setAttribute('aria-label','编辑原文');sourceEditor.placeholder='在此粘贴或修改原文…';sourceEditor.dir='auto';
+    $('.source summary').firstChild!.textContent='原文 ';$('.source-text').setAttribute('hidden','');$('.source').append(sourceEditor);
+    const actions=document.createElement('div');actions.className='source-actions';const submit=document.createElement('button');submit.type='button';submit.className='source-submit';submit.textContent='翻译';actions.append(submit);$('.source').append(actions);
+    const submitSource=()=>{const text=sourceEditor.value;if(!text.trim()||text.length>MAX_TEXT)return;const target=language.value;show({text,kind:'read',rect:new DOMRect()},true,target);};
+    submit.addEventListener('click',submitSource);
+    sourceEditor.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();submitSource();}});
+    sourceEditor.addEventListener('input',()=>{
+      generation++;stopAll();snap=null;activeWriting=activeTranslation='';render();$('.write-output').hidden=true;
+      $('.source-text').textContent=sourceEditor.value;$('.count').textContent=`${sourceEditor.value.length} 字符`;
+      submit.disabled=!sourceEditor.value.trim()||sourceEditor.value.length>MAX_TEXT;
+      $('.translate-status').textContent=sourceEditor.value.length>MAX_TEXT?'选中文字过长，请缩短到 16,000 个字符以内。':'点击翻译，更新结果。';
+    });
+  }
+
   const edges: Edge[] = docked ? [] : ['n','s','e','w','ne','nw','se','sw'];
   const edgeNames = { n: '上边', s: '下边', e: '右边', w: '左边', ne: '右上角', nw: '左上角', se: '右下角', sw: '左下角' };
   for (const edge of edges) {
@@ -113,7 +129,7 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     generation++; stopAll(); snap?.cleanup?.(); candidate?.cleanup?.(); snap = candidate = null; panel.hidden = launcher.hidden = true;
     for (const selector of ['.source-text','.translate-text','.write-text','.translate-status','.write-status','.translate-actions','.write-actions']) $(selector).replaceChildren();
     $<HTMLInputElement>('.custom input').value = '';
-    if(docked){panel.hidden=false;$('.source').hidden=true;$('.write-output').hidden=true;$('.translate-status').textContent='在 PDF 中选中文字，然后右键用 Lingo 翻译。';}
+    if(docked){notify('仅发送当前原文 · 此处可复制结果');panel.hidden=false;$('.source').hidden=false;$<HTMLDetailsElement>('.source').open=true;sourceEditor!.value='';$<HTMLButtonElement>('.source-submit').disabled=true;$('.count').textContent='';$('.write-output').hidden=true;$('.translate-status').classList.remove('error');$('.translate-text').classList.remove('loading');$('.translate-status').textContent='在 PDF 中右键翻译，或在上方粘贴原文。';}
   }
   function scan() {
     if (composing || blocked() || !panel.hidden || root.activeElement) return;
@@ -121,21 +137,22 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     if (!candidate || candidate.text.length > MAX_TEXT) { launcher.hidden = true; return; }
     mount(); launcher.hidden = false; position(launcher, candidate.rect);
   }
-  function show(snapshot: Snapshot) {
+  function show(snapshot: Snapshot, keepOpen=false, targetLanguage=settings.language) {
     $('.source').hidden=false;
     generation++; stopAll(); snap?.cleanup?.(); if (candidate && candidate !== snapshot) candidate.cleanup?.();
     snap = snapshot; candidate = null; activeWriting = activeTranslation = ''; selectedMode = 'proofread';
     $<HTMLInputElement>('.custom input').value = '';
     $('.write-output').hidden = true;
     $('.source-text').textContent = snapshot.text; $('.count').textContent = `${snapshot.text.length} 字符`;
-    $<HTMLDetailsElement>('.source').open = false;
+    $<HTMLDetailsElement>('.source').open=keepOpen;if(sourceEditor){sourceEditor.value=snapshot.text;$<HTMLButtonElement>('.source-submit').disabled=!snapshot.text.trim()||snapshot.text.length>MAX_TEXT;}
     mount(); panel.hidden = false; launcher.hidden = true; position(panel, snapshot.rect);
-    notify(snapshot.kind === 'read' ? '仅发送选中文字 · 此处可复制结果' : '仅发送选中文字 · 可替换所选部分');
-    language.value = settings.language;
+    notify(docked?'仅发送当前原文 · 此处可复制结果':snapshot.kind === 'read' ? '仅发送选中文字 · 此处可复制结果' : '仅发送选中文字 · 可替换所选部分');
+    language.value = targetLanguage;
     start('translate');
   }
   function key(mode: Mode, instruction: string) { return JSON.stringify([mode, mode === 'translate' ? language.value : '', instruction]); }
   function start(mode: Mode, instruction = '') {
+    if (!snap && sourceEditor && sourceEditor.value.trim() && sourceEditor.value.length<=MAX_TEXT)snap={text:sourceEditor.value,kind:'read',rect:new DOMRect()};
     if (!snap) return;
     const k = key(mode, instruction);
     if (mode === 'translate') { if (activeTranslation !== k) cancelResult(activeTranslation); activeTranslation = k; }

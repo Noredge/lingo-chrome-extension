@@ -329,7 +329,23 @@ const messages = {
   "请先保存修改，再启用此配置。": ["請先儲存修改，再啟用此配置。", "Save your changes before activating this profile."],
   "请先启用另一套服务，再删除当前配置。": ["請先啟用另一套服務，再刪除當前配置。", "Activate another service before deleting the current profile."],
   "请填写 1–60 个字符的配置名称。": ["請填寫 1–60 個字元的配置名稱。", "Enter a profile name of 1–60 characters."],
-  "配置名称": ["配置名稱", "Profile name"]
+  "配置名称": ["配置名稱", "Profile name"],
+  "使用已保存的连接。": ["使用已儲存的連線。", "Uses the saved connection."],
+  "保存并使用此配置": ["儲存並使用此配置", "Save and use this profile"],
+  "删除这套配置及其 Key？地址和模型也会一并移除。": ["刪除這套配置及其 Key？地址和模型也會一併移除。", "Delete this profile and its Key? Its address and model will also be removed."],
+  "在 PDF 中右键翻译，或在上方粘贴原文。": ["在 PDF 中右鍵翻譯，或在上方貼上原文。", "Right-click text in the PDF to translate, or paste source text above."],
+  "在此粘贴或修改原文…": ["在此貼上或修改原文…", "Paste or edit source text here…"],
+  "填写连接后，保存并使用。": ["填寫連線後，儲存並使用。", "Enter the connection, then save and use it."],
+  "已保存，当前使用此配置。": ["已儲存，當前使用此配置。", "Saved. This profile is now in use."],
+  "已删除配置及 Key。": ["已刪除配置及 Key。", "Profile and Key deleted."],
+  "放弃尚未保存的更改？": ["放棄尚未儲存的更改？", "Discard unsaved changes?"],
+  "有未保存的更改": ["有未儲存的更改", "Unsaved changes"],
+  "本机凭据无法读取，请先重新填写 Key，或删除此配置。": ["本機憑據無法讀取，請先重新填寫 Key，或刪除此配置。", "Device credentials could not be read. Enter the Key again or delete this profile."],
+  "点击翻译，更新结果。": ["點選翻譯，更新結果。", "Click Translate to update the result."],
+  "编辑原文": ["編輯原文", "Edit source text"],
+  "选择或编辑连接，保存后使用。": ["選擇或編輯連線，儲存後使用。", "Choose or edit a connection, then save to use it."],
+  "原文": ["原文", "Source text"],
+  "仅发送当前原文 · 此处可复制结果": ["僅傳送目前原文 · 此處可複製結果", "Only the current source is sent · Copy results here"]
 };
 const roots = /* @__PURE__ */ new Set();
 const nodes = /* @__PURE__ */ new WeakMap();
@@ -711,9 +727,14 @@ async function serviceAction(msg) {
     return publicServiceConfig(id);
   }
   if (msg.type === "deleteProfile") {
-    if (c.activeServiceId === id) throw new Error("请先启用另一套服务，再删除当前配置。");
     const profiles = c.profiles.filter((x) => x.id !== id);
-    await chrome.storage.local.set({ serviceProfiles: profiles });
+    let activeServiceId = c.activeServiceId;
+    if (activeServiceId === id) {
+      const blank = { id: crypto.randomUUID(), name: "OpenAI", baseUrl: DEFAULT_BASE_URL, model: DEFAULTS.model, storageMode: "device", credentialBaseUrl: DEFAULT_BASE_URL, consentBaseUrl: DEFAULT_BASE_URL, dataConsent: false };
+      profiles.unshift(blank);
+      activeServiceId = blank.id;
+    }
+    await chrome.storage.local.set({ serviceProfiles: profiles, activeServiceId });
     await sessionSet();
     await discardUnusedDeviceKey(profiles);
     return publicServiceConfig();
@@ -755,7 +776,7 @@ async function serviceAction(msg) {
   }
   const mode = msg.storageMode ?? (msg.remember ? "encrypted" : "session");
   if (!["device", "encrypted", "session"].includes(mode)) throw new Error("请选择有效的 Key 保存方式。");
-  if (!apiKey && mode !== p.storageMode && (p.encryptedKey || p.deviceKey)) throw new Error(p.encryptedKey ? "请先解锁已保存的 Key，或填写新 Key，再更改保存方式。" : "本机凭据无法读取，请先重新填写 Key，或使用删除 Key。");
+  if (!apiKey && mode !== p.storageMode && (p.encryptedKey || p.deviceKey)) throw new Error(p.encryptedKey ? "请先解锁已保存的 Key，或填写新 Key，再更改保存方式。" : "本机凭据无法读取，请先重新填写 Key，或删除此配置。");
   let vault = p.encryptedKey;
   if (mode === "encrypted" && (apiKey || msg.password) && (!vault || msg.key || msg.password || baseChanged)) {
     if (!apiKey) throw new Error("请先填写 Key 或解锁已保存的 Key。");
@@ -765,7 +786,7 @@ async function serviceAction(msg) {
   const deviceKey = mode === "device" ? apiKey ? await encryptDeviceKey(apiKey, baseUrl) : p.deviceKey : void 0;
   const profile = { id, name: name.trim(), baseUrl, model: msg.model, storageMode: mode, credentialBaseUrl: baseUrl, consentBaseUrl: baseUrl, dataConsent: msg.dataConsent === true, ...mode === "device" && deviceKey ? { deviceKey } : {}, ...mode === "encrypted" && vault ? { encryptedKey: vault } : {} };
   const settings = { ...c.settings, uiLanguage, language: msg.language, languages: [...new Set(languages)] };
-  await persistProfile(profile, c, { settings, apiOrigins: [.../* @__PURE__ */ new Set([...c.apiOrigins, apiOrigin(baseUrl)])] });
+  await persistProfile(profile, c, { settings, ...msg.activate === true ? { activeServiceId: id } : {}, apiOrigins: [.../* @__PURE__ */ new Set([...c.apiOrigins, apiOrigin(baseUrl)])] });
   await sessionSet(apiKey || void 0, baseUrl);
   await chrome.storage.session.remove("legacyMigrated");
   await discardUnusedDeviceKey(c.profiles.map((x) => x.id === id ? profile : x));

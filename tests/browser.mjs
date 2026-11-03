@@ -153,7 +153,7 @@ try{
  await options.locator('#key-options').evaluate(el=>el.open=true);await options.locator('#storage-mode').selectOption('encrypted');
  await options.getByLabel('设置本机解锁密码（至少 12 个字符）',{exact:true}).fill('fixture-only password 2026');
  await options.getByLabel('再次输入解锁密码',{exact:true}).fill('fixture-only password 2026');
- await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.locator('#settings-form button[type=submit]:not(:disabled)').waitFor();assert.equal((await options.evaluate(()=>chrome.runtime.sendMessage({type:'config'}))).storageMode,'encrypted');
+ await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.locator('#save-bar').waitFor({state:'hidden'});assert.equal((await options.evaluate(()=>chrome.runtime.sendMessage({type:'config'}))).storageMode,'encrypted');
  const storage2=await worker.evaluate(async()=>{const raw=await chrome.storage.local.get(null),l=raw.serviceProfiles[0],s=(await chrome.storage.session.get('serviceSessions')).serviceSessions.default||{};return {plaintextLocal:!!l.apiKey||typeof l.deviceKey==='string',encrypted:!!l.encryptedKey,session:!!s.apiKey,leaked:JSON.stringify(l).includes('fixture-only password 2026')||JSON.stringify(l).includes('sk-test-fixture-not-a-real-secret')};});
  assert.deepEqual(storage2,{plaintextLocal:false,encrypted:true,session:true,leaked:false});check('password-encrypted vault persists without plaintext Key or password');
  const popup=await context.newPage();await popup.goto(`chrome-extension://${id}/popup.html`);await popup.screenshot({path:path.join(evidence,'popup.png')});check('popup renders and rejects unsupported extension pages');

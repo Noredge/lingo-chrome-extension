@@ -29,9 +29,9 @@ try{
   await save({key:fake});await worker.evaluate(async()=>{const {serviceProfiles}=await chrome.storage.local.get('serviceProfiles');serviceProfiles[0].deviceKey={version:1,algorithm:'AES-GCM',iv:'AAAA',ciphertext:'AAAA'};await chrome.storage.local.set({serviceProfiles});await chrome.storage.session.clear()});
   const c=await save({dataConsent:false});assert(!c.error,c.error);assert(!c.dataConsent&&c.deviceError);assert(await worker.evaluate(async()=>!!(await chrome.storage.local.get('serviceProfiles')).serviceProfiles[0].deviceKey));
  });
- await check('deleting a key clears all credential draft inputs',async()=>{
+ await check('deleting a profile clears all credential draft inputs',async()=>{
   await save({key:fake});await options.reload();await options.locator('#key-status').filter({hasText:'Key 已配置'}).waitFor();await options.locator('#key-options').evaluate(el=>el.open=true);await options.locator('#api-key').fill(fake);await options.locator('#reveal').click();
-  options.once('dialog',d=>d.accept());await options.locator('#delete-key').click();await options.getByText('尚未配置 Key',{exact:true}).waitFor();assert.equal(await options.locator('#api-key').inputValue(),'');assert.equal(await options.locator('#api-key').getAttribute('type'),'password');
+  options.once('dialog',d=>d.accept());await options.locator('#delete-profile').click();await options.getByText('尚未配置 Key',{exact:true}).waitFor();assert.equal(await options.locator('#api-key').inputValue(),'');assert.equal(await options.locator('#api-key').getAttribute('type'),'password');
  });
  await check('Enter in the unlock-password field unlocks rather than submitting settings',async()=>{
   await save({key:fake,storageMode:'encrypted',password,passwordConfirm:password});await msg({type:'lock'});await options.reload();await options.locator('#key-status').filter({hasText:'Key 已锁定'}).waitFor();

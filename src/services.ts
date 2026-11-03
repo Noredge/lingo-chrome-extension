@@ -55,8 +55,10 @@ export async function serviceAction(msg:any) {
   }
   if(msg.type==='activateProfile') {await chrome.storage.local.set({activeServiceId:id});return publicServiceConfig(id);}
   if(msg.type==='deleteProfile') {
-    if(c.activeServiceId===id)throw new Error('请先启用另一套服务，再删除当前配置。');
-    const profiles=c.profiles.filter(x=>x.id!==id);await chrome.storage.local.set({serviceProfiles:profiles});await sessionSet();await discardUnusedDeviceKey(profiles);return publicServiceConfig();
+    const profiles=c.profiles.filter(x=>x.id!==id);let activeServiceId=c.activeServiceId;
+    // Removing the active connection never silently activates another saved provider.
+    if(activeServiceId===id){const blank:ServiceProfile={id:crypto.randomUUID(),name:'OpenAI',baseUrl:DEFAULT_BASE_URL,model:DEFAULTS.model,storageMode:'device',credentialBaseUrl:DEFAULT_BASE_URL,consentBaseUrl:DEFAULT_BASE_URL,dataConsent:false};profiles.unshift(blank);activeServiceId=blank.id;}
+    await chrome.storage.local.set({serviceProfiles:profiles,activeServiceId});await sessionSet();await discardUnusedDeviceKey(profiles);return publicServiceConfig();
   }
   if(msg.type==='lock') {
     if(p.storageMode==='device')throw new Error('免解锁模式不使用密码锁定；请删除 Key，或改为加密保存。');
@@ -83,7 +85,7 @@ export async function serviceAction(msg:any) {
   if(msg.key!==undefined&&msg.key!=='') {if(typeof msg.key!=='string'||!validKey(msg.key.trim()))throw new Error('Key 格式不正确，请完整粘贴服务商提供的 API Key（8–512 个字符）。');apiKey=msg.key.trim();}
   const mode=msg.storageMode ?? (msg.remember?'encrypted':'session');
   if(!['device','encrypted','session'].includes(mode))throw new Error('请选择有效的 Key 保存方式。');
-  if(!apiKey&&mode!==p.storageMode&&(p.encryptedKey||p.deviceKey))throw new Error(p.encryptedKey?'请先解锁已保存的 Key，或填写新 Key，再更改保存方式。':'本机凭据无法读取，请先重新填写 Key，或使用删除 Key。');
+  if(!apiKey&&mode!==p.storageMode&&(p.encryptedKey||p.deviceKey))throw new Error(p.encryptedKey?'请先解锁已保存的 Key，或填写新 Key，再更改保存方式。':'本机凭据无法读取，请先重新填写 Key，或删除此配置。');
   let vault=p.encryptedKey;
   if(mode==='encrypted'&&(apiKey||msg.password)&&(!vault||msg.key||msg.password||baseChanged)) {
     if(!apiKey)throw new Error('请先填写 Key 或解锁已保存的 Key。');
@@ -93,7 +95,7 @@ export async function serviceAction(msg:any) {
   const deviceKey=mode==='device'?(apiKey?await encryptDeviceKey(apiKey,baseUrl):p.deviceKey):undefined;
   const profile:ServiceProfile={id,name:name.trim(),baseUrl,model:msg.model,storageMode:mode,credentialBaseUrl:baseUrl,consentBaseUrl:baseUrl,dataConsent:msg.dataConsent===true,...(mode==='device'&&deviceKey?{deviceKey}:{}),...(mode==='encrypted'&&vault?{encryptedKey:vault}:{})};
   const settings={...c.settings,uiLanguage,language:msg.language,languages:[...new Set<string>(languages)]};
-  await persistProfile(profile,c,{settings,apiOrigins:[...new Set([...c.apiOrigins,apiOrigin(baseUrl)])]});
+  await persistProfile(profile,c,{settings,...(msg.activate===true?{activeServiceId:id}:{}),apiOrigins:[...new Set([...c.apiOrigins,apiOrigin(baseUrl)])]});
   await sessionSet(apiKey||undefined,baseUrl);await chrome.storage.session.remove('legacyMigrated');await discardUnusedDeviceKey(c.profiles.map(x=>x.id===id?profile:x));
   return publicServiceConfig(id);
 }

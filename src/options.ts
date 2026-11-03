@@ -13,7 +13,13 @@ base.addEventListener('input', () => { destination(); if (base.value.replace(/\/
 ui.addEventListener('change', () => {setLanguage(ui.value);destination();void message({type:'setUiLanguage',uiLanguage:ui.value}).catch(e=>status('save-status',e.message,true));});
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const key = $<HTMLInputElement>('api-key'), model = $<HTMLInputElement>('model'), language = $<HTMLSelectElement>('language'), storageMode = $<HTMLSelectElement>('storage-mode');
-let selectedLanguages = [...DEFAULTS.languages];
+let selectedLanguages = [...DEFAULTS.languages], savedForm = '', loaded = false;
+function formState(){return JSON.stringify([profileName.value.trim(),base.value,model.value.trim(),key.value,storageMode.value,$<HTMLInputElement>('vault-password').value,$<HTMLInputElement>('vault-confirm').value,$<HTMLInputElement>('data-consent').checked,language.value,selectedLanguages]);}
+function edited(){return loaded && formState()!==savedForm;}
+function dirty(){return loaded && (edited() || profileId!==activeProfileId);}
+function updateDirty(){ $('save-bar').hidden=!dirty();$('save-settings').textContent=profileId===activeProfileId?'保存设置':'保存并使用此配置';}
+$('settings-form').addEventListener('input',updateDirty);$('settings-form').addEventListener('change',updateDirty);
+window.addEventListener('beforeunload',e=>{if(edited()){e.preventDefault();e.returnValue='';}});
 function drawLanguages(preferred = language.value) {
   language.replaceChildren(); $('language-list').replaceChildren();
   for (const l of selectedLanguages) {
@@ -21,7 +27,7 @@ function drawLanguages(preferred = language.value) {
     const chip = document.createElement('span'); chip.className = 'language-chip';
     const text = document.createElement('span'); text.textContent = l.split('（')[0]; text.translate = false;
     const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '×'; remove.setAttribute('aria-label', `移除 ${l}`); remove.disabled = selectedLanguages.length === 1;
-    remove.addEventListener('click', () => { const current = language.value; selectedLanguages = selectedLanguages.filter(x => x !== l); drawLanguages(current); });
+    remove.addEventListener('click', () => { const current = language.value; selectedLanguages = selectedLanguages.filter(x => x !== l); drawLanguages(current);updateDirty(); });
     chip.append(text, remove); $('language-list').append(chip);
   }
   language.value = selectedLanguages.includes(preferred) ? preferred : selectedLanguages[0];
@@ -32,7 +38,7 @@ function drawLanguages(preferred = language.value) {
 }
 $('add-language-button').addEventListener('click', () => {
   const value = $<HTMLSelectElement>('add-language').value;
-  if (value && !selectedLanguages.includes(value)) { selectedLanguages.push(value); drawLanguages(); }
+  if (value && !selectedLanguages.includes(value)) { selectedLanguages.push(value); drawLanguages();updateDirty(); }
 });
 async function message(data: object) { const result = await chrome.runtime.sendMessage(data); if (result.error) throw new Error(result.error); return result; }
 function status(id: string, text: string, error = false) { $(id).textContent = text; $(id).classList.toggle('error', error); }
@@ -50,8 +56,7 @@ function draw(c: any) {
   profileId=c.profileId;activeProfileId=c.activeServiceId;profileName.value=savedName=c.profileName;
   profileSelect.replaceChildren(...c.profiles.map((p:any)=>{const o=new Option(p.name,p.id);o.translate=false;return o;}));profileSelect.value=profileId;
   const active=c.profiles.find((p:any)=>p.id===activeProfileId);const prefix=document.createElement('span');prefix.textContent='当前使用：';const activeName=document.createElement('span');activeName.translate=false;activeName.textContent=active?.name || '';$('active-profile').replaceChildren(prefix,activeName);
-  $<HTMLButtonElement>('activate-profile').disabled=profileId===activeProfileId;$('activate-profile').textContent=profileId===activeProfileId?'使用中':'启用此配置';
-  $<HTMLButtonElement>('delete-profile').disabled=profileId===activeProfileId;
+
   base.value = savedBase = c.settings.baseUrl; savedModel = c.settings.model; ui.value = c.settings.uiLanguage; setLanguage(ui.value); destination();
   model.value = c.settings.model; selectedLanguages = [...c.settings.languages]; drawLanguages(c.settings.language); storageMode.value = c.storageMode;
   $('key-status').textContent = c.hasKey ? 'Key 已配置' : c.hasVault ? 'Key 已锁定' : '尚未配置 Key'; $('key-status').classList.toggle('connected', c.hasKey);
@@ -72,16 +77,17 @@ function draw(c: any) {
       row.append(name, b); $('blocked').append(row);
     }
   }
+  loaded=true;savedForm=formState();updateDirty();
 }
 async function load() { draw(await message({ type:profileId?'serviceConfig':'config',profileId:profileId||undefined })); await sites(); }
 void load().catch(e => status('save-status', e.message, true));
 $('settings-form').addEventListener('submit', async e => {
-  e.preventDefault(); const b = document.querySelector<HTMLButtonElement>('button[type="submit"]')!; b.disabled = true;
+  e.preventDefault(); const b=$<HTMLButtonElement>('save-settings'),form=$('settings-form');b.disabled=true;form.inert=true;stopTest();
   try { const normalized = normalizeBaseUrl(base.value);
     const granted = await chrome.permissions.request({origins:[apiOrigin(normalized)]});
     if (!granted) throw new Error('未授权 API 服务，设置未保存。');
-    const c = await message({ type: 'save', profileId, name:profileName.value.trim(), baseUrl:normalized, uiLanguage:ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === 'device', password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); clearCredentialInputs(); draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
-  catch (e) { status('save-status', (e as Error).message, true); } finally { b.disabled = false; }
+    const c = await message({ type: 'save', profileId, activate:true, name:profileName.value.trim(), baseUrl:normalized, uiLanguage:ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === 'device', password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); clearCredentialInputs(); draw(c); status('save-status','已保存，当前使用此配置。'); }
+  catch (e) { status('save-status', (e as Error).message, true); } finally { b.disabled=false;form.inert=false;updateDirty(); }
 });
 storageMode.addEventListener('change', drawStorage);
 $('unlock-key').addEventListener('click', async () => {
@@ -94,18 +100,14 @@ $('unlock-password').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); $<HTMLButtonElement>('unlock-key').click(); }
 });
 $('lock-key').addEventListener('click', async () => {
-  try { draw(await message({type:'lock',profileId})); clearCredentialInputs(); status('save-status','已清除会话中的 Key 并停止正在进行的请求。'); }
+  try { const c=await message({type:'lock',profileId});clearCredentialInputs();draw(c); status('save-status','已清除会话中的 Key 并停止正在进行的请求。'); }
   catch(e) { status('save-status',(e as Error).message,true); }
 });
 $('reveal').addEventListener('click', () => { key.type = key.type === 'password' ? 'text' : 'password'; $('reveal').textContent = key.type === 'password' ? '显示' : '隐藏'; });
-$('delete-key').addEventListener('click', async () => {
-  if (!confirm(t('删除此扩展保存的 Key？这不会撤销服务商平台上的密钥。'))) return;
-  try { draw(await message({ type: 'deleteKey',profileId })); clearCredentialInputs(); status('save-status', '已删除扩展中的 Key。'); } catch (e) { status('save-status', (e as Error).message, true); }
-});
 let testPort: chrome.runtime.Port | null = null;
 $('test').addEventListener('click', () => {
   if (testPort) { testPort.disconnect(); testPort = null; $('test').textContent = '测试连接'; status('save-status', '测试已停止。'); return; }
-  if (key.value.trim() || base.value.replace(/\/$/,'') !== savedBase || model.value.trim() !== savedModel || profileName.value.trim() !== savedName) { status('save-status', '请先保存服务地址、模型和 Key，再测试连接。', true); return; }
+  if (edited()) { status('save-status', '请先保存服务地址、模型和 Key，再测试连接。', true); return; }
   const port = chrome.runtime.connect({ name: 'lingo-task' }); testPort = port;
   let complete = false; let output = '';
   status('save-status', '正在使用已保存的模型翻译固定示例…'); $('test').textContent = '停止测试';
@@ -160,13 +162,10 @@ chrome.permissions.onAdded.addListener(() => { void sites(); });
 chrome.permissions.onRemoved.addListener(() => { void sites(); });
 
 function stopTest(){if(testPort){testPort.disconnect();testPort=null;} $('test').textContent='测试连接';}
-profileSelect.addEventListener('change',()=>{stopTest();clearCredentialInputs();profileId=profileSelect.value;void load().then(()=>status('save-status','')).catch(e=>status('save-status',e.message,true));});
-$('new-profile').addEventListener('click',async()=>{try{stopTest();clearCredentialInputs();draw(await message({type:'createProfile'}));status('save-status','新配置尚未启用，保存后可测试连接。');}catch(e){status('save-status',(e as Error).message,true);}});
-$('activate-profile').addEventListener('click',async()=>{
- if(key.value.trim()||base.value.replace(/\/$/,'')!==savedBase||model.value.trim()!==savedModel||profileName.value.trim()!==savedName){status('save-status','请先保存修改，再启用此配置。',true);return;}
- try{stopTest();draw(await message({type:'activateProfile',profileId}));status('save-status','已切换服务。后续请求使用此配置。');}catch(e){status('save-status',(e as Error).message,true);}
-});
+function discardDraft(){return !edited() || confirm(t('放弃尚未保存的更改？'));}
+profileSelect.addEventListener('change',()=>{if(!discardDraft()){profileSelect.value=profileId;return;}stopTest();clearCredentialInputs();profileId=profileSelect.value;void load().then(()=>status('save-status','')).catch(e=>status('save-status',e.message,true));});
+$('new-profile').addEventListener('click',async()=>{if(!discardDraft())return;try{stopTest();clearCredentialInputs();draw(await message({type:'createProfile'}));status('save-status','填写连接后，保存并使用。');}catch(e){status('save-status',(e as Error).message,true);}});
 $('delete-profile').addEventListener('click',async()=>{
- if(!confirm(t('删除这套服务配置及其中保存的 Key？')))return;
- try{stopTest();clearCredentialInputs();draw(await message({type:'deleteProfile',profileId}));status('save-status','已删除服务配置。');}catch(e){status('save-status',(e as Error).message,true);}
+ if(!confirm(t('删除这套配置及其 Key？地址和模型也会一并移除。')))return;
+ try{stopTest();clearCredentialInputs();draw(await message({type:'deleteProfile',profileId}));status('save-status','已删除配置及 Key。');}catch(e){status('save-status',(e as Error).message,true);}
 });

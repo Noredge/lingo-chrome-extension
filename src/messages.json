@@ -1322,5 +1322,69 @@
   "配置名称": [
     "配置名稱",
     "Profile name"
+  ],
+  "使用已保存的连接。": [
+    "使用已儲存的連線。",
+    "Uses the saved connection."
+  ],
+  "保存并使用此配置": [
+    "儲存並使用此配置",
+    "Save and use this profile"
+  ],
+  "删除这套配置及其 Key？地址和模型也会一并移除。": [
+    "刪除這套配置及其 Key？地址和模型也會一併移除。",
+    "Delete this profile and its Key? Its address and model will also be removed."
+  ],
+  "在 PDF 中右键翻译，或在上方粘贴原文。": [
+    "在 PDF 中右鍵翻譯，或在上方貼上原文。",
+    "Right-click text in the PDF to translate, or paste source text above."
+  ],
+  "在此粘贴或修改原文…": [
+    "在此貼上或修改原文…",
+    "Paste or edit source text here…"
+  ],
+  "填写连接后，保存并使用。": [
+    "填寫連線後，儲存並使用。",
+    "Enter the connection, then save and use it."
+  ],
+  "已保存，当前使用此配置。": [
+    "已儲存，當前使用此配置。",
+    "Saved. This profile is now in use."
+  ],
+  "已删除配置及 Key。": [
+    "已刪除配置及 Key。",
+    "Profile and Key deleted."
+  ],
+  "放弃尚未保存的更改？": [
+    "放棄尚未儲存的更改？",
+    "Discard unsaved changes?"
+  ],
+  "有未保存的更改": [
+    "有未儲存的更改",
+    "Unsaved changes"
+  ],
+  "本机凭据无法读取，请先重新填写 Key，或删除此配置。": [
+    "本機憑據無法讀取，請先重新填寫 Key，或刪除此配置。",
+    "Device credentials could not be read. Enter the Key again or delete this profile."
+  ],
+  "点击翻译，更新结果。": [
+    "點選翻譯，更新結果。",
+    "Click Translate to update the result."
+  ],
+  "编辑原文": [
+    "編輯原文",
+    "Edit source text"
+  ],
+  "选择或编辑连接，保存后使用。": [
+    "選擇或編輯連線，儲存後使用。",
+    "Choose or edit a connection, then save to use it."
+  ],
+  "原文": [
+    "原文",
+    "Source text"
+  ],
+  "仅发送当前原文 · 此处可复制结果": [
+    "僅傳送目前原文 · 此處可複製結果",
+    "Only the current source is sent · Copy results here"
   ]
 }

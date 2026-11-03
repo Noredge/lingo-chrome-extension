@@ -1,4 +1,4 @@
-# 商店文案草稿 · 1.0.0-dev.2
+# 商店文案草稿 · 1.0.0-dev.3
 
 尚未上架。当前仓库私有；原 GitHub Pages 网址不能作为已验证的公开政策链接。正式 1.0 前恢复公开政策页面、补齐最终截图并重新检查商店字段。计划 Unlisted，由用户完成开发者注册、付款及最终提交。
 
@@ -60,4 +60,6 @@ Keys are remembered with automatic local AES-256-GCM encryption by default. The 
 
 Complex editors may support copying only. Browser internal pages and extension stores restrict floating panels. Review generated text before use. Support: hongbin.lei98@gmail.com. Never send Keys, passwords or private documents. Independent software, not an official OpenAI or Google product.
 
-多配置 / Multiple profiles: 保存名称、Base URL、Key、模型；选择只是编辑，点击启用才切换。测试不会启用配置，失败不自动切换。自定义服务必须支持 Responses API。PDF 与浮窗共用完整面板，PDF 保留原生阅读器与右键入口。 / Save named profiles; activate one explicitly in settings. Testing does not activate it, and failures never trigger fallback. Custom services must implement Responses API. PDF uses the shared panel and Chrome’s native viewer/context menu.
+多配置 / Multiple profiles: 保存名称、Base URL、Key、模型；选择后点击一次保存并使用即可切换。测试不会启用配置，失败不自动切换。自定义服务必须支持 Responses API。PDF 与浮窗共用完整面板，PDF 保留原生阅读器与右键入口。 / Save named profiles; save and use one explicitly in settings. Testing does not activate it, and failures never trigger fallback. Custom services must implement Responses API. PDF uses the shared panel and Chrome’s native viewer/context menu.
+
+侧边栏原文支持手动编辑/粘贴；点击翻译才提交，输入时清除旧结果。保存条仅有改动时显示；保存配置即使用，无需另点启用。 / Edit or paste sidebar source and click Translate; typing clears old results without sending. The save bar appears only for unsaved changes, and saving also selects the service for use.

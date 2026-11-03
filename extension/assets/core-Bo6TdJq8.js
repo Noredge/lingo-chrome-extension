@@ -23,8 +23,8 @@ function apiOrigin(base) {
 export {
   DEFAULTS as D,
   LANGUAGES as L,
-  MODES as M,
+  MAX_TEXT as M,
   apiOrigin as a,
-  MAX_TEXT as b,
+  MODES as b,
   normalizeBaseUrl as n
 };

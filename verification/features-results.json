@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-dev.2",
+  "version": "1.0.0-dev.3",
   "checks": [
     "fresh interface follows browser independently of translation target",
     "top-right interface language persists immediately in all three locales",
@@ -25,11 +25,21 @@
     "sidebar reset clears sensitive source and results",
     "a subsequent right-click selection replaces source and requests new translation",
     "unsaved destination change resets consent and prevents stale connection test",
-    "settings UI adds, saves, tests and explicitly activates a profile",
-    "settings profile selector edits without activation and delete removes only selected inactive profile"
+    "save bar appears only for actual changes, reverts cleanly, and redundant actions are removed",
+    "language shortlist edits show save bar and successful save hides it",
+    "cancelled discard preserves unsaved settings",
+    "one save both persists and activates new profile; connection test remains available when clean",
+    "selecting a saved profile and saving switches once, without a second activation",
+    "failed save preserves active provider and keeps unsaved bar visible",
+    "delete removes selected inactive configuration and its Key together",
+    "manual paste clears old results without sending, explicit Translate uses edited source",
+    "writing presets use manually edited source and never the stale PDF snapshot",
+    "blank or oversized pasted source cannot be submitted or sent by presets",
+    "empty sidebar accepts paste and keyboard translation; reset clears editor",
+    "deleting the last active profile removes credentials and leaves a blank default without fallback"
   ],
   "fixtureOnly": true,
-  "apiRequests": 20,
+  "apiRequests": 24,
   "pageErrors": [],
   "nativePdfMenu": "tested separately"
 }
