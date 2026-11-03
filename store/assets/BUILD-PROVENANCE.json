@@ -1,0 +1,31 @@
+{
+  "extensionVersion": "1.0.0",
+  "sourceRuntime": {
+    "LICENSE": "ade20bc166d63471d8f9e597c7b70a19e716b5cc95e02c47865b45f2b130c157",
+    "THIRD_PARTY_NOTICES.txt": "fa48e6ec04c29c6003b8833e25f36c98507c5217ef07a5f2b1d0653c5252adbf",
+    "background.js": "0cd35391863ff946ee74f2e430516df91f4ecbe11e048725fcb4ba4431d9d86e",
+    "content.js": "80ec242003b65d2ed7083807f9243f4dfb3ee98be9de515d0ea87804d0e3522b",
+    "manifest.json": "1ac551df98f042fd95f0d603763792622f79a8168c5f683f3c27e8ae7339f67b",
+    "options.html": "7df988f10083320226f9e7a8ded43023771b239f50d0499d63efeb262f918f76",
+    "popup.html": "736ff464bcc81bb57da9c87368a827b836f7457f28a60273c4cd527f112d322c",
+    "privacy.html": "ef712b5f1cba44665a0e4fd233363f0dd25f5af1dd3ab9674d72cd22113153f8",
+    "icons/128.png": "7eb69c571fbaa7c7520d1356f09276675ed8fba5e3a8f21ad90311763a3371a5",
+    "icons/16.png": "3b8b316e6a0dc1c01fe1f1f8cb18c05ac102b938c0812cfb3a7337da9c661bae",
+    "icons/32.png": "57aa6176745ba388cba476d2a339f1c4dee46ac94054bbd603e73784ee8695f1",
+    "icons/48.png": "2c2c5f547532d6b34c6926453954c0af21b41a294bd6b7b8791faaba935b21eb",
+    "assets/options-M1k9KeVg.js": "e0cccc424400d7988fd89a7b3f61dd0a8ab7136cd8175460ae35dae62050872a",
+    "assets/popup-Dcy-N7-x.js": "13adc1b425d7c3fb80254dbede7adf4fa80e376466d2813ecd0a3529af7ebb55",
+    "assets/ui-BOAe4Mgc.js": "4073ab5b78d39611424e7ec8243c36ca72681f363d9219990efb3e4806e4ab5e",
+    "assets/ui-Bp9IfIY0.css": "e6e65f2ca4a81bf5579bb490375765f251e2a0dfb8eec9084e8454bc4b8b25e0"
+  },
+  "images": {
+    "01-translation-1280x800.png": "eb0fb082a46c12a756466308c88b63db5b7cc8bfcef21f5971969653823fb0b7",
+    "02-writing-1280x800.png": "ffaaade5902ad0626fa42d59375a0bdff4e2ab6b438dfa839ff6d7fcc544cf32",
+    "03-settings-1280x800.png": "5d24b4379344316505f2eab885777f94f66796ece97eaac3b5b91e6ba824d77d",
+    "04-remember-key-1280x800.png": "616cea5b73290d4d56c27ae498e5dd4d20cf4c80b177b0d7ecb4417e2a468484",
+    "icon-128.png": "7eb69c571fbaa7c7520d1356f09276675ed8fba5e3a8f21ad90311763a3371a5",
+    "promo-440x280.png": "e1d007a173b96d7fa3671b7639b689c29eb90ff7d0a51c90460ed3ae8269576e"
+  },
+  "fixtureOnly": true,
+  "manifestDifference": "Only the isolated screenshot copy adds local fixture host permission; all UI/runtime code matches dist."
+}

@@ -1,4 +1,4 @@
-import {chromium} from 'playwright';import {mkdtemp,cp,readFile,writeFile,mkdir,rm} from 'node:fs/promises';import {tmpdir} from 'node:os';import path from 'node:path';import http from 'node:http';
+import {chromium} from 'playwright';import {mkdtemp,cp,readFile,writeFile,mkdir,rm} from 'node:fs/promises';import {tmpdir} from 'node:os';import {createHash} from 'node:crypto';import {readdir} from 'node:fs/promises';import assert from 'node:assert/strict';import path from 'node:path';import http from 'node:http';
 const out=path.resolve('store/assets');await mkdir(out,{recursive:true});
 const temp=await mkdtemp(path.join(tmpdir(),'lingo-store-')),ext=path.join(temp,'extension');await cp('dist',ext,{recursive:true});
 const manifest=JSON.parse(await readFile(path.join(ext,'manifest.json'),'utf8'));manifest.host_permissions.push('http://127.0.0.1/*');await writeFile(path.join(ext,'manifest.json'),JSON.stringify(manifest));
@@ -22,8 +22,13 @@ try{
  await select('#rewrite');await host.getByRole('button',{name:'校对',exact:true}).click();await host.locator('.write-actions').getByRole('button',{name:'复制',exact:true}).waitFor();await move();await page.screenshot({path:path.join(out,'02-writing-1280x800.png')});
  await options.reload();await options.getByRole('heading',{name:'浮窗翻译语言',exact:true}).waitFor();await options.locator('.card').filter({has:options.getByRole('heading',{name:'浮窗翻译语言',exact:true})}).scrollIntoViewIfNeeded();await options.screenshot({path:path.join(out,'03-settings-1280x800.png')});
  await options.locator('#storage-mode').scrollIntoViewIfNeeded();await options.screenshot({path:path.join(out,'04-remember-key-1280x800.png')});
+ assert.equal(await options.locator('.version').textContent(),manifest.version);
  const promo=await context.newPage();await promo.setViewportSize({width:440,height:280});await promo.setContent('<html><body style="margin:0;background:#edf2e6;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif;color:#294733;padding:32px;box-sizing:border-box"><div style="font-size:18px;font-weight:650">文 Lingo</div><h1 style="font-size:31px;line-height:1.5;font-weight:550;letter-spacing:-1px;margin:20px 0 12px">读懂每一句。<br>写好每一句。</h1><p style="font-size:12px;color:#73886a;margin:0">划词翻译 · 校对改写 · 自备 API Key</p></body></html>');await promo.screenshot({path:path.join(out,'promo-440x280.png')});
  await cp('public/icons/128.png',path.join(out,'icon-128.png'));
- await writeFile(path.join(out,'ASSETS.md'),'截图尺寸均为 1280×800，来源为运行中的真实扩展界面及本地演示页面；演示 API 响应为固定样例，页面内已标注。未使用用户邮箱、真实 Key 或私人数据。宣传图为 440×280，图标为 128×128。重建：npm run build && npm run store:assets。\n');
+ const hash=async file=>createHash('sha256').update(await readFile(file)).digest('hex');
+ const sourceRuntime={};for(const name of await readdir('dist',{recursive:true})){try{sourceRuntime[name]=await hash(path.join('dist',name))}catch(e){if(e.code!=='EISDIR')throw e}}
+ const images={};for(const name of await readdir(out)){if(name.endsWith('.png'))images[name]=await hash(path.join(out,name))}
+ await writeFile(path.join(out,'BUILD-PROVENANCE.json'),JSON.stringify({extensionVersion:manifest.version,sourceRuntime,images,fixtureOnly:true,manifestDifference:'Only the isolated screenshot copy adds local fixture host permission; all UI/runtime code matches dist.'},null,2)+'\n');
+ await writeFile(path.join(out,'ASSETS.md'),`正式版 ${manifest.version} 的截图，全部从本次构建重新生成。设置页版本标识直接读取 manifest。BUILD-PROVENANCE.json 记录运行文件及每张图片的 SHA-256；隔离副本只额外授权本地演示站点。\n\n截图尺寸均为 1280×800，来源为运行中的真实扩展界面及本地演示页面；演示 API 响应为固定样例，页面内已标注。未使用用户邮箱、真实 Key 或私人数据。宣传图为 440×280，图标为 128×128。重建：npm run build && npm run store:assets。\n`);
  console.log('Created 4 store screenshots, promotional tile and icon.');
 }finally{await context.close();server.close();await rm(temp,{recursive:true,force:true})}

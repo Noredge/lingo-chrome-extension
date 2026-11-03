@@ -12,6 +12,6 @@ try{
  const state=await sw.evaluate(async()=>({permissions:await chrome.permissions.getAll(),scripts:await chrome.scripting.getRegisteredContentScripts(),local:await chrome.storage.local.get(null),session:await chrome.storage.session.get(null)}));
  assert.deepEqual(state.permissions.origins,['https://api.openai.com/*']);assert.equal(state.scripts.length,0);assert.deepEqual(state.local,{});assert.deepEqual(state.session,{});
  await page.screenshot({path:path.resolve('../evidence/release-settings.png'),fullPage:true});
- await writeFile(path.resolve('../evidence/release-smoke.json'),JSON.stringify({browser:await context.browser().version(),unchangedProductionManifest:true,hasEmbeddedKey:false,preauthorizedOrigins:state.permissions.origins,initialContentScripts:state.scripts.length,result:'passed'},null,2));
+ await writeFile(path.resolve('../evidence/release-smoke.json'),JSON.stringify({extensionVersion:await sw.evaluate(()=>chrome.runtime.getManifest().version),browser:await context.browser().version(),unchangedProductionManifest:true,hasEmbeddedKey:false,preauthorizedOrigins:state.permissions.origins,initialContentScripts:state.scripts.length,result:'passed'},null,2));
  console.log('PASS production manifest loads unchanged; no embedded credentials or blanket website permissions');
 }finally{await context.close();await rm(profile,{recursive:true,force:true});}

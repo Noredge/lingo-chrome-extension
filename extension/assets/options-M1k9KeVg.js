@@ -1,6 +1,7 @@
 import "./ui-BOAe4Mgc.js";
 const DEFAULTS = { languages: ["简体中文", "English"] };
 const LANGUAGES = ["简体中文", "繁體中文", "English", "日本語", "한국어", "Français", "Deutsch", "Español", "Português（葡萄牙语）", "Italiano（意大利语）", "Nederlands（荷兰语）", "Русский（俄语）", "Українська（乌克兰语）", "Polski（波兰语）", "Čeština（捷克语）", "Svenska（瑞典语）", "Dansk（丹麦语）", "Norsk（挪威语）", "Suomi（芬兰语）", "Ελληνικά（希腊语）", "Türkçe（土耳其语）", "العربية（阿拉伯语）", "עברית（希伯来语）", "فارسی（波斯语）", "हिन्दी（印地语）", "বাংলা（孟加拉语）", "ไทย（泰语）", "Tiếng Việt（越南语）", "Bahasa Indonesia（印尼语）", "Bahasa Melayu（马来语）", "Filipino（菲律宾语）"];
+document.querySelector(".version").textContent = chrome.runtime.getManifest().version;
 const $ = (id) => document.getElementById(id);
 const key = $("api-key"), model = $("model"), language = $("language"), storageMode = $("storage-mode");
 let selectedLanguages = [...DEFAULTS.languages];
@@ -55,6 +56,11 @@ function status(id, text, error = false) {
   $(id).textContent = text;
   $(id).classList.toggle("error", error);
 }
+function clearCredentialInputs() {
+  for (const id of ["api-key", "vault-password", "vault-confirm", "unlock-password"]) $(id).value = "";
+  key.type = "password";
+  $("reveal").textContent = "显示";
+}
 function drawStorage() {
   const mode = storageMode.value;
   $("password-fields").hidden = mode !== "encrypted";
@@ -108,11 +114,7 @@ $("settings-form").addEventListener("submit", async (e) => {
   b.disabled = true;
   try {
     const c = await message({ type: "save", key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === "device", password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
-    key.value = "";
-    $("vault-password").value = "";
-    $("vault-confirm").value = "";
-    key.type = "password";
-    $("reveal").textContent = "显示";
+    clearCredentialInputs();
     draw(c);
     status("save-status", "设置已保存。已打开的窗口可点击重试，或关闭后重新划词。");
   } catch (e2) {
@@ -135,9 +137,16 @@ $("unlock-key").addEventListener("click", async () => {
     button.disabled = false;
   }
 });
+$("unlock-password").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    $("unlock-key").click();
+  }
+});
 $("lock-key").addEventListener("click", async () => {
   try {
     draw(await message({ type: "lock" }));
+    clearCredentialInputs();
     status("save-status", "已清除会话中的 Key 并停止正在进行的请求。");
   } catch (e) {
     status("save-status", e.message, true);
@@ -151,7 +160,7 @@ $("delete-key").addEventListener("click", async () => {
   if (!confirm("删除此扩展保存的 Key？这不会撤销 OpenAI 平台上的密钥。")) return;
   try {
     draw(await message({ type: "deleteKey" }));
-    key.value = "";
+    clearCredentialInputs();
     status("save-status", "已删除扩展中的 Key。");
   } catch (e) {
     status("save-status", e.message, true);

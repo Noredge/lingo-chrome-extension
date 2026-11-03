@@ -147,16 +147,23 @@
       const expected = s.value.slice(0, s.start) + result + s.value.slice(s.end);
       if (!document.execCommand("insertText", false, result)) throw new Error("此编辑框不支持可靠替换，请使用复制。");
       s.stale = true;
+      s.cleanup?.();
       if (target.value !== expected) throw new Error("网站重新处理了文字，请检查编辑框内容；可按撤销恢复。");
     } else {
       const target = s.target;
       target.focus({ preventScroll: true });
       if (!canReplace(s)) throw new Error("编辑区已变化，请重新划选。");
+      const original = cleanCopy(target.cloneNode(true)).textContent || "";
+      const expected = original.slice(0, s.start) + result + original.slice(s.end);
       const selection = window.getSelection();
       selection?.removeAllRanges();
       selection?.addRange(s.range);
       if (!document.execCommand("insertText", false, result)) throw new Error("此编辑区不支持可靠替换，请使用复制。");
       s.stale = true;
+      s.cleanup?.();
+      const comparable = (text) => text.replace(/[\r\n]/g, "").replace(/\u00a0/g, " ");
+      const actual = cleanCopy(target.cloneNode(true)).textContent || "";
+      if (comparable(actual) !== comparable(expected)) throw new Error("网站重新处理了文字，请检查编辑区内容；可按撤销恢复。");
     }
     s.cleanup?.();
   }

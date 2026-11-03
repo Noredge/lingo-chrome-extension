@@ -1,4 +1,4 @@
-# Chrome Web Store 文案 · Lingo 1.4.0
+# Chrome Web Store 文案 · Lingo 1.0.0
 
 发布者：Noredge
 公开支持邮箱：hongbin.lei98@gmail.com

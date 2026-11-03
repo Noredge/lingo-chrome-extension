@@ -168,8 +168,19 @@ try{
  await hintHost.getByRole('button',{name:'校对',exact:true}).click();await hintHost.locator('.write-actions').getByRole('button',{name:'替换选中文字',exact:true}).click();
  assert.equal(await hints.locator('#mail-editor').innerText(),'Hello Alex,\n\nCan you send it to me today?\n\nReference LINGO-4827');
  check('Gmail Smart Compose hints are excluded and hint removal does not shift replacement');await hints.close();
+
+ // A site may synchronously rewrite the editor in response to the native insertion.
+ await page.setViewportSize({width:1320,height:950});await close();
+ await page.locator('#rich').evaluate(el=>{el.innerHTML='<b>Hello.</b> <span id="rich-selection">Can you send me it today?</span> <i>Thanks.</i>';el.addEventListener('input',()=>{el.append(document.createTextNode(' Unexpected site edit.'))},{once:true})});
+ await selectRead('#rich-selection');await done();await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');await host.locator('.write-actions').getByRole('button',{name:'替换选中文字',exact:true}).click();
+ await host.getByText('网站重新处理了文字，请检查编辑区内容；可按撤销恢复。',{exact:true}).waitFor();check('rich editor post-processing is detected instead of reporting an unconditional successful replacement');await close();
+ // Simulate Chrome denying access after a content script was already injected.
+ const beforeDenied=calls.length;
+ await worker.evaluate(()=>{self.auditExecute=chrome.scripting.executeScript;chrome.scripting.executeScript=async()=>{throw new Error('test: host permission removed')}});
+ await selectRead();await host.getByText('网站授权已失效，请重新授权，或从扩展菜单临时调用。',{exact:true}).waitFor();assert.equal(calls.length,beforeDenied);check('a request denied by Chrome site-access validation never reaches the API');
+ await worker.evaluate(()=>{chrome.scripting.executeScript=self.auditExecute;delete self.auditExecute});await host.locator('.translate-actions').getByRole('button',{name:'重试',exact:true}).click();await done();check('restored Chrome site access allows explicit retry');await close();
 assert.equal(errors.length,0,errors.join('\n'));check('no uncaught page errors');
- await writeFile(path.join(evidence,'browser-results.json'),JSON.stringify({browser:await context.browser().version(),checks,limitations:['API responses mocked; no live Key used','Fixture origin pre-authorized in test copy','Gmail-style editor fixture, not logged-in Gmail'],pageErrors:errors},null,2));
+ await writeFile(path.join(evidence,'browser-results.json'),JSON.stringify({extensionVersion:manifest.version,browser:await context.browser().version(),checks,limitations:['API responses mocked; no live Key used','Fixture origin pre-authorized in test copy','Gmail-style editor fixture, not logged-in Gmail'],pageErrors:errors},null,2));
  console.log(`Completed ${checks.length} browser checks.`);
 }catch(e){await writeFile(path.join(evidence,'failure.txt'),String(e.stack));for(const [i,p] of context.pages().entries())await p.screenshot({path:path.join(evidence,`failure-${i}.png`)}).catch(()=>{});throw e;}
 finally{await context.close();server.close();await rm(temp,{recursive:true,force:true});}

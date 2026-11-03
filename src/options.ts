@@ -1,5 +1,6 @@
 import './ui.css';
 import { LANGUAGES, DEFAULTS } from './core';
+document.querySelector('.version')!.textContent = chrome.runtime.getManifest().version;
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const key = $<HTMLInputElement>('api-key'), model = $<HTMLInputElement>('model'), language = $<HTMLSelectElement>('language'), storageMode = $<HTMLSelectElement>('storage-mode');
 let selectedLanguages = [...DEFAULTS.languages];
@@ -25,6 +26,10 @@ $('add-language-button').addEventListener('click', () => {
 });
 async function message(data: object) { const result = await chrome.runtime.sendMessage(data); if (result.error) throw new Error(result.error); return result; }
 function status(id: string, text: string, error = false) { $(id).textContent = text; $(id).classList.toggle('error', error); }
+function clearCredentialInputs() {
+  for (const id of ['api-key','vault-password','vault-confirm','unlock-password']) $<HTMLInputElement>(id).value = '';
+  key.type = 'password'; $('reveal').textContent = '显示';
+}
 function drawStorage() {
   const mode = storageMode.value;
   $('password-fields').hidden = mode !== 'encrypted';
@@ -56,7 +61,7 @@ async function load() { draw(await message({ type: 'config' })); await sites(); 
 void load().catch(e => status('save-status', e.message, true));
 $('settings-form').addEventListener('submit', async e => {
   e.preventDefault(); const b = document.querySelector<HTMLButtonElement>('button[type="submit"]')!; b.disabled = true;
-  try { const c = await message({ type: 'save', key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === 'device', password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); key.value = ''; $<HTMLInputElement>('vault-password').value = ''; $<HTMLInputElement>('vault-confirm').value = ''; key.type = 'password'; $('reveal').textContent = '显示'; draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
+  try { const c = await message({ type: 'save', key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === 'device', password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); clearCredentialInputs(); draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
   catch (e) { status('save-status', (e as Error).message, true); } finally { b.disabled = false; }
 });
 storageMode.addEventListener('change', drawStorage);
@@ -66,14 +71,17 @@ $('unlock-key').addEventListener('click', async () => {
   catch (e) { status('save-status',(e as Error).message,true); }
   finally { password.value = ''; button.disabled = false; }
 });
+$('unlock-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); $<HTMLButtonElement>('unlock-key').click(); }
+});
 $('lock-key').addEventListener('click', async () => {
-  try { draw(await message({type:'lock'})); status('save-status','已清除会话中的 Key 并停止正在进行的请求。'); }
+  try { draw(await message({type:'lock'})); clearCredentialInputs(); status('save-status','已清除会话中的 Key 并停止正在进行的请求。'); }
   catch(e) { status('save-status',(e as Error).message,true); }
 });
 $('reveal').addEventListener('click', () => { key.type = key.type === 'password' ? 'text' : 'password'; $('reveal').textContent = key.type === 'password' ? '显示' : '隐藏'; });
 $('delete-key').addEventListener('click', async () => {
   if (!confirm('删除此扩展保存的 Key？这不会撤销 OpenAI 平台上的密钥。')) return;
-  try { draw(await message({ type: 'deleteKey' })); key.value = ''; status('save-status', '已删除扩展中的 Key。'); } catch (e) { status('save-status', (e as Error).message, true); }
+  try { draw(await message({ type: 'deleteKey' })); clearCredentialInputs(); status('save-status', '已删除扩展中的 Key。'); } catch (e) { status('save-status', (e as Error).message, true); }
 });
 let testPort: chrome.runtime.Port | null = null;
 $('test').addEventListener('click', () => {

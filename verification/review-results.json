@@ -1,0 +1,14 @@
+{
+  "extensionVersion": "1.0.0",
+  "checks": [
+    "ordinary preferences save before entering any API key",
+    "locked encrypted key survives a session-only conversion attempt",
+    "concurrent preference save does not overwrite an unpaused site",
+    "locking clears unsaved key and password inputs and restores masking",
+    "corrupted automatic vault does not prevent revoking data consent",
+    "deleting a key clears all credential draft inputs",
+    "Enter in the unlock-password field unlocks rather than submitting settings"
+  ],
+  "failures": [],
+  "fixtureOnly": true
+}

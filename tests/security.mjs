@@ -52,5 +52,5 @@ try {
  c=await save({storageMode:'session'});assert(c.hasKey&&!c.hasVault);assert.deepEqual(await stats(),{plain:false,vault:false,session:true,leak:false});
  await context.close();await boot();c=await config();assert(!c.hasKey&&c.storageMode==='session');check('session mode removes persistent copies and remains selected after restart');
  c=await save({storageMode:'device',deviceConsent:true,key:fake});assert(c.hasKey);await msg({type:'deleteKey'});await context.close();await boot();c=await config();assert(!c.hasKey&&!c.hasVault);assert.deepEqual(await stats(),{plain:false,vault:false,session:false,leak:false});assert.equal(await keyMetadata(),null);check('deleting device credentials also deletes the automatic decryption key across restart');
- await mkdir('../evidence',{recursive:true});await writeFile('../evidence/security-results.json',JSON.stringify({checks,apiRequests:requests,fixtureOnly:true},null,2));
+ await mkdir('../evidence',{recursive:true});await writeFile('../evidence/security-results.json',JSON.stringify({extensionVersion:await worker.evaluate(()=>chrome.runtime.getManifest().version),checks,apiRequests:requests,fixtureOnly:true},null,2));
 } finally {await context?.close();await rm(temp,{recursive:true,force:true})}

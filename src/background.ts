@@ -23,7 +23,7 @@ async function config() {
   if (!apiKey && local.deviceKey) {
     try { apiKey = await decryptDeviceKey(local.deviceKey); } catch { deviceError = true; }
   }
-  return { settings: { ...DEFAULTS, ...(local.settings as Partial<Settings> || {}), ...languagePreferences(local.settings || {}) } as Settings, apiKey, deviceError, storageMode: local.deviceKey ? 'device' : local.encryptedKey ? 'encrypted' : typeof local.keyStorageMode === 'string' && ['device','session','encrypted'].includes(local.keyStorageMode) ? local.keyStorageMode : session.apiKey ? 'session' : 'device', vault: local.encryptedKey, remember: !!local.encryptedKey, dataConsent: local.dataConsent === 1, migrated: !!session.legacyMigrated };
+  return { settings: { ...DEFAULTS, ...(local.settings as Partial<Settings> || {}), ...languagePreferences(local.settings || {}) } as Settings, apiKey, deviceError, deviceVault: local.deviceKey, storageMode: local.deviceKey ? 'device' : local.encryptedKey ? 'encrypted' : typeof local.keyStorageMode === 'string' && ['device','session','encrypted'].includes(local.keyStorageMode) ? local.keyStorageMode : session.apiKey ? 'session' : 'device', vault: local.encryptedKey, remember: !!local.encryptedKey, dataConsent: local.dataConsent === 1, migrated: !!session.legacyMigrated };
 }
 function trusted(sender: chrome.runtime.MessageSender) {
   // An options page opened in a tab also has sender.tab; trust its extension URL.
@@ -33,13 +33,13 @@ async function publicConfig() {
   const c = await config();
   return { settings: c.settings, hasKey: !!c.apiKey, hasVault: !!c.vault, remember: c.remember, storageMode: c.storageMode, deviceError: c.deviceError, dataConsent: c.dataConsent, migrated: c.migrated };
 }
-let credentialQueue = Promise.resolve<unknown>(undefined), credentialEpoch = 0;
-function mutateCredentials(action: () => Promise<unknown>) {
-  const operation = credentialQueue.catch(() => {}).then(async () => {
-    await ready; credentialEpoch++; running.forEach(controller => controller.abort());
+let stateQueue = Promise.resolve<unknown>(undefined), credentialEpoch = 0;
+function mutateState(action: () => Promise<unknown>, stopRequests = true) {
+  const operation = stateQueue.catch(() => {}).then(async () => {
+    await ready; credentialEpoch++; if (stopRequests) running.forEach(controller => controller.abort());
     return action();
   });
-  credentialQueue = operation; return operation;
+  stateQueue = operation; return operation;
 }
 async function credentialAction(msg: any) {
   const old = await config();
@@ -69,16 +69,16 @@ async function credentialAction(msg: any) {
   const storageMode = msg.storageMode ?? (msg.remember ? 'encrypted' : 'session');
   if (!['session','encrypted','device'].includes(storageMode)) throw new Error('请选择有效的 Key 保存方式。');
   if (storageMode === 'device' && msg.deviceConsent !== true) throw new Error('请确认免解锁模式使用本机自动加密保存 Key。');
-  if (storageMode === 'device' && !apiKey) throw new Error('请先解锁已保存的 Key，或重新填写 Key，再开启免解锁。');
+  if (!apiKey && storageMode !== old.storageMode && (old.vault || old.deviceVault)) throw new Error(old.vault ? '请先解锁已保存的 Key，或填写新 Key，再更改保存方式。' : '本机凭据无法读取，请先重新填写 Key，或使用删除 Key。');
   let vault = old.vault;
-  if (storageMode === 'encrypted' && (!vault || msg.key || msg.password)) {
+  if (storageMode === 'encrypted' && (apiKey || msg.password) && (!vault || msg.key || msg.password)) {
     if (!apiKey) throw new Error('请先填写 Key 或解锁已保存的 Key。');
     if (typeof msg.password !== 'string' || msg.password !== msg.passwordConfirm) throw new Error('两次解锁密码不一致。');
     vault = await encryptKey(apiKey, msg.password);
   }
-  const deviceKey = storageMode === 'device' ? await encryptDeviceKey(apiKey) : undefined;
+  const deviceKey = storageMode === 'device' ? (apiKey ? await encryptDeviceKey(apiKey) : old.deviceVault) : undefined;
   // Finish validation/encryption before touching stored credentials.
-  await chrome.storage.local.set({settings, keyStorageMode: storageMode, dataConsent: msg.dataConsent === true ? 1 : 0, ...(storageMode === 'encrypted' ? {encryptedKey: vault} : storageMode === 'device' ? {deviceKey} : {})});
+  await chrome.storage.local.set({settings, keyStorageMode: storageMode, dataConsent: msg.dataConsent === true ? 1 : 0, ...(storageMode === 'encrypted' && vault ? {encryptedKey: vault} : storageMode === 'device' && deviceKey ? {deviceKey} : {})});
   if (apiKey) await chrome.storage.session.set({apiKey});
   if (storageMode !== 'encrypted') await chrome.storage.local.remove('encryptedKey');
   if (storageMode !== 'device') { await chrome.storage.local.remove('deviceKey'); await removeDeviceKey(); }
@@ -97,7 +97,7 @@ function syncScripts() {
   return registration;
 }
 chrome.permissions.onAdded.addListener(() => { void syncScripts(); });
-chrome.permissions.onRemoved.addListener(() => { void syncScripts(); });
+chrome.permissions.onRemoved.addListener(() => { running.forEach(controller => controller.abort()); void syncScripts(); });
 chrome.runtime.onInstalled.addListener(details => {
   if (details.reason === 'install') void chrome.runtime.openOptionsPage();
   void chrome.contextMenus.removeAll().then(() => chrome.contextMenus.create({ id: 'lingo-open', title: '用 Lingo 翻译与修改', contexts: ['selection', 'editable'] }));
@@ -124,16 +124,16 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     if (msg.type === 'config') return publicConfig();
     if (msg.type === 'options') { await chrome.runtime.openOptionsPage(); return { ok: true }; }
     if (!trusted(sender)) throw new Error('此操作只能从扩展设置页执行。');
-    if (['save','unlock','lock','deleteKey'].includes(msg.type)) return mutateCredentials(() => credentialAction(msg));
+    if (['save','unlock','lock','deleteKey'].includes(msg.type)) return mutateState(() => credentialAction(msg));
     if (msg.type === 'syncSites') { await syncScripts(); return { ok: true }; }
-    if (msg.type === 'unblock') {
+    if (msg.type === 'unblock') return mutateState(async () => {
       const c = await config(); c.settings.blockedHosts = c.settings.blockedHosts.filter(x => x !== msg.host);
       await chrome.storage.local.set({ settings: c.settings });
       const tabs = await chrome.tabs.query({});
       await Promise.all(tabs.filter(tab => tab.id && tab.url && /^https?:/.test(tab.url) && new URL(tab.url).hostname === msg.host).map(tab => chrome.tabs.sendMessage(tab.id!, { type: 'refreshConfig' }).catch(() => {})));
       return { ok: true };
-    }
-    if (msg.type === 'toggleSite') {
+    }, false);
+    if (msg.type === 'toggleSite') return mutateState(async () => {
       const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
       const tab = tabs[0]; if (!tab?.url || !/^https?:/.test(tab.url)) throw new Error('请打开普通网页。');
       const host = new URL(tab.url).hostname; const c = await config();
@@ -141,7 +141,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       await chrome.storage.local.set({ settings: c.settings });
       if (tab.id) await chrome.tabs.sendMessage(tab.id, { type: 'refreshConfig' }).catch(() => {});
       return publicConfig();
-    }
+    }, false);
     if (msg.type === 'openActive') {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id) throw new Error('找不到当前标签页。');
@@ -170,7 +170,7 @@ chrome.runtime.onConnect.addListener(port => {
     let idle: ReturnType<typeof setTimeout> | undefined;
     let timedOut = false;
     try {
-      await credentialQueue.catch(() => {});
+      await stateQueue.catch(() => {});
       const epoch = credentialEpoch;
       const c = await config();
       if (epoch !== credentialEpoch || closed) throw new Error('设置已变化，请重新操作。');
@@ -180,6 +180,15 @@ chrome.runtime.onConnect.addListener(port => {
       if (!c.apiKey) throw new Error('请先打开设置，填写你的 OpenAI API Key。');
       if (sender.tab && c.settings.blockedHosts.includes(new URL(sender.url!).hostname)) throw new Error('此站点已暂停 Lingo，请从扩展菜单重新启用。');
       const request = buildRequest(task, c.settings.model);
+      if (!trusted(sender)) {
+        try {
+          await chrome.scripting.executeScript({
+            target: {tabId: sender.tab!.id!, ...(sender.documentId ? {documentIds:[sender.documentId]} : {frameIds:[sender.frameId || 0]})},
+            func: () => true
+          });
+        } catch { throw new Error('网站授权已失效，请重新授权，或从扩展菜单临时调用。'); }
+      }
+      if (epoch !== credentialEpoch || closed || controller.signal.aborted) throw new Error('设置已变化，请重新操作。');
       if (running.size >= 4) throw new Error('已有多个请求进行中，请完成或取消后重试。');
       running.add(controller);
       const resetIdle = () => { clearTimeout(idle); idle = setTimeout(() => { timedOut = true; controller?.abort(); }, 25000); };

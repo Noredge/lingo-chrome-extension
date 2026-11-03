@@ -1,4 +1,4 @@
-# 真实 Chrome / Gmail 验证
+# 早期开发构建的真实 Chrome / Gmail 验证
 
 日期：2026-11-02。使用用户日常 Chrome、真实登录的 Gmail 和用户自行保存的 OpenAI Key，模型设置为 `gpt-6-luna`。未读取或展示 Key。只为 Gmail 启用常驻网页权限。
 
