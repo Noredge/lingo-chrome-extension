@@ -372,7 +372,10 @@
     "已授权网页访问": ["已授權網頁存取", "Website access allowed"],
     "查看设置引导": ["查看設定引導", "View setup guide"],
     "继续设置引导": ["繼續設定引導", "Continue setup"],
-    "关闭设置引导": ["關閉設定引導", "Close setup guide"]
+    "关闭设置引导": ["關閉設定引導", "Close setup guide"],
+    "已保存此配置。": ["已儲存此設定。", "Profile saved."],
+    "保存修改后，发送固定示例测试连接。": ["儲存修改後，傳送固定範例測試連線。", "Saves your changes, then tests with a short sample."],
+    "保存并测试此配置，不切换当前服务。": ["儲存並測試此設定，不切換目前服務。", "Saves and tests this profile without switching the active service."]
   };
   const roots = /* @__PURE__ */ new Set();
   const nodes = /* @__PURE__ */ new WeakMap();

@@ -1,8 +1,8 @@
-# Lingo · 1.0.0-dev.5
+# Lingo · 1.0.0-dev.6
 
 自用 Chrome 划词翻译与写作扩展，正在准备正式 1.0。当前为开发预览，仓库已恢复私有，未提交 Chrome Web Store。之前的 v1.0.0 / v1.3.0 / v1.4.0 均为历史开发快照，GitHub Releases 标记为 prerelease。
 
-Manifest 数字版本为 `0.9.4`，显示版本为 `1.0.0-dev.5`。尚未在商店发布，因此可以在正式发布前重新整理版本序列；将来正式版使用数字版本 `1.0.0`。不要把历史开发包当成当前上架包。
+Manifest 数字版本为 `0.9.5`，显示版本为 `1.0.0-dev.6`。尚未在商店发布，因此可以在正式发布前重新整理版本序列；将来正式版使用数字版本 `1.0.0`。不要把历史开发包当成当前上架包。
 
 ## 使用
 
@@ -55,7 +55,7 @@ npm run package:dev
 python3 scripts/audit-secrets.py
 ```
 
-需要 Playwright Chromium（首次可 `npx playwright install chromium`）。测试只用隔离浏览器、无效 fixture Key 与拦截的 API 响应，不读取个人 Chrome 配置。`tests/pdf-native.mjs` 是需要人工/原生 UI 操作的 PDF 验收程序，以 Ctrl+C 退出并清理；不会混入发布运行代码。证据见 `verification/DEVELOPMENT-1.0-dev.5.md`。旧验证报告仅代表对应历史构建。
+需要 Playwright Chromium（首次可 `npx playwright install chromium`）。测试只用隔离浏览器、无效 fixture Key 与拦截的 API 响应，不读取个人 Chrome 配置。`tests/pdf-native.mjs` 是需要人工/原生 UI 操作的 PDF 验收程序，以 Ctrl+C 退出并清理；不会混入发布运行代码。证据见 `verification/DEVELOPMENT-1.0-dev.6.md`。旧验证报告仅代表对应历史构建。
 
 `npm run package:store` 对开发版本拒绝打包，防止误上架；`package:dev` 生成可解压加载的开发运行 ZIP。商店素材仍为草稿。截图带版本与构建哈希，代码改变后必须重新生成。
 

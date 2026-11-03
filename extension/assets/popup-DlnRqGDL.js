@@ -1,4 +1,4 @@
-import { l as localize, s as setLanguage } from "./i18n-Dsuap1VN.js";
+import { l as localize, s as setLanguage } from "./i18n-S53oJ_oW.js";
 /* empty css            */
 localize(document);
 const $ = (id) => document.getElementById(id);

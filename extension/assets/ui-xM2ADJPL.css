@@ -28,8 +28,10 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 
 .settings-footer{align-items:center;flex-wrap:wrap}#setup-restart{font-size:10px;padding:0;color:#829474}
 
-#setup-dialog{color:inherit;background:#f8f9f4;width:min(660px,calc(100vw - 32px));max-height:calc(100dvh - 48px);padding:30px;border:1px solid #dce5d6;border-radius:20px;box-shadow:0 18px 70px #1f382c33;overflow:auto;overscroll-behavior:contain}
+#setup-dialog{color:inherit;background:#f8f9f4;width:min(660px,calc(100vw - 32px));max-height:calc(100dvh - 48px);padding:0;border:1px solid #dce5d6;border-radius:20px;box-shadow:0 18px 70px #1f382c33;overflow:hidden;overscroll-behavior:contain}
 #setup-dialog::backdrop{background:#273d326b;backdrop-filter:blur(2px)}
-#setup-close{position:sticky;float:right;top:0;z-index:3;font-size:27px;line-height:1;width:36px;height:36px;padding:0;background:#edf2e8;border-radius:50%;color:#6f8271}
+#setup-close{position:absolute;right:6px;top:6px;z-index:3;font-size:27px;line-height:1;width:32px;height:32px;padding:0;background:#edf2e8;border-radius:50%;color:#6f8271}
 #setup-dialog #setup-head h1{font-size:27px;margin-top:20px}#setup-dialog .setup-steps{margin:24px 0}#setup-dialog .setup-privacy{display:inline-block;font-size:10px;margin-top:20px;color:#829474}
-@media(max-width:480px){#setup-dialog{width:calc(100vw - 20px);max-height:calc(100dvh - 24px);padding:20px 16px;border-radius:16px}#setup-dialog .card{padding:18px}#setup-dialog .setup-steps{gap:5px;font-size:10px}#setup-dialog .setup-steps li{gap:4px}#setup-dialog .setup-steps li span{width:22px;height:22px}#setup-dialog .setup-nav{gap:6px}#setup-dialog .setup-nav button{font-size:12px;padding:10px}}
+@media(max-width:480px){#setup-dialog{width:calc(100vw - 20px);max-height:calc(100dvh - 24px);padding:0;border-radius:16px}#setup-dialog .card{padding:18px}#setup-dialog .setup-steps{gap:5px;font-size:10px}#setup-dialog .setup-steps li{gap:4px}#setup-dialog .setup-steps li span{width:22px;height:22px}#setup-dialog .setup-nav{gap:6px}#setup-dialog .setup-nav button{font-size:12px;padding:10px}}
+
+.setup-chrome{height:44px;position:relative;flex-shrink:0}#setup-scroll{max-height:calc(100dvh - 94px);overflow:auto;overscroll-behavior:contain;padding:0 30px 24px}#setup-dialog[open]{display:flex;flex-direction:column}@media(max-width:480px){#setup-scroll{max-height:calc(100dvh - 70px);padding:0 16px 20px}}

@@ -23,7 +23,11 @@ settingsForm.before(formHome);accessCard.before(accessHome);
 function formState(){return JSON.stringify([profileName.value.trim(),base.value,model.value.trim(),key.value,storageMode.value,$<HTMLInputElement>('vault-password').value,$<HTMLInputElement>('vault-confirm').value,$<HTMLInputElement>('data-consent').checked,language.value,selectedLanguages]);}
 function edited(){return loaded && formState()!==savedForm;}
 function dirty(){return loaded && (edited() || profileId!==activeProfileId);}
-function updateDirty(){ $('save-bar').hidden=!dirty();$('save-settings').textContent=profileId===activeProfileId?'保存设置':'保存并使用此配置';}
+function updateTestButton(){
+  $('test').textContent=testPort?'停止测试':edited()?'保存并测试连接':'测试连接';
+  $('test-help').textContent=edited() && profileId!==activeProfileId?'保存并测试此配置，不切换当前服务。':onboarding?'发送一句固定示例，检查连接是否可用。':edited()?'保存修改后，发送固定示例测试连接。':'使用已保存的连接。';
+}
+function updateDirty(){ $('save-bar').hidden=!dirty();$('save-settings').textContent=profileId===activeProfileId?'保存设置':'保存并使用此配置';updateTestButton();}
 $('settings-form').addEventListener('input',updateDirty);$('settings-form').addEventListener('change',updateDirty);
 window.addEventListener('beforeunload',e=>{if(edited()){e.preventDefault();e.returnValue='';}});
 function drawLanguages(preferred = language.value) {
@@ -102,8 +106,7 @@ function renderSetup(){
   $('setup-back').hidden=setupStep===0;
   $('setup-skip').hidden=setupStep!==1;
   $('setup-next').textContent=setupStep===0?'下一步':setupStep===1?'保存并继续':'完成设置';
-  $('test').textContent=onboarding?'保存并测试连接':'测试连接';
-  $('test-help').textContent=onboarding?'发送一句固定示例，检查连接是否可用。':'使用已保存的连接。';
+  updateTestButton();
   $('service-title').textContent=onboarding?'连接你的 API':'服务配置';
   drawSitePermission();
   document.querySelector<HTMLElement>('.settings-layout')!.hidden=false;
@@ -113,7 +116,7 @@ function renderSetup(){
 async function goStep(step:number){
   stopTest();
   await message({type:'onboardingProgress',step});setupStep=step;renderSetup();status('setup-status','');
-  $('setup-title').focus();setupDialog.scrollTop=0;
+  $('setup-title').focus();$('setup-scroll').scrollTop=0;
 }
 async function setupAction(action:()=>Promise<void>){
   if(setupBusy)return;setupBusy=true;$('setup-nav').inert=true;
@@ -131,14 +134,15 @@ $('setup-next').addEventListener('click',()=>{
   });
 });
 void load().catch(e => {document.querySelector<HTMLElement>('.settings-layout')!.hidden=false;status('save-status', e.message, true);});
-async function saveConnection():Promise<boolean> {
+async function saveConnection(activate=true):Promise<boolean> {
   const b=$<HTMLButtonElement>('save-settings'),form=$('settings-form');b.disabled=true;form.inert=true;$('setup-nav').inert=true;stopTest();
   try { const normalized = normalizeBaseUrl(base.value);
+    if(normalized!==savedBase && knownKey && !key.value.trim())throw new Error('更换服务地址时，请填写该服务的新 Key。旧 Key 不会转发到新地址。');
     if(onboarding && !key.value.trim() && !knownKey)throw new Error('请填写 API Key，或选择稍后配置。');
     if(onboarding && !$<HTMLInputElement>('data-consent').checked)throw new Error('请同意将选中文字发送给此服务。');
     const granted = await chrome.permissions.request({origins:[apiOrigin(normalized)]});
     if (!granted) throw new Error('未授权 API 服务，设置未保存。');
-    const c = await message({ type: 'save', profileId, activate:true, name:profileName.value.trim(), baseUrl:normalized, uiLanguage:ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === 'device', password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); clearCredentialInputs(); draw(c); status('save-status','已保存，当前使用此配置。');return true;
+    const c = await message({ type: 'save', profileId, activate, name:profileName.value.trim(), baseUrl:normalized, uiLanguage:ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === 'device', password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); clearCredentialInputs(); draw(c); status('save-status',c.activeServiceId===profileId?'已保存，当前使用此配置。':'已保存此配置。');return true;
   } catch (e) { status('save-status', (e as Error).message, true);return false; } finally { b.disabled=false;form.inert=false;$('setup-nav').inert=false;updateDirty(); }
 }
 $('settings-form').addEventListener('submit', async e => {
@@ -162,23 +166,22 @@ $('lock-key').addEventListener('click', async () => {
 $('reveal').addEventListener('click', () => { key.type = key.type === 'password' ? 'text' : 'password'; $('reveal').textContent = key.type === 'password' ? '显示' : '隐藏'; });
 let testPort: chrome.runtime.Port | null = null;
 $('test').addEventListener('click', async () => {
-  if (testPort) { testPort.disconnect(); testPort = null; $('test').textContent = onboarding?'保存并测试连接':'测试连接'; status('save-status', '测试已停止。'); return; }
-  if(onboarding){
-    if(setupBusy || !$<HTMLFormElement>('settings-form').reportValidity())return;
-    setupBusy=true;try{if(!await saveConnection())return;}finally{setupBusy=false;}
+  if (testPort) { testPort.disconnect(); testPort = null; updateTestButton(); status('save-status', '测试已停止。'); return; }
+  if(setupBusy || !$<HTMLFormElement>('settings-form').reportValidity())return;
+  if(edited() || onboarding && !knownKey){
+    setupBusy=true;try{if(!await saveConnection(false))return;}finally{setupBusy=false;}
   }
-  if (edited()) { status('save-status', '请先保存服务地址、模型和 Key，再测试连接。', true); return; }
   const port = chrome.runtime.connect({ name: 'lingo-task' }); testPort = port;
   let complete = false; let output = '';
   status('save-status', '正在使用已保存的模型翻译固定示例…'); $('test').textContent = '停止测试';
   const timer = setTimeout(() => { complete = true; status('save-status', '连接超时，请稍后再试。', true); finish(); }, 35000);
-  const finish = () => { clearTimeout(timer); testPort = null; $('test').textContent = onboarding?'保存并测试连接':'测试连接'; port.disconnect(); };
+  const finish = () => { clearTimeout(timer); testPort = null; updateTestButton(); port.disconnect(); };
   port.onMessage.addListener(event => {
     if (event.type === 'delta') output += event.text;
     if (event.type === 'done') { complete = true; status('save-status', `连接成功 · ${output}`); finish(); }
     if (event.type === 'error') { complete = true; status('save-status', event.error, true); finish(); }
   });
-  port.onDisconnect.addListener(() => { clearTimeout(timer); if (testPort === port) { testPort = null; $('test').textContent = onboarding?'保存并测试连接':'测试连接'; if (!complete) status('save-status', '连接已中断，请重试。', true); } });
+  port.onDisconnect.addListener(() => { clearTimeout(timer); if (testPort === port) { testPort = null; updateTestButton(); if (!complete) status('save-status', '连接已中断，请重试。', true); } });
   port.postMessage({ type: 'run', profileId, task: { id: crypto.randomUUID(), text: 'A little clearer, a little better.', mode: 'translate', language: language.value } });
 });
 function drawSitePermission(){
@@ -225,7 +228,7 @@ $('site-form').addEventListener('submit', async e => {
 chrome.permissions.onAdded.addListener(() => { void sites(); });
 chrome.permissions.onRemoved.addListener(() => { void sites(); });
 
-function stopTest(){if(testPort){testPort.disconnect();testPort=null;} $('test').textContent=onboarding?'保存并测试连接':'测试连接';}
+function stopTest(){if(testPort){testPort.disconnect();testPort=null;} updateTestButton();}
 function discardDraft(){return !edited() || confirm(t('放弃尚未保存的更改？'));}
 profileSelect.addEventListener('change',()=>{if(!discardDraft()){profileSelect.value=profileId;return;}stopTest();clearCredentialInputs();profileId=profileSelect.value;void load().then(()=>status('save-status','')).catch(e=>status('save-status',e.message,true));});
 $('new-profile').addEventListener('click',async()=>{if(!discardDraft())return;try{stopTest();clearCredentialInputs();draw(await message({type:'createProfile'}));status('save-status','填写连接后，保存并使用。');}catch(e){status('save-status',(e as Error).message,true);}});
@@ -234,7 +237,7 @@ $('delete-profile').addEventListener('click',async()=>{
  try{stopTest();clearCredentialInputs();draw(await message({type:'deleteProfile',profileId}));status('save-status','已删除配置及 Key。');}catch(e){status('save-status',(e as Error).message,true);}
 });
 
-$('setup-restart').addEventListener('click',()=>void setupAction(async()=>{stopTest();const c=await message({type:'restartOnboarding'});setupComplete=false;onboarding=true;setupStep=c.onboardingStep;renderSetup();$('setup-title').focus();setupDialog.scrollTop=0;}));
+$('setup-restart').addEventListener('click',()=>void setupAction(async()=>{stopTest();const c=await message({type:'restartOnboarding'});setupComplete=false;onboarding=true;setupStep=c.onboardingStep;renderSetup();$('setup-title').focus();$('setup-scroll').scrollTop=0;}));
 
 function dismissSetup(){void setupAction(async()=>{
   stopTest();await message({type:'dismissOnboarding'});onboarding=false;

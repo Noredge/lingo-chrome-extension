@@ -1,4 +1,4 @@
-import { l as localize, s as setLanguage } from "./i18n-Dsuap1VN.js";
+import { l as localize, s as setLanguage } from "./i18n-S53oJ_oW.js";
 import { M as MAX_TEXT, b as MODES, D as DEFAULTS } from "./core-Bo6TdJq8.js";
 function sensitiveFieldActive() {
   let active = document.activeElement;

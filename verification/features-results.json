@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-dev.5",
+  "version": "1.0.0-dev.6",
   "checks": [
     "fresh interface follows browser independently of translation target",
     "top-right interface language persists immediately in all three locales",
@@ -24,11 +24,13 @@
     "language switching updates shared panel and settings without changing source or output",
     "sidebar reset clears sensitive source and results",
     "a subsequent right-click selection replaces source and requests new translation",
-    "unsaved destination change resets consent and prevents stale connection test",
+    "save-and-test rejects unsaved destination changes without a replacement Key and does not test stale credentials",
     "save bar appears only for actual changes, reverts cleanly, and redundant actions are removed",
-    "language shortlist edits show save bar and successful save hides it",
+    "language shortlist save hides the bar without triggering an API connection test",
     "cancelled discard preserves unsaved settings",
     "one save both persists and activates new profile; connection test remains available when clean",
+    "normal settings saves edits and tests in one click, then restores clean Test connection state",
+    "saving and testing an inactive profile leaves the active service unchanged",
     "selecting a saved profile and saving switches once, without a second activation",
     "failed save preserves active provider and keeps unsaved bar visible",
     "delete removes selected inactive configuration and its Key together",
@@ -39,7 +41,7 @@
     "deleting the last active profile removes credentials and leaves a blank default without fallback"
   ],
   "fixtureOnly": true,
-  "apiRequests": 24,
+  "apiRequests": 28,
   "pageErrors": [],
   "nativePdfMenu": "tested separately"
 }

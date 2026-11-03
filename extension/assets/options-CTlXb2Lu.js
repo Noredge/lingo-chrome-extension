@@ -1,4 +1,4 @@
-import { l as localize, s as setLanguage, t } from "./i18n-Dsuap1VN.js";
+import { l as localize, s as setLanguage, t } from "./i18n-S53oJ_oW.js";
 /* empty css            */
 import { D as DEFAULTS, n as normalizeBaseUrl, L as LANGUAGES, a as apiOrigin } from "./core-Bo6TdJq8.js";
 document.querySelector(".version").textContent = chrome.runtime.getManifest().version_name || chrome.runtime.getManifest().version;
@@ -46,9 +46,14 @@ function edited() {
 function dirty() {
   return loaded && (edited() || profileId !== activeProfileId);
 }
+function updateTestButton() {
+  $("test").textContent = testPort ? "停止测试" : edited() ? "保存并测试连接" : "测试连接";
+  $("test-help").textContent = edited() && profileId !== activeProfileId ? "保存并测试此配置，不切换当前服务。" : onboarding ? "发送一句固定示例，检查连接是否可用。" : edited() ? "保存修改后，发送固定示例测试连接。" : "使用已保存的连接。";
+}
 function updateDirty() {
   $("save-bar").hidden = !dirty();
   $("save-settings").textContent = profileId === activeProfileId ? "保存设置" : "保存并使用此配置";
+  updateTestButton();
 }
 $("settings-form").addEventListener("input", updateDirty);
 $("settings-form").addEventListener("change", updateDirty);
@@ -220,8 +225,7 @@ function renderSetup() {
   $("setup-back").hidden = setupStep === 0;
   $("setup-skip").hidden = setupStep !== 1;
   $("setup-next").textContent = setupStep === 0 ? "下一步" : setupStep === 1 ? "保存并继续" : "完成设置";
-  $("test").textContent = onboarding ? "保存并测试连接" : "测试连接";
-  $("test-help").textContent = onboarding ? "发送一句固定示例，检查连接是否可用。" : "使用已保存的连接。";
+  updateTestButton();
   $("service-title").textContent = onboarding ? "连接你的 API" : "服务配置";
   drawSitePermission();
   document.querySelector(".settings-layout").hidden = false;
@@ -238,7 +242,7 @@ async function goStep(step) {
   renderSetup();
   status("setup-status", "");
   $("setup-title").focus();
-  setupDialog.scrollTop = 0;
+  $("setup-scroll").scrollTop = 0;
 }
 async function setupAction(action) {
   if (setupBusy) return;
@@ -283,7 +287,7 @@ void load().catch((e) => {
   document.querySelector(".settings-layout").hidden = false;
   status("save-status", e.message, true);
 });
-async function saveConnection() {
+async function saveConnection(activate = true) {
   const b = $("save-settings"), form = $("settings-form");
   b.disabled = true;
   form.inert = true;
@@ -291,14 +295,15 @@ async function saveConnection() {
   stopTest();
   try {
     const normalized = normalizeBaseUrl(base.value);
+    if (normalized !== savedBase && knownKey && !key.value.trim()) throw new Error("更换服务地址时，请填写该服务的新 Key。旧 Key 不会转发到新地址。");
     if (onboarding && !key.value.trim() && !knownKey) throw new Error("请填写 API Key，或选择稍后配置。");
     if (onboarding && !$("data-consent").checked) throw new Error("请同意将选中文字发送给此服务。");
     const granted = await chrome.permissions.request({ origins: [apiOrigin(normalized)] });
     if (!granted) throw new Error("未授权 API 服务，设置未保存。");
-    const c = await message({ type: "save", profileId, activate: true, name: profileName.value.trim(), baseUrl: normalized, uiLanguage: ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === "device", password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
+    const c = await message({ type: "save", profileId, activate, name: profileName.value.trim(), baseUrl: normalized, uiLanguage: ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === "device", password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
     clearCredentialInputs();
     draw(c);
-    status("save-status", "已保存，当前使用此配置。");
+    status("save-status", c.activeServiceId === profileId ? "已保存，当前使用此配置。" : "已保存此配置。");
     return true;
   } catch (e) {
     status("save-status", e.message, true);
@@ -363,22 +368,18 @@ $("test").addEventListener("click", async () => {
   if (testPort) {
     testPort.disconnect();
     testPort = null;
-    $("test").textContent = onboarding ? "保存并测试连接" : "测试连接";
+    updateTestButton();
     status("save-status", "测试已停止。");
     return;
   }
-  if (onboarding) {
-    if (setupBusy || !$("settings-form").reportValidity()) return;
+  if (setupBusy || !$("settings-form").reportValidity()) return;
+  if (edited() || onboarding && !knownKey) {
     setupBusy = true;
     try {
-      if (!await saveConnection()) return;
+      if (!await saveConnection(false)) return;
     } finally {
       setupBusy = false;
     }
-  }
-  if (edited()) {
-    status("save-status", "请先保存服务地址、模型和 Key，再测试连接。", true);
-    return;
   }
   const port = chrome.runtime.connect({ name: "lingo-task" });
   testPort = port;
@@ -394,7 +395,7 @@ $("test").addEventListener("click", async () => {
   const finish = () => {
     clearTimeout(timer);
     testPort = null;
-    $("test").textContent = onboarding ? "保存并测试连接" : "测试连接";
+    updateTestButton();
     port.disconnect();
   };
   port.onMessage.addListener((event) => {
@@ -414,7 +415,7 @@ $("test").addEventListener("click", async () => {
     clearTimeout(timer);
     if (testPort === port) {
       testPort = null;
-      $("test").textContent = onboarding ? "保存并测试连接" : "测试连接";
+      updateTestButton();
       if (!complete) status("save-status", "连接已中断，请重试。", true);
     }
   });
@@ -489,7 +490,7 @@ function stopTest() {
     testPort.disconnect();
     testPort = null;
   }
-  $("test").textContent = onboarding ? "保存并测试连接" : "测试连接";
+  updateTestButton();
 }
 function discardDraft() {
   return !edited() || confirm(t("放弃尚未保存的更改？"));
@@ -534,7 +535,7 @@ $("setup-restart").addEventListener("click", () => void setupAction(async () => 
   setupStep = c.onboardingStep;
   renderSetup();
   $("setup-title").focus();
-  setupDialog.scrollTop = 0;
+  $("setup-scroll").scrollTop = 0;
 }));
 function dismissSetup() {
   void setupAction(async () => {
