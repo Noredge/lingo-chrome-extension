@@ -1,4 +1,4 @@
-# 商店文案草稿 · 1.0.0-dev.1
+# 商店文案草稿 · 1.0.0-dev.2
 
 尚未上架。当前仓库私有；原 GitHub Pages 网址不能作为已验证的公开政策链接。正式 1.0 前恢复公开政策页面、补齐最终截图并重新检查商店字段。计划 Unlisted，由用户完成开发者注册、付款及最终提交。
 
@@ -18,7 +18,7 @@ Chrome 内置阅读器中的 PDF 可选中文字后右键“用 Lingo 翻译”�
 
 界面支持简体中文、繁體中文与 English，默认跟随 Chrome，也可手动切换。界面语言与翻译目标语言独立；从 31 种目标语言中挑选浮窗常用列表。浮窗可拖动标题栏移动，从四边/四角缩放，最小 320×300。
 
-使用自己的 OpenAI、DeepSeek 或其他 Chat Completions 相容服务：填写 Base URL、API Key、模型，再测试连接。所有服务共用标准接口；无需开发者账户，不包含 API 额度。服务商可能按其政策收费。
+使用自己的 OpenAI 或其他 Responses API 相容服务：填写 Base URL、API Key、模型，再测试连接。所有服务共用标准接口；无需开发者账户，不包含 API 额度。服务商可能按其政策收费。
 
 只有你确认说明并打开翻译/写作操作时，选中文字和必要指令才发往设置中显示的服务地址。Key 与完整地址绑定；换服务须填写相应 Key。不自动上传整页、整封邮件或浏览历史，无开发者代理、广告、分析或文字历史。服务端保留由服务商政策决定。
 
@@ -36,7 +36,7 @@ Key 默认本机自动 AES-256-GCM 加密并免解锁，也可选 session-only �
 
 介面可跟隨瀏覽器，或選擇簡體中文、繁體中文、English；翻譯目標語言獨立設定。一般網頁選取文字後使用可移動、八方向縮放的浮窗；Chrome PDF 選取文字後右鍵「用 Lingo 翻譯」，在側邊欄查看結果。圖片型 PDF 需先 OCR。
 
-填入自己的 Base URL、API Key 與模型，透過統一 Chat Completions 協定連接 OpenAI、DeepSeek 或其他相容服務。Key 與完整服務網址綁定；資料接收方會明確顯示。服務費用與資料保留依所選服務商政策，擴充功能不提供額度。預設免解鎖的本機加密，也可選密碼加密或僅本次工作階段。自動解密金鑰亦在瀏覽器設定檔中，無法防範完整設定檔失竊。
+填入自己的 Base URL、API Key 與模型，透過統一 Responses API 協定連接 OpenAI 或其他相容服務。Key 與完整服務網址綁定；資料接收方會明確顯示。服務費用與資料保留依所選服務商政策，擴充功能不提供額度。預設免解鎖的本機加密，也可選密碼加密或僅本次工作階段。自動解密金鑰亦在瀏覽器設定檔中，無法防範完整設定檔失竊。
 
 只傳送明確選取的文字與指令，不自動上傳完整頁面、郵件、PDF 或瀏覽歷程，不設開發者代理、分析或廣告。請核對 AI 結果。支援信箱：hongbin.lei98@gmail.com，請勿寄送憑證或私人文件。
 
@@ -52,10 +52,12 @@ In Chrome’s built-in PDF viewer, select text, right-click “Translate with Li
 
 Choose English, Simplified Chinese or Traditional Chinese for the interface, or follow Chrome. Translation targets are independent, with a shortlist selected from 31 languages.
 
-Connect your own OpenAI, DeepSeek or compatible service using Base URL, API Key, model and Test connection. One shared Chat Completions protocol is used. Provider usage is billed separately; no API credits are included. Credentials bind to the full service address, and the destination is visible. Changing addresses requires a Key for the new service.
+Connect your own OpenAI or compatible service using Base URL, API Key, model and Test connection. One shared Responses API protocol is used. Provider usage is billed separately; no API credits are included. Credentials bind to the full service address, and the destination is visible. Changing addresses requires a Key for the new service.
 
 After consent, only deliberate translation or writing actions send selected text and instructions to your chosen provider. No automatic full-page, whole-email, whole-PDF or browsing-history upload; no developer relay, analytics, ads or text history. Provider retention depends on its policies.
 
 Keys are remembered with automatic local AES-256-GCM encryption by default. The decryption key is in the same browser profile, so this is not protection against whole-profile theft or an OS keychain. Password encryption and session-only storage are also available.
 
-Complex editors may support copying only. Browser internal pages and extension stores restrict floating panels. Review generated text before use. Support: hongbin.lei98@gmail.com. Never send Keys, passwords or private documents. Independent software, not an official OpenAI, DeepSeek or Google product.
+Complex editors may support copying only. Browser internal pages and extension stores restrict floating panels. Review generated text before use. Support: hongbin.lei98@gmail.com. Never send Keys, passwords or private documents. Independent software, not an official OpenAI or Google product.
+
+多配置 / Multiple profiles: 保存名称、Base URL、Key、模型；选择只是编辑，点击启用才切换。测试不会启用配置，失败不自动切换。自定义服务必须支持 Responses API。PDF 与浮窗共用完整面板，PDF 保留原生阅读器与右键入口。 / Save named profiles; activate one explicitly in settings. Testing does not activate it, and failures never trigger fallback. Custom services must implement Responses API. PDF uses the shared panel and Chrome’s native viewer/context menu.

@@ -17,15 +17,15 @@ const context=await chromium.launchPersistentContext(path.join(temp,'profile'),{
 const checks=[];const errors=[];const calls=[];let next='ok',delay=0;let apiSeen;
 const check=(name)=>{checks.push(name);console.log('PASS',name);};
 let worker=context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');const id=worker.url().split('/')[2];
-await context.route('https://api.openai.com/v1/chat/completions',async route=>{
+await context.route('https://api.openai.com/v1/responses',async route=>{
  const body=route.request().postDataJSON();calls.push(body);apiSeen?.();const mode=next;next='ok';const wait=delay;delay=0;
  if(wait)await new Promise(r=>setTimeout(r,wait));
  if(mode==='401')return route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({error:{message:'test only'}})}).catch(()=>{});
  if(mode==='429')return route.fulfill({status:429,contentType:'application/json',body:JSON.stringify({error:{code:'insufficient_quota'}})}).catch(()=>{});
- const input=JSON.parse(body.messages[1].content);let text=body.messages[0].content.includes('Translate the source')?(input.source_text.includes('Can you')?'你今天能把它发给我吗？':'那些安静的时刻，往往最令人难忘。'):input.source_text.replace('Can you send me it today?','Can you send it to me today?').replace('I has a plan.','I have a plan.');
+ const input=JSON.parse(body.input);let text=body.instructions.includes('Translate the source')?(input.source_text.includes('Can you')?'你今天能把它发给我吗？':'那些安静的时刻，往往最令人难忘。'):input.source_text.replace('Can you send me it today?','Can you send it to me today?').replace('I has a plan.','I have a plan.');
  if(input.editing_request)text='Could you send it to me today, please?';
  if(mode==='html')text='<img src=x onerror="window.injected=true"> Safe text.';
- const payload=[{choices:[{index:0,delta:{content:text.slice(0,5)},finish_reason:null}]},{choices:[{index:0,delta:{content:text.slice(5)},finish_reason:null}]},...(mode==='incomplete'?[{choices:[{index:0,delta:{},finish_reason:'length'}]}]:[{choices:[{index:0,delta:{},finish_reason:'stop'}]}])].map(e=>`data: ${JSON.stringify(e)}\n\n`).join('');
+ const payload=[{type:'response.output_text.delta',delta:text.slice(0,5)},{type:'response.output_text.delta',delta:text.slice(5)},...(mode==='incomplete'?[{type:'response.incomplete'}]:[{type:'response.completed',response:{status:'completed'}}])].map(e=>`data: ${JSON.stringify(e)}\n\n`).join('');
  await route.fulfill({status:200,contentType:'text/event-stream',body:payload}).catch(()=>{});
 });
 try{
@@ -51,10 +51,10 @@ try{
  };
  await selectRead(); await host.getByText('首次使用，请打开设置并填写 API Key。').waitFor();assert.equal(calls.length,0);check('missing Key shows setup action and sends no request');await close();
  await options.getByLabel('API Key',{exact:true}).fill('sk-test-fixture-not-a-real-secret');
- await options.getByRole('checkbox',{name:'我同意将选中文字和修改要求发送给所选服务 处理',exact:true}).check();
- await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.getByText('Key 已配置',{exact:true}).waitFor();
+ await options.locator('#data-consent').check();
+ await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.locator('#key-status').filter({hasText:'Key 已配置'}).waitFor();
  assert.equal(await options.getByLabel('API Key',{exact:true}).inputValue(),'');
- const storage=await worker.evaluate(async()=>({local:!!(await chrome.storage.local.get('deviceKey')).deviceKey,session:!!(await chrome.storage.session.get('apiKey')).apiKey}));
+ const storage=await worker.evaluate(async()=>({local:!!(await chrome.storage.local.get('serviceProfiles')).serviceProfiles[0].deviceKey,session:!!(await chrome.storage.session.get('serviceSessions')).serviceSessions?.default?.apiKey}));
  assert.deepEqual(storage,{local:true,session:true});check('Key remembered on device by default and cleared from visible input');
  const contentAccess=await worker.evaluate(async()=>{
   const [tab]=await chrome.tabs.query({url:'http://127.0.0.1/*'});
@@ -64,17 +64,17 @@ try{
  assert.match(credentialMutation.error,/设置页/);check('webpage content scripts cannot unlock, save, lock or delete credentials');
  await selectRead();await done();assert.equal(await host.locator('.translate-text').textContent(),'那些安静的时刻，往往最令人难忘。');check('site-authorized selection launcher and streamed translation');
  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:url});await page.bringToFront();await host.locator('.translate-actions').getByRole('button',{name:'复制',exact:true}).click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'那些安静的时刻，往往最令人难忘。');check('copy writes the complete result to clipboard');
- await host.getByRole('button',{name:'专业',exact:true}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).messages[1].content).source_text,'The quiet moments are often the ones we remember best.');check('rewrite receives original text instead of translation');
+ await host.getByRole('button',{name:'专业',exact:true}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).input).source_text,'The quiet moments are often the ones we remember best.');check('rewrite receives original text instead of translation');
  const count=calls.length;await host.getByRole('button',{name:'专业',exact:true}).click();await page.waitForTimeout(100);assert.equal(calls.length,count);check('same-selection completed results reused without duplicate request');
- await host.getByLabel('自定义修改要求').fill('More polite');await host.getByRole('button',{name:'执行自定义改写'}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).messages[1].content).editing_request,'More polite');check('custom instruction stays separate from source');
- await host.getByLabel('翻译目标语言').selectOption('English');await done();assert.match(calls.at(-1).messages[0].content,/into English/);check('target language changes trigger translation');await close();
+ await host.getByLabel('自定义修改要求').fill('More polite');await host.getByRole('button',{name:'执行自定义改写'}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).input).editing_request,'More polite');check('custom instruction stays separate from source');
+ await host.getByLabel('翻译目标语言').selectOption('English');await done();assert.match(calls.at(-1).instructions,/into English/);check('target language changes trigger translation');await close();
  assert.deepEqual(await options.getByLabel('浮窗默认目标语言').locator('option').allTextContents(),['简体中文','English']);
  await options.getByLabel('添加目标语言',{exact:true}).selectOption('ไทย（泰语）');await options.getByRole('button',{name:'添加到浮窗',exact:true}).click();
  await options.getByRole('button',{name:'移除 English',exact:true}).click();
  await options.getByLabel('浮窗默认目标语言').selectOption('ไทย（泰语）');
  await options.getByRole('button',{name:'保存设置',exact:true}).click();
  await options.waitForFunction(async()=> (await chrome.runtime.sendMessage({type:'config'})).settings.language === 'ไทย（泰语）');
- await selectRead();await done();assert.equal(await host.getByLabel('翻译目标语言').inputValue(),'ไทย（泰语）');assert.match(calls.at(-1).messages[0].content,/into ไทย/);
+ await selectRead();await done();assert.equal(await host.getByLabel('翻译目标语言').inputValue(),'ไทย（泰语）');assert.match(calls.at(-1).instructions,/into ไทย/);
  assert.deepEqual(await host.getByLabel('翻译目标语言').locator('option').allTextContents(),['简体中文','ไทย']);
  await options.reload();assert.deepEqual(await options.getByLabel('浮窗默认目标语言').locator('option').allTextContents(),['简体中文','ไทย']);
  check('settings add and remove languages; persisted shortlist and default reach overlay and API');
@@ -150,11 +150,11 @@ try{
  const passwordFallback=await worker.evaluate(async()=>{const [tab]=await chrome.tabs.query({url:'http://127.0.0.1/*'});return chrome.tabs.sendMessage(tab.id,{type:'open',fallback:'private-password'});});assert.equal(passwordFallback.ok,false);assert.equal(await host.locator('.panel').isVisible(),false);check('context-menu fallback cannot bypass password exclusion');
  await selectInput('#readonly',0,9);await done();assert.equal(await host.getByRole('button',{name:'替换选中文字',exact:true}).count(),0);check('read-only fields only offer copy');await close();
  await page.setViewportSize({width:390,height:740});await selectRead();await done();const bounds=await host.locator('.panel').boundingBox();assert(bounds.x>=0&&bounds.x+bounds.width<=390&&bounds.y+bounds.height<=741);await page.screenshot({path:path.join(evidence,'narrow-window.png')});check('overlay fits narrow viewport');await close();
- await options.locator('#storage-mode').selectOption('encrypted');
+ await options.locator('#key-options').evaluate(el=>el.open=true);await options.locator('#storage-mode').selectOption('encrypted');
  await options.getByLabel('设置本机解锁密码（至少 12 个字符）',{exact:true}).fill('fixture-only password 2026');
  await options.getByLabel('再次输入解锁密码',{exact:true}).fill('fixture-only password 2026');
- await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.getByText('已加密保存到本机，本次会话已解锁。',{exact:true}).waitFor();
- const storage2=await worker.evaluate(async()=>{const l=await chrome.storage.local.get(null),s=await chrome.storage.session.get(null);return {plaintextLocal:!!l.apiKey||typeof l.deviceKey==='string',encrypted:!!l.encryptedKey,session:!!s.apiKey,leaked:JSON.stringify(l).includes('fixture-only password 2026')||JSON.stringify(l).includes('sk-test-fixture-not-a-real-secret')};});
+ await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.locator('#settings-form button[type=submit]:not(:disabled)').waitFor();assert.equal((await options.evaluate(()=>chrome.runtime.sendMessage({type:'config'}))).storageMode,'encrypted');
+ const storage2=await worker.evaluate(async()=>{const raw=await chrome.storage.local.get(null),l=raw.serviceProfiles[0],s=(await chrome.storage.session.get('serviceSessions')).serviceSessions.default||{};return {plaintextLocal:!!l.apiKey||typeof l.deviceKey==='string',encrypted:!!l.encryptedKey,session:!!s.apiKey,leaked:JSON.stringify(l).includes('fixture-only password 2026')||JSON.stringify(l).includes('sk-test-fixture-not-a-real-secret')};});
  assert.deepEqual(storage2,{plaintextLocal:false,encrypted:true,session:true,leaked:false});check('password-encrypted vault persists without plaintext Key or password');
  const popup=await context.newPage();await popup.goto(`chrome-extension://${id}/popup.html`);await popup.screenshot({path:path.join(evidence,'popup.png')});check('popup renders and rejects unsupported extension pages');
  

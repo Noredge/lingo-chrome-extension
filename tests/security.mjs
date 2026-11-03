@@ -14,10 +14,10 @@ async function boot(){
 const config=()=>options.evaluate(()=>chrome.runtime.sendMessage({type:'config'}));
 const msg=data=>options.evaluate(data=>chrome.runtime.sendMessage(data),data);
 const save=async(override={})=>{const c=await config();return msg({type:'save',key:'',...c.settings,remember:c.remember,dataConsent:c.dataConsent,...override})};
-const stats=()=>worker.evaluate(async()=>{const l=await chrome.storage.local.get(null),s=await chrome.storage.session.get(null);return {plain:!!l.apiKey||typeof l.deviceKey==='string',vault:!!l.encryptedKey,session:!!s.apiKey,leak:JSON.stringify(l).includes('sk-test-fixture-not-a-real-secret')||JSON.stringify(l).includes('fixture-only password 2026')}});
+const stats=()=>worker.evaluate(async()=>{const raw=await chrome.storage.local.get(null),l=raw.serviceProfiles.find(p=>p.id===raw.activeServiceId),s=(await chrome.storage.session.get('serviceSessions')).serviceSessions?.[raw.activeServiceId]||{};return {plain:!!l.apiKey||typeof l.deviceKey==='string',vault:!!l.encryptedKey,session:!!s.apiKey,leak:JSON.stringify(l).includes('sk-test-fixture-not-a-real-secret')||JSON.stringify(l).includes('fixture-only password 2026')}});
 try {
  await boot();assert.equal((await config()).storageMode,'device');assert.equal(await options.locator('#storage-mode').inputValue(),'device');check('fresh install defaults to device persistence without an unlock password');
- await worker.evaluate(async key=>{await chrome.storage.local.set({apiKey:key,settings:{model:'gpt-6-luna',language:'日本語',blockedHosts:[]}});await chrome.storage.session.clear()},fake);
+ await worker.evaluate(async key=>{await chrome.storage.local.remove(['serviceProfiles','activeServiceId']);await chrome.storage.local.set({apiKey:key,settings:{model:'gpt-6-luna',language:'日本語',blockedHosts:[]}});await chrome.storage.session.clear()},fake);
  await context.close();await boot();
  let c=await config();assert(c.hasKey&&c.migrated&&!c.remember);assert.equal(c.settings.language,'日本語');assert.equal((await stats()).plain,false);check('legacy plaintext migrates to session and preserves old language before persistent deletion');
  const denied=await options.evaluate(()=>new Promise(resolve=>{const p=chrome.runtime.connect({name:'lingo-task'});p.onMessage.addListener(e=>{if(e.type==='error'){resolve(e.error);p.disconnect()}});p.postMessage({type:'run',task:{id:'consent',text:'A test sentence.',mode:'translate',language:'English'}})}));
@@ -33,16 +33,16 @@ try {
  c=await save({remember:false,dataConsent:true});assert(c.hasKey&&!c.hasVault);assert.deepEqual(await stats(),{plain:false,vault:false,session:true,leak:false});check('session-only mode removes the encrypted persistent copy');
  await msg({type:'deleteKey'});assert.deepEqual(await stats(),{plain:false,vault:false,session:false,leak:false});check('delete clears both credential stores');
 
- await options.reload();await options.locator('#storage-mode').selectOption('device');
+ await options.reload();await options.locator('#key-options').evaluate(el=>el.open=true);await options.locator('#storage-mode').selectOption('device');
  await options.getByLabel('API Key',{exact:true}).fill(fake);await options.getByRole('button',{name:'保存设置',exact:true}).click();
- await options.getByText('已记住 Key，本机自动加密，重启 Chrome 后无需解锁。',{exact:true}).waitFor();
+ await options.locator('#key-status').filter({hasText:'Key 已配置'}).waitFor();
  assert.equal(await options.getByLabel('API Key',{exact:true}).inputValue(),'');assert.deepEqual(await stats(),{plain:false,vault:false,session:true,leak:false});check('device mode saves through UI without password or extra checkbox and clears key input');
  await context.close();await boot();c=await config();assert(c.hasKey&&!c.hasVault&&c.storageMode==='device');assert.equal(await options.locator('#unlock-section').isVisible(),false);check('device key survives real browser restart without unlocking');
  const keyMetadata=()=>worker.evaluate(()=>new Promise((resolve,reject)=>{const r=indexedDB.open('lingo-device-vault',1);r.onsuccess=()=>{const db=r.result,tx=db.transaction('keys'),q=tx.objectStore('keys').get('aes');tx.oncomplete=()=>{const k=q.result;db.close();resolve(k?{type:k.type,algorithm:k.algorithm.name,length:k.algorithm.length,extractable:k.extractable}:null)};tx.onerror=()=>reject(tx.error)};r.onerror=()=>reject(r.error)}));
  assert.deepEqual(await keyMetadata(),{type:'secret',algorithm:'AES-GCM',length:256,extractable:false});check('device AES-256 key survives as a non-extractable CryptoKey in extension IndexedDB');
- const record=await worker.evaluate(async()=>(await chrome.storage.local.get('deviceKey')).deviceKey);
- await worker.evaluate(async record=>{await chrome.storage.local.set({deviceKey:{...record,ciphertext:(record.ciphertext[0]==='A'?'B':'A')+record.ciphertext.slice(1)}})},record);
- c=await config();assert(c.deviceError&&!c.hasKey);await worker.evaluate(record=>chrome.storage.local.set({deviceKey:record}),record);c=await config();assert(c.hasKey&&!c.deviceError);check('tampered device ciphertext fails closed and restores without leaking credentials');
+ const record=await worker.evaluate(async()=>(await chrome.storage.local.get('serviceProfiles')).serviceProfiles[0].deviceKey);
+ await worker.evaluate(async record=>{const {serviceProfiles}=await chrome.storage.local.get('serviceProfiles');serviceProfiles[0].deviceKey={...record,ciphertext:(record.ciphertext[0]==='A'?'B':'A')+record.ciphertext.slice(1)};await chrome.storage.local.set({serviceProfiles})},record);
+ c=await config();assert(c.deviceError&&!c.hasKey);await worker.evaluate(async record=>{const {serviceProfiles}=await chrome.storage.local.get('serviceProfiles');serviceProfiles[0].deviceKey=record;await chrome.storage.local.set({serviceProfiles})},record);c=await config();assert(c.hasKey&&!c.deviceError);check('tampered device ciphertext fails closed and restores without leaking credentials');
  assert(!JSON.stringify(c).includes(fake)&&!('deviceKey' in c));check('device credentials are excluded from public config');
  assert.match((await msg({type:'lock'})).error,/免解锁/);assert((await config()).hasKey);check('device mode cannot misleadingly report a password lock');
  c=await save({storageMode:'encrypted',password:'short',passwordConfirm:'short'});assert(c.error);assert.equal((await config()).hasKey,true);assert.equal((await config()).storageMode,'device');check('failed encryption conversion preserves remembered key');
@@ -52,5 +52,10 @@ try {
  c=await save({storageMode:'session'});assert(c.hasKey&&!c.hasVault);assert.deepEqual(await stats(),{plain:false,vault:false,session:true,leak:false});
  await context.close();await boot();c=await config();assert(!c.hasKey&&c.storageMode==='session');check('session mode removes persistent copies and remains selected after restart');
  c=await save({storageMode:'device',deviceConsent:true,key:fake});assert(c.hasKey);await msg({type:'deleteKey'});await context.close();await boot();c=await config();assert(!c.hasKey&&!c.hasVault);assert.deepEqual(await stats(),{plain:false,vault:false,session:false,leak:false});assert.equal(await keyMetadata(),null);check('deleting device credentials also deletes the automatic decryption key across restart');
+ c=await save({storageMode:'encrypted',key:fake,password,passwordConfirm:password,dataConsent:true});
+ await worker.evaluate(async()=>{const {serviceProfiles,settings}=await chrome.storage.local.get(null),p=serviceProfiles[0];await chrome.storage.local.set({settings,encryptedKey:p.encryptedKey,keyStorageMode:p.storageMode,dataConsent:1,credentialBaseUrl:p.baseUrl,consentBaseUrl:p.baseUrl});await chrome.storage.local.remove(['serviceProfiles','activeServiceId']);await chrome.storage.session.clear()});
+ await context.close();await boot();c=await config();assert(c.hasVault&&!c.hasKey&&c.storageMode==='encrypted');assert((await msg({type:'unlock',password})).hasKey);check('previous single-profile password vault migrates without re-encryption or downgrade');
+ await save({storageMode:'device'});await worker.evaluate(async()=>{const {serviceProfiles,settings}=await chrome.storage.local.get(null),p=serviceProfiles[0];await chrome.storage.local.set({settings,deviceKey:p.deviceKey,keyStorageMode:p.storageMode,dataConsent:1,credentialBaseUrl:p.baseUrl,consentBaseUrl:p.baseUrl});await chrome.storage.local.remove(['serviceProfiles','activeServiceId']);await chrome.storage.session.clear()});
+ await context.close();await boot();c=await config();assert(c.hasKey&&c.storageMode==='device'&&c.profiles.length===1&&c.activeServiceId===c.profileId);assert.equal(await worker.evaluate(async()=>!!(await chrome.storage.local.get('deviceKey')).deviceKey),false);check('previous single-profile automatic vault migrates and old singleton fields are removed');
  await mkdir('../evidence',{recursive:true});await writeFile('../evidence/security-results.json',JSON.stringify({extensionVersion:await worker.evaluate(()=>chrome.runtime.getManifest().version),checks,apiRequests:requests,fixtureOnly:true},null,2));
 } finally {await context?.close();await rm(temp,{recursive:true,force:true})}

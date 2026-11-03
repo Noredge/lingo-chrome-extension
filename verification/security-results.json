@@ -1,5 +1,5 @@
 {
-  "extensionVersion": "0.9.0",
+  "extensionVersion": "0.9.1",
   "checks": [
     "fresh install defaults to device persistence without an unlock password",
     "legacy plaintext migrates to session and preserves old language before persistent deletion",
@@ -25,7 +25,9 @@
     "locked vault is preserved until user unlocks or supplies replacement key",
     "unlocked encrypted key can switch to device mode without retyping key",
     "session mode removes persistent copies and remains selected after restart",
-    "deleting device credentials also deletes the automatic decryption key across restart"
+    "deleting device credentials also deletes the automatic decryption key across restart",
+    "previous single-profile password vault migrates without re-encryption or downgrade",
+    "previous single-profile automatic vault migrates and old singleton fields are removed"
   ],
   "apiRequests": 0,
   "fixtureOnly": true

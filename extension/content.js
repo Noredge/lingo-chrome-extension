@@ -131,7 +131,6 @@
     "结果过长，请缩短原文后重试。": ["結果過長，請縮短原文後重試。", "The result is too long. Shorten the source text and retry."],
     "结果未生成完整，请缩短原文后重试。": ["結果未生成完整，請縮短原文後重試。", "The result is incomplete. Shorten the source text and retry."],
     "模型返回了工具调用，未返回可用文字。": ["模型返回了工具呼叫，未返回可用文字。", "The model returned a tool call instead of usable text."],
-    "服务返回格式不正确，需要 Chat Completions 格式。": ["服務返回格式不正確，需要 Chat Completions 格式。", "Unexpected response format. Chat Completions format is required."],
     "服务未返回内容，请重试。": ["服務未返回內容，請重試。", "The service returned no content. Please retry."],
     "连接中断，结果未完整返回，请重试。": ["連線中斷，結果未完整返回，請重試。", "Connection interrupted before the result completed. Please retry."],
     "模型返回了空结果，请重试。": ["模型返回了空結果，請重試。", "The model returned an empty result. Please retry."],
@@ -229,7 +228,6 @@
     "跟随浏览器": ["跟隨瀏覽器", "Follow browser"],
     "连接 API 服务": ["連線 API 服務", "Connect an API service"],
     "翻译、校对和改写，共用一个连接。": ["翻譯、校對和改寫，共用一個連線。", "One connection for translation, proofreading and rewriting."],
-    "填写 API 根地址，例如 https://api.openai.com/v1 或 https://api.deepseek.com。自动追加 /chat/completions。更换地址需重新填写对应 Key。": ["填寫 API 根地址，例如 https://api.openai.com/v1 或 https://api.deepseek.com。自動追加 /chat/completions。更換地址需重新填寫對應 Key。", "Enter the API base, e.g. https://api.openai.com/v1 or https://api.deepseek.com. /chat/completions is appended automatically. A new address requires its own Key."],
     "旧版明文 Key 已转为仅本次会话可用，并从本机持久存储中移除。请选择“记住 Key，免解锁”或加密保存；仅本次会话模式会在浏览器关闭后清除 Key。": ["舊版明文 Key 已轉為僅本次會話可用，並從本機持久儲存中移除。請選擇“記住 Key，免解鎖”或加密儲存；僅本次會話模式會在瀏覽器關閉後清除 Key。", "Your legacy plaintext Key was moved to session-only storage and removed from persistent storage. Choose remember mode or password encryption; session-only mode clears the Key when Chrome closes."],
     "本机解锁密码": ["本機解鎖密碼", "Local unlock password"],
     "解锁": ["解鎖", "Unlock"],
@@ -247,7 +245,6 @@
     "阅读完整隐私政策 ↗": ["閱讀完整隱私政策 ↗", "Read the full privacy policy ↗"],
     "我同意将选中文字和修改要求发送给所选服务 处理": ["我同意將選中文字和修改要求傳送給所選服務 處理", "I agree to send selected text and editing instructions to the selected service"],
     "模型": ["模型", "Model"],
-    "需支持 Chat Completions 格式；填写服务商提供的模型名称。": ["需支援 Chat Completions 格式；填寫服務商提供的模型名稱。", "Requires Chat Completions format. Enter the model name from your provider."],
     "浮窗翻译语言": ["浮窗翻譯語言", "Panel translation languages"],
     "只把常用语言放进浮窗，随时添加或移除。": ["只把常用語言放進浮窗，隨時新增或移除。", "Keep your frequent languages in the panel. Add or remove them anytime."],
     "浮窗中的语言": ["浮窗中的語言", "Languages in the panel"],
@@ -302,7 +299,39 @@
     "自定义修改要求": ["自定義修改要求", "Custom editing request"],
     "试试：更委婉一点…": ["試試：更委婉一點…", "Try: make this more polite…"],
     "执行自定义改写": ["執行自定義改寫", "Run custom rewrite"],
-    "仅发送选中文字": ["僅傳送選中文字", "Only selected text is sent"]
+    "仅发送选中文字": ["僅傳送選中文字", "Only selected text is sent"],
+    "API 用量按服务商规则计费。": ["API 用量按服務商規則計費。", "API usage is billed by your provider."],
+    "Key 与此服务地址绑定。": ["Key 與此服務地址繫結。", "The Key is bound to this service address."],
+    "使用 Responses API，自动追加 /responses。": ["使用 Responses API，自動追加 /responses。", "Uses Responses API. /responses is appended automatically."],
+    "使用中": ["使用中", "Active"],
+    "保存多套连接，在这里选择使用哪一套。": ["儲存多套連線，在這裡選擇使用哪一套。", "Save connections and choose which one to use here."],
+    "保存方式": ["儲存方式", "Storage mode"],
+    "保留现有密码时留空。": ["保留現有密碼時留空。", "Leave blank to keep your current password."],
+    "允许将选中文字发送给此服务": ["允許將選中文字傳送給此服務", "Allow selected text to be sent to this service"],
+    "先保存，再测试；测试不会切换当前服务。": ["先儲存，再測試；測試不會切換當前服務。", "Save before testing. Testing does not switch the active service."],
+    "删除这套服务配置及其中保存的 Key？": ["刪除這套服務配置及其中儲存的 Key？", "Delete this service profile and its saved Key?"],
+    "删除配置": ["刪除配置", "Delete profile"],
+    "原有连接已保留为一套服务配置。": ["原有連線已保留為一套服務配置。", "Your existing connection has been preserved as a service profile."],
+    "启用此配置": ["啟用此配置", "Use this profile"],
+    "在 PDF 中选中文字，然后右键用 Lingo 翻译。": ["在 PDF 中選中文字，然後右鍵用 Lingo 翻譯。", "Select text in the PDF, then right-click to translate with Lingo."],
+    "已切换服务。后续请求使用此配置。": ["已切換服務。後續請求使用此配置。", "Service switched. New requests will use this profile."],
+    "已删除服务配置。": ["已刪除服務配置。", "Service profile deleted."],
+    "常用语言列表，与界面语言独立。": ["常用語言列表，與介面語言獨立。", "Your translation languages, independent of the interface language."],
+    "当前使用：": ["當前使用：", "Active service: "],
+    "找不到这套服务配置，请重新选择。": ["找不到這套服務配置，請重新選擇。", "Service profile not found. Please select another."],
+    "新增": ["新增", "Add new"],
+    "新配置尚未启用，保存后可测试连接。": ["新配置尚未啟用，儲存後可測試連線。", "New profile added. Save to test it; activate it when ready."],
+    "最多保存 20 套服务配置。": ["最多儲存 20 套服務配置。", "You can save up to 20 service profiles."],
+    "服务未返回完整的 Responses 结果。": ["服務未返回完整的 Responses 結果。", "The service did not return a complete Responses result."],
+    "服务返回格式不正确，需要 Responses API 格式。": ["服務返回格式不正確，需要 Responses API 格式。", "Invalid response format. Responses API is required."],
+    "服务配置": ["服務配置", "Service profiles"],
+    "本机自动加密，适合自己的电脑。详细说明见隐私政策。": ["本機自動加密，適合自己的電腦。詳細說明見隱私政策。", "Encrypted automatically on this device. Best for your own computer. See the privacy policy for details."],
+    "管理指定站点": ["管理指定站點", "Manage individual sites"],
+    "网页划词后点击「文」。PDF 选中文字后，右键用 Lingo 翻译。": ["網頁劃詞後點選「文」。PDF 選中文字後，右鍵用 Lingo 翻譯。", "On webpages, select text and click 文. In PDFs, select text and right-click to translate with Lingo."],
+    "请先保存修改，再启用此配置。": ["請先儲存修改，再啟用此配置。", "Save your changes before activating this profile."],
+    "请先启用另一套服务，再删除当前配置。": ["請先啟用另一套服務，再刪除當前配置。", "Activate another service before deleting the current profile."],
+    "请填写 1–60 个字符的配置名称。": ["請填寫 1–60 個字元的配置名稱。", "Enter a profile name of 1–60 characters."],
+    "配置名称": ["配置名稱", "Profile name"]
   };
   const roots = /* @__PURE__ */ new Set();
   const nodes = /* @__PURE__ */ new WeakMap();
@@ -563,18 +592,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
     if (edge.includes("s")) bottom = clamp(bottom + dy, top + minH, viewport.height - MARGIN);
     return { left, top, width: right - left, height: bottom - top };
   }
-  if (!window.__lingoInstalled) {
-    window.__lingoInstalled = true;
-    init();
-  }
-  function init() {
+  function createPanel(options = {}) {
+    const docked = !!options.container;
     const host = document.createElement("div");
     host.id = "lingo-extension-root";
-    host.style.cssText = "all:initial!important;position:fixed!important;left:0!important;top:0!important;width:0!important;height:0!important;z-index:2147483647!important;color-scheme:light!important";
+    host.style.cssText = docked ? "display:block;height:100%;color-scheme:light" : "all:initial!important;position:fixed!important;left:0!important;top:0!important;width:0!important;height:0!important;z-index:2147483647!important;color-scheme:light!important";
     const root = host.attachShadow({ mode: "open" });
     localize(root);
     const style = document.createElement("style");
-    style.textContent = css;
+    style.textContent = css + (docked ? ".panel{position:relative;inset:auto!important;width:100%;height:100%;min-width:0;min-height:0;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none}.drag-handle{cursor:default}.model{max-width:45%}.result{max-height:none}.panel .source[hidden]{display:none!important}" : "");
     root.append(style);
     const launcher = document.createElement("button");
     launcher.className = "launcher";
@@ -596,7 +622,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
     <footer><span class="notice" role="status">仅发送选中文字</span><span class="model" translate="no"></span></footer>`;
     const $ = (s) => panel.querySelector(s);
     const language = $(".language");
-    const edges = ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
+    const edges = docked ? [] : ["n", "s", "e", "w", "ne", "nw", "se", "sw"];
     const edgeNames = { n: "上边", s: "下边", e: "右边", w: "左边", ne: "右上角", nw: "左上角", se: "右下角", sw: "左下角" };
     for (const edge of edges) {
       const handle = document.createElement("button");
@@ -613,6 +639,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       b.dataset.mode = mode;
       $(".presets").append(b);
     });
+    let profileId = "";
     let settings = { ...DEFAULTS }, hasKey = false, hasVault = false, snap = null;
     let candidate = null, generation = 0, selectedMode = "proofread";
     let composing = false, lastPointer = { x: 30 }, activeWriting = "", activeTranslation = "";
@@ -621,7 +648,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       try {
         const c = await chrome.runtime.sendMessage({ type: "config" });
         if (c?.settings) {
-          const serviceChanged = settings.baseUrl !== c.settings.baseUrl || settings.model !== c.settings.model;
+          const serviceChanged = profileId !== c.profileId || settings.baseUrl !== c.settings.baseUrl || settings.model !== c.settings.model;
+          profileId = c.profileId;
           settings = c.settings;
           setLanguage(settings.uiLanguage);
           if (serviceChanged && !panel.hidden) close();
@@ -640,12 +668,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       }));
       language.value = settings.language;
       $(".model").textContent = new URL(settings.baseUrl).host + " · " + settings.model;
-      $(".model").setAttribute("title", settings.baseUrl + "/chat/completions");
+      $(".model").setAttribute("title", settings.baseUrl + "/responses");
       if (settings.blockedHosts.includes(location.hostname)) close();
     }
     void config();
     function mount() {
-      if (!host.isConnected) document.documentElement.append(host);
+      if (!host.isConnected) (options.container || document.documentElement).append(host);
     }
     function blocked() {
       return settings.blockedHosts.includes(location.hostname);
@@ -657,12 +685,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
     let gesture = null;
     const clamp2 = (n, min, max) => Math.max(min, Math.min(n, Math.max(min, max)));
     function fitPanel() {
-      if (panel.hidden) return;
+      if (panel.hidden || docked) return;
       const r = panel.getBoundingClientRect();
       panel.style.left = `${clamp2(r.left, 10, innerWidth - r.width - 10)}px`;
       panel.style.top = `${clamp2(r.top, 10, innerHeight - r.height - 10)}px`;
     }
     function position(el, rect) {
+      if (docked) return;
       if (el === panel && moved) {
         fitPanel();
         return;
@@ -683,6 +712,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       panel.style.height = `${r.height}px`;
     }
     function resetLayout() {
+      if (docked) {
+        close();
+        return;
+      }
       moved = false;
       panel.style.width = "";
       panel.style.height = "";
@@ -730,7 +763,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
         }
       });
     }
-    layoutControl($(".drag-handle"), "move");
+    if (!docked) layoutControl($(".drag-handle"), "move");
     for (const edge of edges) layoutControl($(`[data-edge="${edge}"]`), edge);
     new ResizeObserver(() => {
       if (!panel.hidden && snap) position(panel, snap.rect);
@@ -753,6 +786,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       panel.hidden = launcher.hidden = true;
       for (const selector of [".source-text", ".translate-text", ".write-text", ".translate-status", ".write-status", ".translate-actions", ".write-actions"]) $(selector).replaceChildren();
       $(".custom input").value = "";
+      if (docked) {
+        panel.hidden = false;
+        $(".source").hidden = true;
+        $(".write-output").hidden = true;
+        $(".translate-status").textContent = "在 PDF 中选中文字，然后右键用 Lingo 翻译。";
+      }
     }
     function scan() {
       if (composing || blocked() || !panel.hidden || root.activeElement) return;
@@ -767,6 +806,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       position(launcher, candidate.rect);
     }
     function show(snapshot) {
+      $(".source").hidden = false;
       generation++;
       stopAll();
       snap?.cleanup?.();
@@ -920,7 +960,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
           });
         }));
         actions.append(button("打开设置", () => {
-          void chrome.runtime.sendMessage({ type: "options" });
+          void chrome.runtime.sendMessage({ type: "options" }).catch(() => notify("扩展已更新，请刷新网页后使用。"));
         }));
       }
       if (r.state === "done") {
@@ -963,9 +1003,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
     });
     panel.addEventListener("click", (e) => {
       const b = e.target.closest("button");
-      if (b?.dataset.action === "close") close();
+      if (b?.dataset.action === "close") {
+        close();
+        options.onClose?.();
+      }
       if (b?.dataset.action === "reset-layout") resetLayout();
-      if (b?.dataset.action === "settings") void chrome.runtime.sendMessage({ type: "options" });
+      if (b?.dataset.action === "settings") void chrome.runtime.sendMessage({ type: "options" }).catch(() => notify("扩展已更新，请刷新网页后使用。"));
       if (b?.dataset.mode) start(b.dataset.mode);
     });
     language.addEventListener("change", () => start("translate"));
@@ -974,68 +1017,85 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       const input = $(".custom input");
       if (input.value.trim()) start("custom", input.value.trim());
     });
-    document.addEventListener("pointerdown", (e) => {
-      if (e.composedPath().includes(host)) return;
-      lastPointer = { x: e.clientX, y: e.clientY };
-      if (!panel.hidden) close();
-    }, true);
-    document.addEventListener("pointerup", (e) => {
-      if (!e.composedPath().includes(host)) setTimeout(scan, 0);
-    }, true);
-    document.addEventListener("keyup", (e) => {
-      if (!e.composedPath().includes(host) && e.key !== "Escape") setTimeout(scan, 0);
-    }, true);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && (!panel.hidden || !launcher.hidden)) {
-        close();
-        e.stopPropagation();
-      }
-    }, true);
-    document.addEventListener("compositionstart", () => {
-      composing = true;
-      launcher.hidden = true;
-    }, true);
-    document.addEventListener("compositionend", () => {
-      composing = false;
-    }, true);
-    document.addEventListener("input", (e) => {
-      if (!e.composedPath().includes(host) && !panel.hidden) {
-        if (snap?.target) snap.stale = true;
-        render2();
-      }
-    }, true);
-    document.addEventListener("scroll", (e) => {
-      if (!e.composedPath().includes(host)) launcher.hidden = true;
-    }, true);
-    window.addEventListener("resize", () => {
-      launcher.hidden = true;
-      if (!panel.hidden && snap) position(panel, snap.rect);
-    });
-    chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
-      if (msg.type === "refreshConfig") {
-        void config();
-        return;
-      }
-      if (msg.type === "open") {
-        void config().then(() => {
-          if (blocked()) {
-            reply({ ok: false, error: "此站点已暂停，请从 Lingo 菜单重新启用。" });
-            return;
-          }
-          if (sensitiveFieldActive()) {
-            reply({ ok: false, error: "请先在非密码区域选中文字。" });
-            return;
-          }
-          const s = capture() || candidate || (msg.fallback ? { text: String(msg.fallback), kind: "read", rect: new DOMRect(30, 50, 0, 20) } : null);
-          if (!s || !s.text.trim() || s.text.length > MAX_TEXT) {
-            reply({ ok: false, error: "请先选中 1–16,000 个字符，再打开 Lingo。" });
-            return;
-          }
-          show(s);
-          reply({ ok: true });
-        });
-        return true;
-      }
-    });
+    if (!docked) {
+      document.addEventListener("pointerdown", (e) => {
+        if (e.composedPath().includes(host)) return;
+        lastPointer = { x: e.clientX, y: e.clientY };
+        if (!panel.hidden) close();
+      }, true);
+      document.addEventListener("pointerup", (e) => {
+        if (!e.composedPath().includes(host)) setTimeout(scan, 0);
+      }, true);
+      document.addEventListener("keyup", (e) => {
+        if (!e.composedPath().includes(host) && e.key !== "Escape") setTimeout(scan, 0);
+      }, true);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && (!panel.hidden || !launcher.hidden)) {
+          close();
+          e.stopPropagation();
+        }
+      }, true);
+      document.addEventListener("compositionstart", () => {
+        composing = true;
+        launcher.hidden = true;
+      }, true);
+      document.addEventListener("compositionend", () => {
+        composing = false;
+      }, true);
+      document.addEventListener("input", (e) => {
+        if (!e.composedPath().includes(host) && !panel.hidden) {
+          if (snap?.target) snap.stale = true;
+          render2();
+        }
+      }, true);
+      document.addEventListener("scroll", (e) => {
+        if (!e.composedPath().includes(host)) launcher.hidden = true;
+      }, true);
+      window.addEventListener("resize", () => {
+        launcher.hidden = true;
+        if (!panel.hidden && snap) position(panel, snap.rect);
+      });
+      chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
+        if (msg.type === "refreshConfig") {
+          void config();
+          return;
+        }
+        if (msg.type === "open") {
+          void config().then(() => {
+            if (blocked()) {
+              reply({ ok: false, error: "此站点已暂停，请从 Lingo 菜单重新启用。" });
+              return;
+            }
+            if (sensitiveFieldActive()) {
+              reply({ ok: false, error: "请先在非密码区域选中文字。" });
+              return;
+            }
+            const s = capture() || candidate || (msg.fallback ? { text: String(msg.fallback), kind: "read", rect: new DOMRect(30, 50, 0, 20) } : null);
+            if (!s || !s.text.trim() || s.text.length > MAX_TEXT) {
+              reply({ ok: false, error: "请先选中 1–16,000 个字符，再打开 Lingo。" });
+              return;
+            }
+            show(s);
+            reply({ ok: true });
+          });
+          return true;
+        }
+      });
+    }
+    if (docked) {
+      for (const attr of ["tabindex", "aria-label", "title"]) $(".drag-handle").removeAttribute(attr);
+      mount();
+      close();
+      $('[data-action="reset-layout"]').setAttribute("title", "清除");
+      $('[data-action="reset-layout"]').setAttribute("aria-label", "清除");
+    }
+    return { clear: close, refresh: config, showText: async (text) => {
+      await config();
+      show({ text, kind: "read", rect: new DOMRect() });
+    } };
+  }
+  if (!window.__lingoInstalled) {
+    window.__lingoInstalled = true;
+    createPanel();
   }
 })();

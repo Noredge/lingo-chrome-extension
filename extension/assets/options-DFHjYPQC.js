@@ -1,13 +1,16 @@
-import { l as localize, s as setLanguage, t } from "./i18n-BW9HZsYX.js";
-import { D as DEFAULTS, n as normalizeBaseUrl, a as apiOrigin, L as LANGUAGES } from "./core-DItjoKfo.js";
+import { l as localize, s as setLanguage, t } from "./i18n-C0rG16O5.js";
+/* empty css            */
+import { D as DEFAULTS, n as normalizeBaseUrl, a as apiOrigin, L as LANGUAGES } from "./core-D6yPLxNU.js";
 document.querySelector(".version").textContent = chrome.runtime.getManifest().version_name || chrome.runtime.getManifest().version;
 localize(document);
 const base = document.getElementById("base-url");
 const ui = document.getElementById("ui-language");
-let savedBase = "", savedModel = "", allGranted = false;
+let savedBase = "", savedModel = "", savedName = "", allGranted = false, profileId = "", activeProfileId = "";
+const profileSelect = document.getElementById("profile");
+const profileName = document.getElementById("profile-name");
 function destination() {
   try {
-    document.getElementById("destination").textContent = t("数据传送到：") + normalizeBaseUrl(base.value) + "/chat/completions";
+    document.getElementById("destination").textContent = t("数据传送到：") + normalizeBaseUrl(base.value) + "/responses";
   } catch {
     document.getElementById("destination").textContent = t("请检查 Base URL。");
   }
@@ -22,6 +25,7 @@ base.addEventListener("input", () => {
 ui.addEventListener("change", () => {
   setLanguage(ui.value);
   destination();
+  void message({ type: "setUiLanguage", uiLanguage: ui.value }).catch((e) => status("save-status", e.message, true));
 });
 const $ = (id) => document.getElementById(id);
 const key = $("api-key"), model = $("model"), language = $("language"), storageMode = $("storage-mode");
@@ -94,6 +98,25 @@ function drawStorage() {
   $("storage-help").textContent = mode === "device" ? "保存一次，重启 Chrome 后也可直接使用，无需解锁。" : mode === "encrypted" ? "重启 Chrome 或重载扩展后解锁一次，之后的划词与打开浮窗都不需要重复输入密码。" : "关闭浏览器或重载扩展后，需要重新填写 Key。";
 }
 function draw(c) {
+  profileId = c.profileId;
+  activeProfileId = c.activeServiceId;
+  profileName.value = savedName = c.profileName;
+  profileSelect.replaceChildren(...c.profiles.map((p) => {
+    const o = new Option(p.name, p.id);
+    o.translate = false;
+    return o;
+  }));
+  profileSelect.value = profileId;
+  const active = c.profiles.find((p) => p.id === activeProfileId);
+  const prefix = document.createElement("span");
+  prefix.textContent = "当前使用：";
+  const activeName = document.createElement("span");
+  activeName.translate = false;
+  activeName.textContent = active?.name || "";
+  $("active-profile").replaceChildren(prefix, activeName);
+  $("activate-profile").disabled = profileId === activeProfileId;
+  $("activate-profile").textContent = profileId === activeProfileId ? "使用中" : "启用此配置";
+  $("delete-profile").disabled = profileId === activeProfileId;
   base.value = savedBase = c.settings.baseUrl;
   savedModel = c.settings.model;
   ui.value = c.settings.uiLanguage;
@@ -105,8 +128,8 @@ function draw(c) {
   storageMode.value = c.storageMode;
   $("key-status").textContent = c.hasKey ? "Key 已配置" : c.hasVault ? "Key 已锁定" : "尚未配置 Key";
   $("key-status").classList.toggle("connected", c.hasKey);
-  key.placeholder = c.hasKey ? "已保存 · 留空保留，输入新 Key 可替换" : "sk-…";
-  $("key-hint").textContent = c.deviceError ? "本机凭据无法读取，请重新填写 API Key 并保存。" : c.storageMode === "device" && c.hasKey ? "已记住 Key，本机自动加密，重启 Chrome 后无需解锁。" : c.hasVault ? c.hasKey ? "已加密保存到本机，本次会话已解锁。" : "已加密保存到本机，请输入解锁密码。" : c.hasKey ? "仅保留在本次浏览器会话，不写入磁盘。" : "Key 仅在扩展后台使用，不会传给网页脚本。";
+  key.placeholder = c.hasKey || c.hasVault ? "已保存 · 留空保留，输入新 Key 可替换" : "API Key";
+  $("key-hint").textContent = c.deviceError ? "本机凭据无法读取，请重新填写 API Key 并保存。" : c.hasVault && !c.hasKey ? "Key 已锁定" : c.hasKey ? "Key 已配置" : "Key 与此服务地址绑定。";
   $("migration-note").hidden = !c.migrated;
   $("unlock-section").hidden = !c.hasVault || c.hasKey;
   drawStorage();
@@ -135,7 +158,7 @@ function draw(c) {
   }
 }
 async function load() {
-  draw(await message({ type: "config" }));
+  draw(await message({ type: profileId ? "serviceConfig" : "config", profileId: profileId || void 0 }));
   await sites();
 }
 void load().catch((e) => status("save-status", e.message, true));
@@ -147,7 +170,7 @@ $("settings-form").addEventListener("submit", async (e) => {
     const normalized = normalizeBaseUrl(base.value);
     const granted = await chrome.permissions.request({ origins: [apiOrigin(normalized)] });
     if (!granted) throw new Error("未授权 API 服务，设置未保存。");
-    const c = await message({ type: "save", baseUrl: normalized, uiLanguage: ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === "device", password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
+    const c = await message({ type: "save", profileId, name: profileName.value.trim(), baseUrl: normalized, uiLanguage: ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === "device", password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
     clearCredentialInputs();
     draw(c);
     status("save-status", "设置已保存。已打开的窗口可点击重试，或关闭后重新划词。");
@@ -162,7 +185,7 @@ $("unlock-key").addEventListener("click", async () => {
   const password = $("unlock-password"), button = $("unlock-key");
   button.disabled = true;
   try {
-    draw(await message({ type: "unlock", password: password.value }));
+    draw(await message({ type: "unlock", profileId, password: password.value }));
     status("save-status", "已解锁，本次浏览器会话可用。");
   } catch (e) {
     status("save-status", e.message, true);
@@ -179,7 +202,7 @@ $("unlock-password").addEventListener("keydown", (e) => {
 });
 $("lock-key").addEventListener("click", async () => {
   try {
-    draw(await message({ type: "lock" }));
+    draw(await message({ type: "lock", profileId }));
     clearCredentialInputs();
     status("save-status", "已清除会话中的 Key 并停止正在进行的请求。");
   } catch (e) {
@@ -193,7 +216,7 @@ $("reveal").addEventListener("click", () => {
 $("delete-key").addEventListener("click", async () => {
   if (!confirm(t("删除此扩展保存的 Key？这不会撤销服务商平台上的密钥。"))) return;
   try {
-    draw(await message({ type: "deleteKey" }));
+    draw(await message({ type: "deleteKey", profileId }));
     clearCredentialInputs();
     status("save-status", "已删除扩展中的 Key。");
   } catch (e) {
@@ -209,7 +232,7 @@ $("test").addEventListener("click", () => {
     status("save-status", "测试已停止。");
     return;
   }
-  if (key.value.trim() || base.value.replace(/\/$/, "") !== savedBase || model.value.trim() !== savedModel) {
+  if (key.value.trim() || base.value.replace(/\/$/, "") !== savedBase || model.value.trim() !== savedModel || profileName.value.trim() !== savedName) {
     status("save-status", "请先保存服务地址、模型和 Key，再测试连接。", true);
     return;
   }
@@ -251,7 +274,7 @@ $("test").addEventListener("click", () => {
       if (!complete) status("save-status", "连接已中断，请重试。", true);
     }
   });
-  port.postMessage({ type: "run", task: { id: crypto.randomUUID(), text: "A little clearer, a little better.", mode: "translate", language: language.value } });
+  port.postMessage({ type: "run", profileId, task: { id: crypto.randomUUID(), text: "A little clearer, a little better.", mode: "translate", language: language.value } });
 });
 async function sites() {
   const p = await chrome.permissions.getAll();
@@ -312,4 +335,51 @@ chrome.permissions.onAdded.addListener(() => {
 });
 chrome.permissions.onRemoved.addListener(() => {
   void sites();
+});
+function stopTest() {
+  if (testPort) {
+    testPort.disconnect();
+    testPort = null;
+  }
+  $("test").textContent = "测试连接";
+}
+profileSelect.addEventListener("change", () => {
+  stopTest();
+  clearCredentialInputs();
+  profileId = profileSelect.value;
+  void load().then(() => status("save-status", "")).catch((e) => status("save-status", e.message, true));
+});
+$("new-profile").addEventListener("click", async () => {
+  try {
+    stopTest();
+    clearCredentialInputs();
+    draw(await message({ type: "createProfile" }));
+    status("save-status", "新配置尚未启用，保存后可测试连接。");
+  } catch (e) {
+    status("save-status", e.message, true);
+  }
+});
+$("activate-profile").addEventListener("click", async () => {
+  if (key.value.trim() || base.value.replace(/\/$/, "") !== savedBase || model.value.trim() !== savedModel || profileName.value.trim() !== savedName) {
+    status("save-status", "请先保存修改，再启用此配置。", true);
+    return;
+  }
+  try {
+    stopTest();
+    draw(await message({ type: "activateProfile", profileId }));
+    status("save-status", "已切换服务。后续请求使用此配置。");
+  } catch (e) {
+    status("save-status", e.message, true);
+  }
+});
+$("delete-profile").addEventListener("click", async () => {
+  if (!confirm(t("删除这套服务配置及其中保存的 Key？"))) return;
+  try {
+    stopTest();
+    clearCredentialInputs();
+    draw(await message({ type: "deleteProfile", profileId }));
+    status("save-status", "已删除服务配置。");
+  } catch (e) {
+    status("save-status", e.message, true);
+  }
 });

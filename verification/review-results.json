@@ -1,5 +1,5 @@
 {
-  "extensionVersion": "0.9.0",
+  "extensionVersion": "0.9.1",
   "checks": [
     "ordinary preferences save before entering any API key",
     "locked encrypted key survives a session-only conversion attempt",

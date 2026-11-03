@@ -1,4 +1,5 @@
-import { l as localize, s as setLanguage } from "./i18n-BW9HZsYX.js";
+import { l as localize, s as setLanguage } from "./i18n-C0rG16O5.js";
+/* empty css            */
 localize(document);
 const $ = (id) => document.getElementById(id);
 let tab, origin = "";

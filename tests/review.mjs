@@ -10,7 +10,7 @@ try{
  const msg=data=>options.evaluate(data=>chrome.runtime.sendMessage(data),data);
  const settings={model:'gpt-6-luna',language:'English',languages:['English'],dataConsent:true};
  const save=(extra={})=>msg({type:'save',...settings,storageMode:'device',deviceConsent:true,...extra});
- const reset=async()=>{await worker.evaluate(async()=>{await chrome.storage.local.clear();await chrome.storage.session.clear()});await options.reload();await options.getByRole('heading',{name:'设置你的 Lingo'}).waitFor()};
+ const reset=async()=>{await worker.evaluate(async()=>{const {serviceProfiles}=await chrome.storage.local.get('serviceProfiles');const p={...serviceProfiles[0],storageMode:'device',dataConsent:false};delete p.deviceKey;delete p.encryptedKey;await chrome.storage.local.clear();await chrome.storage.local.set({serviceProfiles:[p],activeServiceId:p.id});await chrome.storage.session.clear()});await options.reload();await options.getByRole('heading',{name:'设置你的 Lingo'}).waitFor()};
  const check=async(name,fn)=>{try{await reset();await fn();checks.push(name);console.log('PASS',name)}catch(e){failures.push({name,error:e.message});console.log('FAIL',name,e.message)}};
  await check('ordinary preferences save before entering any API key',async()=>{const c=await save();assert(!c.error,c.error);assert(!c.hasKey);assert.equal(c.settings.language,'English')});
  await check('locked encrypted key survives a session-only conversion attempt',async()=>{await save({key:fake,storageMode:'encrypted',password,passwordConfirm:password});await msg({type:'lock'});const c=await save({storageMode:'session'});assert.match(c.error||'',/先解锁/);assert((await msg({type:'config'})).hasVault)});
@@ -21,21 +21,21 @@ try{
   const unpause=msg({type:'unblock',host:'example.com'});await Promise.all([saving,unpause]);assert(!(await msg({type:'config'})).settings.blockedHosts.includes('example.com'));
  });
  await check('locking clears unsaved key and password inputs and restores masking',async()=>{
-  await save({key:fake,storageMode:'encrypted',password,passwordConfirm:password});await options.reload();await options.getByText('Key 已配置',{exact:true}).waitFor();
-  await options.locator('#api-key').fill(fake);await options.locator('#reveal').click();await options.locator('#vault-password').fill(password);await options.locator('#vault-confirm').fill(password);await options.locator('#lock-key').click();await options.getByText('Key 已锁定',{exact:true}).waitFor();
+  await save({key:fake,storageMode:'encrypted',password,passwordConfirm:password});await options.reload();await options.locator('#key-status').filter({hasText:'Key 已配置'}).waitFor();
+  await options.locator('#key-options').evaluate(el=>el.open=true);await options.locator('#api-key').fill(fake);await options.locator('#reveal').click();await options.locator('#vault-password').fill(password);await options.locator('#vault-confirm').fill(password);await options.locator('#lock-key').click();await options.locator('#key-status').filter({hasText:'Key 已锁定'}).waitFor();
   for(const selector of ['#api-key','#vault-password','#vault-confirm','#unlock-password'])assert.equal(await options.locator(selector).inputValue(),'');assert.equal(await options.locator('#api-key').getAttribute('type'),'password');
  });
  await check('corrupted automatic vault does not prevent revoking data consent',async()=>{
-  await save({key:fake});await worker.evaluate(async()=>{await chrome.storage.local.set({deviceKey:{version:1,algorithm:'AES-GCM',iv:'AAAA',ciphertext:'AAAA'}});await chrome.storage.session.clear()});
-  const c=await save({dataConsent:false});assert(!c.error,c.error);assert(!c.dataConsent&&c.deviceError);assert(await worker.evaluate(async()=>!!(await chrome.storage.local.get('deviceKey')).deviceKey));
+  await save({key:fake});await worker.evaluate(async()=>{const {serviceProfiles}=await chrome.storage.local.get('serviceProfiles');serviceProfiles[0].deviceKey={version:1,algorithm:'AES-GCM',iv:'AAAA',ciphertext:'AAAA'};await chrome.storage.local.set({serviceProfiles});await chrome.storage.session.clear()});
+  const c=await save({dataConsent:false});assert(!c.error,c.error);assert(!c.dataConsent&&c.deviceError);assert(await worker.evaluate(async()=>!!(await chrome.storage.local.get('serviceProfiles')).serviceProfiles[0].deviceKey));
  });
  await check('deleting a key clears all credential draft inputs',async()=>{
-  await save({key:fake});await options.reload();await options.getByText('Key 已配置',{exact:true}).waitFor();await options.locator('#api-key').fill(fake);await options.locator('#reveal').click();
+  await save({key:fake});await options.reload();await options.locator('#key-status').filter({hasText:'Key 已配置'}).waitFor();await options.locator('#key-options').evaluate(el=>el.open=true);await options.locator('#api-key').fill(fake);await options.locator('#reveal').click();
   options.once('dialog',d=>d.accept());await options.locator('#delete-key').click();await options.getByText('尚未配置 Key',{exact:true}).waitFor();assert.equal(await options.locator('#api-key').inputValue(),'');assert.equal(await options.locator('#api-key').getAttribute('type'),'password');
  });
  await check('Enter in the unlock-password field unlocks rather than submitting settings',async()=>{
-  await save({key:fake,storageMode:'encrypted',password,passwordConfirm:password});await msg({type:'lock'});await options.reload();await options.getByText('Key 已锁定',{exact:true}).waitFor();
-  await options.locator('#unlock-password').fill(password);await options.locator('#unlock-password').press('Enter');await options.getByText('Key 已配置',{exact:true}).waitFor({timeout:3000});assert((await msg({type:'config'})).hasKey);
+  await save({key:fake,storageMode:'encrypted',password,passwordConfirm:password});await msg({type:'lock'});await options.reload();await options.locator('#key-status').filter({hasText:'Key 已锁定'}).waitFor();
+  await options.locator('#unlock-password').fill(password);await options.locator('#unlock-password').press('Enter');await options.locator('#key-status').filter({hasText:'Key 已配置'}).waitFor({timeout:3000});assert((await msg({type:'config'})).hasKey);
  });
  await mkdir('../evidence',{recursive:true});await writeFile('../evidence/review-results.json',JSON.stringify({extensionVersion:await worker.evaluate(()=>chrome.runtime.getManifest().version),checks,failures,fixtureOnly:true},null,2));
  if(failures.length)throw new Error(`${failures.length} review regressions failed`);

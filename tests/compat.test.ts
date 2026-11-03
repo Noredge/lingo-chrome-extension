@@ -1,33 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeBaseUrl, apiOrigin, validKey, readChatResponse, buildRequest} from '../src/core.ts';
+import {normalizeBaseUrl, apiOrigin, validKey, readResponses, buildRequest} from '../src/core.ts';
 import {encryptKey, decryptKey} from '../src/vault.ts';
 import {resolveLanguage, setLanguage, t} from '../src/i18n.ts';
 function stream(events:unknown[], tail = '') { return new Response(events.map(x=>'data: '+JSON.stringify(x)+'\r\n\r\n').join('')+tail,{headers:{'Content-Type':'text/event-stream'}}); }
-const chunk=(content:string, finish_reason:string|null=null)=>({choices:[{index:0,delta:{content},finish_reason}]});
+const chunk=(delta:string)=>({type:'response.output_text.delta',delta});
+const completed={type:'response.completed',response:{status:'completed'}};
 test('base URLs canonicalize the complete path; unsafe credentials and transports rejected',()=>{
- assert.equal(normalizeBaseUrl('https://EXAMPLE.com/v1/chat/completions/'),'https://example.com/v1');
+ assert.equal(normalizeBaseUrl('https://EXAMPLE.com/v1/responses/'),'https://example.com/v1');
  assert.equal(normalizeBaseUrl('https://api.deepseek.com'),'https://api.deepseek.com');
  assert.equal(normalizeBaseUrl('http://localhost:1234/v1/'),'http://localhost:1234/v1');
  assert.equal(apiOrigin('https://example.com:8443/v1'),'https://example.com/*');
  for(const bad of ['http://remote.example/v1','https://user:password@example.com/v1','https://example.com/v1?q=key','https://example.com/#key','file:///tmp','https://example.com\\evil','https://bad .com'])assert.throws(()=>normalizeBaseUrl(bad));
  assert(validKey('provider-key-without-openai-prefix'));assert(!validKey('abc\nAuthorization:test'));
 });
-test('stream parser accepts standard terminal marker, ignores reasoning and usage, preserves Unicode',async()=>{
- let out='';await readChatResponse(stream([{choices:[{index:0,delta:{reasoning_content:'private reasoning'}}]},chunk('你好🌿'),{choices:[],usage:{}}],'data: [DONE]\n\n'),s=>out+=s);assert.equal(out,'你好🌿');
+test('Responses terminal event completes without DONE, ignoring reasoning',async()=>{
+ let out='';await readResponses(stream([{type:'response.reasoning_summary_text.delta',delta:'private'},chunk('你好🌿'),completed]),s=>out+=s);assert.equal(out,'你好🌿');
 });
-test('nonstream JSON accepted; text content parts supported',async()=>{
- let out='';await readChatResponse(Response.json({choices:[{message:{content:[{type:'text',text:'hello'}]},finish_reason:'stop'}]}),s=>out+=s);assert.equal(out,'hello');
+test('Responses JSON and completed-only stream accepted',async()=>{
+ const response={status:'completed',output:[{type:'message',content:[{type:'output_text',text:'hello'}]}]};
+ for(const res of [Response.json(response),stream([{type:'response.completed',response}])]){let out='';await readResponses(res,s=>out+=s);assert.equal(out,'hello');}
 });
-test('truncated, refused, malformed and empty outputs fail closed',async()=>{
- for(const res of [stream([chunk('partial')]),stream([chunk('partial','length')]),stream([chunk('','content_filter')]),stream([{error:{message:'secret'}}]),stream([chunk('','stop')]),new Response('data: nope\n\n'),Response.json({choices:[{message:{content:'partial'},finish_reason:'length'}]})])await assert.rejects(readChatResponse(res,()=>{}));
+test('truncated, refused, malformed, empty and Chat-only outputs fail closed',async()=>{
+ for(const res of [stream([chunk('partial')]),stream([chunk('partial'),{type:'response.incomplete'}]),stream([{type:'response.refusal.done'}]),stream([{type:'error',message:'secret'}]),stream([completed]),new Response('data: nope\n\n'),Response.json({choices:[{message:{content:'Chat-only'},finish_reason:'stop'}]}),stream([{choices:[{delta:{content:'Chat-only'}}]}],'data: [DONE]\n\n'),stream([chunk('partial'),{type:'response.completed',response:{output:[{type:'message',content:[{type:'output_text',text:'different'}]}]}}])])await assert.rejects(readResponses(res,()=>{}));
 });
 test('HTTP error body never escapes into UI',async()=>{
- await assert.rejects(readChatResponse(Response.json({error:{message:'NEVER-EXPOSE-SECRET'}},{status:401}),()=>{}),e=>!String(e).includes('NEVER-EXPOSE-SECRET'));
+ await assert.rejects(readResponses(Response.json({error:{message:'NEVER-EXPOSE-SECRET'}},{status:401}),()=>{}),e=>!String(e).includes('NEVER-EXPOSE-SECRET'));
 });
 test('minimal shared protocol excludes provider-specific request fields',()=>{
  const req=buildRequest({id:'x',text:'Hello',mode:'translate',language:'English'},'provider/model');
- assert.deepEqual(Object.keys(req).sort(),['messages','model','stream']);assert.equal(req.messages[0].role,'system');assert.equal(req.messages[1].role,'user');
+ assert.deepEqual(Object.keys(req).sort(),['input','instructions','max_output_tokens','model','store','stream']);assert.equal(req.store,false);assert.equal(JSON.parse(req.input).source_text,'Hello');
 });
 test('password ciphertext is bound to full normalized service address; legacy is OpenAI-only',async()=>{
  const secret='fixture-compatible-key',password='fixture-only password';
