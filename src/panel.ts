@@ -152,7 +152,7 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     $<HTMLInputElement>('.custom input').value = '';
     $('.write-output').hidden = true;
     $('.source-text').textContent = snapshot.text; $('.count').textContent = `${snapshot.text.length} 字符`;
-    $<HTMLDetailsElement>('.source').open=keepOpen;if(sourceEditor){sourceEditor.value=snapshot.text;$<HTMLButtonElement>('.source-submit').disabled=!snapshot.text.trim()||snapshot.text.length>MAX_TEXT;}
+    $<HTMLDetailsElement>('.source').open=docked||keepOpen;if(sourceEditor){sourceEditor.value=snapshot.text;$<HTMLButtonElement>('.source-submit').disabled=!snapshot.text.trim()||snapshot.text.length>MAX_TEXT;}
     mount(); panel.hidden = false; launcher.hidden = true; position(panel, snapshot.rect);
     notify(docked?'仅发送当前原文 · 此处可复制结果':snapshot.kind === 'read' ? '仅发送选中文字 · 此处可复制结果' : '仅发送选中文字 · 可替换所选部分');
     language.value = targetLanguage;

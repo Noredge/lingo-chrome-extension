@@ -1,4 +1,4 @@
-import { l as localize, s as setLanguage, t } from "./i18n-Cvij1gh3.js";
+import { l as localize, s as setLanguage, t } from "./i18n-BC74gfL5.js";
 /* empty css            */
 import { D as DEFAULTS, n as normalizeBaseUrl, L as LANGUAGES, a as apiOrigin } from "./core-Bo6TdJq8.js";
 document.querySelector(".version").textContent = chrome.runtime.getManifest().version_name || chrome.runtime.getManifest().version;

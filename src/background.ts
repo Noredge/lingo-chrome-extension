@@ -1,4 +1,5 @@
 import { t, setLanguage } from './i18n';
+import {prefersSidebar} from './surfaces';
 import { buildRequest, readResponses, apiOrigin, type Task } from './core';
 import {serviceReady,serviceState,publicServiceConfig,serviceAction} from './services';
 const ready=serviceReady;
@@ -51,7 +52,6 @@ async function openSelection(tabId: number, frameId = 0, fallback = '') {
 // Invoke sidePanel.open synchronously in the actual menu gesture, including Chrome PDF viewer.
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== 'lingo-open' || tab?.id === undefined || !info.selectionText?.trim()) return;
-  if (info.editable) { void openSelection(tab.id, info.frameId || 0, info.selectionText); return; }
   const tabId = tab.id, windowId = tab.windowId;
   const item = {id:crypto.randomUUID(),text:info.selectionText.slice(0,16001),tabId,created:Date.now()};
   // Window-specific one-shot inbox; survives service worker suspension, never local disk storage.
@@ -62,7 +62,11 @@ chrome.tabs.onRemoved.addListener(tabId => {
   void chrome.storage.session.get(null).then(items => chrome.storage.session.remove(Object.keys(items).filter(k => k.startsWith('panel:') && (items[k] as any)?.tabId === tabId)));
 });
 chrome.windows.onRemoved.addListener(id => { void chrome.storage.session.remove('panel:'+id); });
-chrome.commands.onCommand.addListener((command, tab) => { if (command === 'open-selection' && tab?.id) void openSelection(tab.id); });
+chrome.commands.onCommand.addListener((command, tab) => {
+  if(command!=='open-selection'||tab?.id===undefined)return;
+  if(prefersSidebar(tab.url||'')){void chrome.sidePanel.open({windowId:tab.windowId}).catch(()=>{});return;}
+  void openSelection(tab.id);
+});
 
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (sender.id !== chrome.runtime.id) return;

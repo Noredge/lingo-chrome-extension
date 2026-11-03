@@ -1,5 +1,21 @@
-import { l as localize, s as setLanguage } from "./i18n-Cvij1gh3.js";
+import { l as localize, s as setLanguage } from "./i18n-BC74gfL5.js";
 /* empty css            */
+function isGoogleDocs(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname === "docs.google.com" && /^\/document\//.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+function prefersSidebar(url) {
+  try {
+    const u = new URL(url);
+    return isGoogleDocs(url) || !/^https?:$/.test(u.protocol) || /\.pdf$/i.test(u.pathname) || u.hostname === "chromewebstore.google.com" || u.hostname === "chrome.google.com" && u.pathname.startsWith("/webstore");
+  } catch {
+    return true;
+  }
+}
 localize(document);
 const $ = (id) => document.getElementById(id);
 let tab, origin = "";
@@ -21,6 +37,11 @@ async function refresh() {
   const c = await chrome.runtime.sendMessage({ type: "config" });
   setLanguage(c.settings.uiLanguage);
   $("key-state").textContent = !c.dataConsent ? "请在设置中确认数据处理说明" : c.hasKey ? `Key 已就绪 · ${c.settings.model}` : c.hasVault ? "Key 已锁定，请打开设置解锁" : "首次使用：请在设置中填写 API Key";
+  const sidebarOnly = prefersSidebar(tab?.url || "");
+  $("open").hidden = sidebarOnly;
+  $("open-panel").classList.toggle("primary", sidebarOnly);
+  document.querySelector(".actions").hidden = sidebarOnly;
+  if (sidebarOnly) status("此页面使用侧边栏；粘贴原文，或选中文字后右键翻译。");
   const supported = !!tab?.url && /^https?:/.test(tab.url);
   if (supported) {
     const u = new URL(tab.url);

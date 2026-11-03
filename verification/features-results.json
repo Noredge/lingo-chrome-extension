@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-dev.6",
+  "version": "1.0.0-dev.8",
   "checks": [
     "fresh interface follows browser independently of translation target",
     "top-right interface language persists immediately in all three locales",
@@ -19,6 +19,7 @@
     "public configuration exposes metadata only, no Keys or envelopes",
     "API-only grants do not appear as website selection grants",
     "shared sidebar consumes native selection once and renders source/result as literal text",
+    "new right-click selections reopen the source editor, matching an empty manual sidebar",
     "sidebar provides all six floating-panel presets, preserving translation and original source",
     "PDF supports custom writing and copy without offering unsafe document replacement",
     "language switching updates shared panel and settings without changing source or output",
@@ -41,10 +42,11 @@
     "deleting the last active profile removes credentials and leaves a blank default without fallback",
     "manual panel menu entry works without selection or webpage access and calls sidePanel.open in the click gesture without an API request",
     "side panel open failure stays in the menu with a localized retry message",
-    "manual panel entry is available in all three interface languages"
+    "manual panel entry is available in all three interface languages",
+    "Google Docs menu presents the sidebar without floating-selection or site-authorization controls"
   ],
   "fixtureOnly": true,
-  "apiRequests": 28,
+  "apiRequests": 29,
   "pageErrors": [],
   "nativePdfMenu": "tested separately"
 }

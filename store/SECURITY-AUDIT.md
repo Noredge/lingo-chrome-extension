@@ -1,4 +1,4 @@
-# 当前状态：开发预览 1.0.0-dev.7
+# 当前状态：开发预览 1.0.0-dev.8
 
 最新验证见 verification/DEVELOPMENT-1.0-dev.7.md；本版使用 Responses API 多套具名服务配置。完整地址通过 AES-GCM 附加认证数据与 Key 绑定；测试和启用分离，失败不自动切换。
 

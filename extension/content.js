@@ -382,7 +382,8 @@
     "无法打开面板，请重新打开插件菜单。": ["無法開啟面板，請重新開啟擴充功能選單。", "Could not open the panel. Reopen the extension menu and try again."],
     "此页面不支持划词": ["此頁面不支援劃詞", "Selection tools are unavailable on this page"],
     "可打开面板，粘贴文字进行翻译和修改。": ["可開啟面板，貼上文字進行翻譯和修改。", "Open the panel to paste, translate, and edit text."],
-    "在上方粘贴原文，再翻译或选择写作工具。": ["在上方貼上原文，再翻譯或選擇寫作工具。", "Paste text above, then translate or choose a writing tool."]
+    "在上方粘贴原文，再翻译或选择写作工具。": ["在上方貼上原文，再翻譯或選擇寫作工具。", "Paste text above, then translate or choose a writing tool."],
+    "此页面使用侧边栏；粘贴原文，或选中文字后右键翻译。": ["此頁面使用側邊欄；貼上原文，或選取文字後按右鍵翻譯。", "Use the sidebar here: paste text, or select text and translate from the context menu."]
   };
   const roots = /* @__PURE__ */ new Set();
   const nodes = /* @__PURE__ */ new WeakMap();
@@ -929,7 +930,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       $(".write-output").hidden = true;
       $(".source-text").textContent = snapshot.text;
       $(".count").textContent = `${snapshot.text.length} 字符`;
-      $(".source").open = keepOpen;
+      $(".source").open = docked || keepOpen;
       if (sourceEditor) {
         sourceEditor.value = snapshot.text;
         $(".source-submit").disabled = !snapshot.text.trim() || snapshot.text.length > MAX_TEXT;
@@ -1214,7 +1215,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       show({ text, kind: "read", rect: new DOMRect() });
     } };
   }
-  if (!window.__lingoInstalled) {
+  function isGoogleDocs(url) {
+    try {
+      const u = new URL(url);
+      return u.hostname === "docs.google.com" && /^\/document\//.test(u.pathname);
+    } catch {
+      return false;
+    }
+  }
+  if (!isGoogleDocs(location.href) && !window.__lingoInstalled) {
     window.__lingoInstalled = true;
     createPanel();
   }

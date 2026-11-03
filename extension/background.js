@@ -380,7 +380,8 @@ const messages = {
   "无法打开面板，请重新打开插件菜单。": ["無法開啟面板，請重新開啟擴充功能選單。", "Could not open the panel. Reopen the extension menu and try again."],
   "此页面不支持划词": ["此頁面不支援劃詞", "Selection tools are unavailable on this page"],
   "可打开面板，粘贴文字进行翻译和修改。": ["可開啟面板，貼上文字進行翻譯和修改。", "Open the panel to paste, translate, and edit text."],
-  "在上方粘贴原文，再翻译或选择写作工具。": ["在上方貼上原文，再翻譯或選擇寫作工具。", "Paste text above, then translate or choose a writing tool."]
+  "在上方粘贴原文，再翻译或选择写作工具。": ["在上方貼上原文，再翻譯或選擇寫作工具。", "Paste text above, then translate or choose a writing tool."],
+  "此页面使用侧边栏；粘贴原文，或选中文字后右键翻译。": ["此頁面使用側邊欄；貼上原文，或選取文字後按右鍵翻譯。", "Use the sidebar here: paste text, or select text and translate from the context menu."]
 };
 const roots = /* @__PURE__ */ new Set();
 const nodes = /* @__PURE__ */ new WeakMap();
@@ -431,6 +432,22 @@ function render(root) {
 function setLanguage(value) {
   locale = resolveLanguage(value);
   for (const root of roots) render(root);
+}
+function isGoogleDocs(url) {
+  try {
+    const u = new URL(url);
+    return u.hostname === "docs.google.com" && /^\/document\//.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+function prefersSidebar(url) {
+  try {
+    const u = new URL(url);
+    return isGoogleDocs(url) || !/^https?:$/.test(u.protocol) || /\.pdf$/i.test(u.pathname) || u.hostname === "chromewebstore.google.com" || u.hostname === "chrome.google.com" && u.pathname.startsWith("/webstore");
+  } catch {
+    return true;
+  }
 }
 const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 const DEFAULTS = { baseUrl: DEFAULT_BASE_URL, uiLanguage: "auto", model: "gpt-6-luna", language: "简体中文", languages: ["简体中文", "English"], blockedHosts: [] };
@@ -931,10 +948,6 @@ async function openSelection(tabId, frameId = 0, fallback = "") {
 }
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== "lingo-open" || tab?.id === void 0 || !info.selectionText?.trim()) return;
-  if (info.editable) {
-    void openSelection(tab.id, info.frameId || 0, info.selectionText);
-    return;
-  }
   const tabId = tab.id, windowId = tab.windowId;
   const item = { id: crypto.randomUUID(), text: info.selectionText.slice(0, 16001), tabId, created: Date.now() };
   void chrome.storage.session.set({ ["panel:" + windowId]: item });
@@ -948,7 +961,13 @@ chrome.windows.onRemoved.addListener((id) => {
   void chrome.storage.session.remove("panel:" + id);
 });
 chrome.commands.onCommand.addListener((command, tab) => {
-  if (command === "open-selection" && tab?.id) void openSelection(tab.id);
+  if (command !== "open-selection" || tab?.id === void 0) return;
+  if (prefersSidebar(tab.url || "")) {
+    void chrome.sidePanel.open({ windowId: tab.windowId }).catch(() => {
+    });
+    return;
+  }
+  void openSelection(tab.id);
 });
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (sender.id !== chrome.runtime.id) return;

@@ -1,4 +1,4 @@
-import { l as localize, s as setLanguage } from "./i18n-Cvij1gh3.js";
+import { l as localize, s as setLanguage } from "./i18n-BC74gfL5.js";
 import { M as MAX_TEXT, b as MODES, D as DEFAULTS } from "./core-Bo6TdJq8.js";
 function sensitiveFieldActive() {
   let active = document.activeElement;
@@ -486,7 +486,7 @@ function createPanel(options = {}) {
     $(".write-output").hidden = true;
     $(".source-text").textContent = snapshot.text;
     $(".count").textContent = `${snapshot.text.length} 字符`;
-    $(".source").open = keepOpen;
+    $(".source").open = docked || keepOpen;
     if (sourceEditor) {
       sourceEditor.value = snapshot.text;
       $(".source-submit").disabled = !snapshot.text.trim() || snapshot.text.length > MAX_TEXT;

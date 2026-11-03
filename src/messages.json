@@ -1526,5 +1526,9 @@
   "在上方粘贴原文，再翻译或选择写作工具。": [
     "在上方貼上原文，再翻譯或選擇寫作工具。",
     "Paste text above, then translate or choose a writing tool."
+  ],
+  "此页面使用侧边栏；粘贴原文，或选中文字后右键翻译。": [
+    "此頁面使用側邊欄；貼上原文，或選取文字後按右鍵翻譯。",
+    "Use the sidebar here: paste text, or select text and translate from the context menu."
   ]
 }

@@ -37,3 +37,5 @@ select{appearance:none;-webkit-appearance:none;background-image:url("data:image/
 .setup-chrome{height:44px;position:relative;flex-shrink:0}#setup-scroll{max-height:calc(100dvh - 94px);overflow:auto;overscroll-behavior:contain;padding:0 30px 24px}#setup-dialog[open]{display:flex;flex-direction:column}@media(max-width:480px){#setup-scroll{max-height:calc(100dvh - 70px);padding:0 16px 20px}}
 
 .manual-panel{margin-top:10px}.manual-help{font-size:10px;color:#819077;line-height:1.7;margin:8px 0 0}
+
+.popup-page [hidden]{display:none!important}
