@@ -1,0 +1,393 @@
+(function polyfill() {
+  const relList = document.createElement("link").relList;
+  if (relList && relList.supports && relList.supports("modulepreload")) return;
+  for (const link of document.querySelectorAll('link[rel="modulepreload"]')) processPreload(link);
+  new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.type !== "childList") continue;
+      for (const node of mutation.addedNodes) if (node.tagName === "LINK" && node.rel === "modulepreload") processPreload(node);
+    }
+  }).observe(document, {
+    childList: true,
+    subtree: true
+  });
+  function getFetchOpts(link) {
+    const fetchOpts = {};
+    if (link.integrity) fetchOpts.integrity = link.integrity;
+    if (link.referrerPolicy) fetchOpts.referrerPolicy = link.referrerPolicy;
+    if (link.crossOrigin === "use-credentials") fetchOpts.credentials = "include";
+    else if (link.crossOrigin === "anonymous") fetchOpts.credentials = "omit";
+    else fetchOpts.credentials = "same-origin";
+    return fetchOpts;
+  }
+  function processPreload(link) {
+    if (link.ep) return;
+    link.ep = true;
+    const fetchOpts = getFetchOpts(link);
+    fetch(link.href, fetchOpts);
+  }
+})();
+const messages = {
+  "免解锁模式不使用密码锁定；请删除 Key，或改为加密保存。": ["免解鎖模式不使用密碼鎖定；請刪除 Key，或改為加密儲存。", "Remember mode has no password lock. Delete the Key or switch to password encryption."],
+  "尚未加密保存 Key。": ["尚未加密儲存 Key。", "No password-encrypted Key is saved."],
+  "加密数据中的 Key 格式不正确，请重新保存。": ["加密資料中的 Key 格式不正確，請重新儲存。", "The encrypted Key is invalid. Please save it again."],
+  "请填写有效模型名称并选择目标语言。": ["請填寫有效模型名稱並選擇目標語言。", "Enter a valid model name and select a target language."],
+  "请至少保留一种浮窗语言，并从中选择默认语言。": ["請至少保留一種浮窗語言，並從中選擇預設語言。", "Keep at least one translation language and choose a default from the list."],
+  "请选择有效的界面语言。": ["請選擇有效的介面語言。", "Select a valid interface language."],
+  "更换服务地址时，请填写该服务的新 Key。旧 Key 不会转发到新地址。": ["更換服務地址時，請填寫該服務的新 Key。舊 Key 不會轉發到新地址。", "Enter a new Key for the new service address. Your previous Key will not be forwarded."],
+  "请先授权连接此 API 服务。": ["請先授權連線此 API 服務。", "Allow access to this API service first."],
+  "Key 格式不正确，请完整粘贴服务商提供的 API Key（8–512 个字符）。": ["Key 格式不正確，請完整貼上服務商提供的 API Key（8–512 個字元）。", "Paste the complete API Key supplied by your provider (8–512 characters)."],
+  "请选择有效的 Key 保存方式。": ["請選擇有效的 Key 儲存方式。", "Select a valid Key storage mode."],
+  "请确认免解锁模式使用本机自动加密保存 Key。": ["請確認免解鎖模式使用本機自動加密儲存 Key。", "Confirm automatic local encryption for remember mode."],
+  "请先解锁已保存的 Key，或填写新 Key，再更改保存方式。": ["請先解鎖已儲存的 Key，或填寫新 Key，再更改儲存方式。", "Unlock the saved Key or enter a new Key before changing storage mode."],
+  "本机凭据无法读取，请先重新填写 Key，或使用删除 Key。": ["本機憑據無法讀取，請先重新填寫 Key，或使用刪除 Key。", "Local credentials cannot be read. Enter a new Key or delete the saved Key."],
+  "请先填写 Key 或解锁已保存的 Key。": ["請先填寫 Key 或解鎖已儲存的 Key。", "Enter a Key or unlock the saved Key first."],
+  "两次解锁密码不一致。": ["兩次解鎖密碼不一致。", "The passwords do not match."],
+  "用 Lingo 翻译": ["用 Lingo 翻譯", "Translate with Lingo"],
+  "请先选中文字，再打开 Lingo。": ["請先選中文字，再開啟 Lingo。", "Select text before opening Lingo."],
+  "此页面无法使用扩展。请在普通网页中选择文字后重试。": ["此頁面無法使用擴充套件。請在普通網頁中選擇文字後重試。", "Lingo cannot run on this page. Select text on a regular webpage and try again."],
+  "此操作只能从扩展设置页执行。": ["此操作只能從擴充套件設定頁執行。", "This action is only available from extension settings."],
+  "未知操作。": ["未知操作。", "Unknown action."],
+  "请打开普通网页。": ["請開啟普通網頁。", "Open a regular webpage."],
+  "找不到当前标签页。": ["找不到當前標籤頁。", "The current tab could not be found."],
+  "操作失败，请重试。": ["操作失敗，請重試。", "The action failed. Please try again."],
+  "设置已变化，请重新操作。": ["設定已變化，請重新操作。", "Settings changed. Please try again."],
+  "请先在设置中确认将选中文字发送给所选服务的说明并保存。": ["請先在設定中確認將選中文字傳送給所選服務的說明並儲存。", "Review and save your consent to send selected text to the chosen service in settings."],
+  "本机凭据无法读取，请重新填写 API Key 并保存。": ["本機憑據無法讀取，請重新填寫 API Key 並儲存。", "Local credentials cannot be read. Enter your API Key again and save."],
+  "Key 已锁定，请在设置中输入本机解锁密码。": ["Key 已鎖定，請在設定中輸入本機解鎖密碼。", "The Key is locked. Enter your local unlock password in settings."],
+  "请先打开设置，填写你的 API Key。": ["請先開啟設定，填寫你的 API Key。", "Open settings and enter your API Key first."],
+  "此站点已暂停 Lingo，请从扩展菜单重新启用。": ["此站點已暫停 Lingo，請從擴充套件選單重新啟用。", "Lingo is paused on this site. Resume it from the extension menu."],
+  "网站授权已失效，请重新授权，或从扩展菜单临时调用。": ["網站授權已失效，請重新授權，或從擴充套件選單臨時呼叫。", "Website access expired. Grant access again or use the extension menu temporarily."],
+  "已有多个请求进行中，请完成或取消后重试。": ["已有多個請求進行中，請完成或取消後重試。", "Several requests are running. Finish or cancel one before trying again."],
+  "API 服务授权已失效，请在设置中重新授权。": ["API 服務授權已失效，請在設定中重新授權。", "API service permission expired. Grant access again in settings."],
+  "凭据与服务地址不匹配，请重新保存 Key。": ["憑據與服務地址不匹配，請重新儲存 Key。", "The credential does not match the service address. Save the Key again."],
+  "请求超时，请稍后重试。": ["請求超時，請稍後重試。", "The request timed out. Please try again."],
+  "已停止生成。": ["已停止生成。", "Generation stopped."],
+  "网络连接失败，请检查网络后重试。": ["網路連線失敗，請檢查網路後重試。", "Connection failed. Check your network and try again."],
+  "请求失败，请重试。": ["請求失敗，請重試。", "The request failed. Please try again."],
+  "文": ["文", "文"],
+  "Lingo · 翻译与修改": ["Lingo · 翻譯與修改", "Lingo · Translate and edit"],
+  "用 Lingo 翻译选中文字": ["用 Lingo 翻譯選中文字", "Translate selected text with Lingo"],
+  "Lingo 翻译与写作": ["Lingo 翻譯與寫作", "Lingo translation and writing"],
+  "上边": ["上邊", "top edge"],
+  "下边": ["下邊", "bottom edge"],
+  "右边": ["右邊", "right edge"],
+  "左边": ["左邊", "left edge"],
+  "右上角": ["右上角", "top right corner"],
+  "左上角": ["左上角", "top left corner"],
+  "右下角": ["右下角", "bottom right corner"],
+  "左下角": ["左下角", "bottom left corner"],
+  "调整浮窗大小：{0}": ["調整浮窗大小：{0}", "Resize panel: {0}"],
+  "扩展已更新，请刷新网页后使用。": ["擴充套件已更新，請重新整理網頁後使用。", "The extension was updated. Refresh the webpage to continue."],
+  "{0} 字符": ["{0} 字元", "{0} characters"],
+  "仅发送选中文字 · 此处可复制结果": ["僅傳送選中文字 · 此處可複製結果", "Only selected text is sent · Copy results here"],
+  "仅发送选中文字 · 可替换所选部分": ["僅傳送選中文字 · 可替換所選部分", "Only selected text is sent · Replace the selection"],
+  "Key 已锁定，请打开设置并输入本机解锁密码。": ["Key 已鎖定，請開啟設定並輸入本機解鎖密碼。", "The Key is locked. Open settings and enter your unlock password."],
+  "首次使用，请打开设置并填写 API Key。": ["首次使用，請開啟設定並填寫 API Key。", "First use: open settings and enter an API Key."],
+  "连接中断或后台已休眠，请重试。": ["連線中斷或後臺已休眠，請重試。", "The connection stopped or the background went to sleep. Please retry."],
+  "连接已中断，请重试。": ["連線已中斷，請重試。", "Connection interrupted. Please retry."],
+  "扩展连接失效，请刷新页面后重试。": ["擴充套件連線失效，請重新整理頁面後重試。", "Extension connection lost. Refresh the page and retry."],
+  "已复制": ["已複製", "Copied"],
+  "复制失败，请选中结果手动复制。": ["複製失敗，請選中結果手動複製。", "Copy failed. Select the result and copy it manually."],
+  "正在生成…": ["正在生成…", "Generating…"],
+  "生成失败": ["生成失敗", "Generation failed"],
+  "未发现需要修改的问题。": ["未發現需要修改的問題。", "No corrections needed."],
+  "停止": ["停止", "Stop"],
+  "重试": ["重試", "Retry"],
+  "打开设置": ["開啟設定", "Open settings"],
+  "复制": ["複製", "Copy"],
+  "替换选中文字": ["替換選中文字", "Replace selected text"],
+  "已替换 · 可在编辑框按 ⌘Z / Ctrl+Z 撤销": ["已替換 · 可在編輯框按 ⌘Z / Ctrl+Z 撤銷", "Replaced · Use ⌘Z / Ctrl+Z in the editor to undo"],
+  "原文已变化，请重新划选；仍可复制结果": ["原文已變化，請重新劃選；仍可複製結果", "The original text changed. Select it again; you can still copy the result."],
+  "只替换最初选中的部分": ["只替換最初選中的部分", "Replace only the original selection"],
+  "按你的要求修改": ["按你的要求修改", "Edited as requested"],
+  "{0}结果": ["{0}結果", "{0} result"],
+  "此站点已暂停，请从 Lingo 菜单重新启用。": ["此站點已暫停，請從 Lingo 選單重新啟用。", "Lingo is paused here. Resume it from the Lingo menu."],
+  "请先在非密码区域选中文字。": ["請先在非密碼區域選中文字。", "Select text outside password fields first."],
+  "请先选中 1–16,000 个字符，再打开 Lingo。": ["請先選中 1–16,000 個字元，再開啟 Lingo。", "Select 1–16,000 characters before opening Lingo."],
+  "简体中文": ["簡體中文", "简体中文"],
+  "繁體中文": ["繁體中文", "繁體中文"],
+  "日本語": ["日本語", "日本語"],
+  "Português（葡萄牙语）": ["Português（葡萄牙語）", "Português"],
+  "Italiano（意大利语）": ["Italiano（義大利語）", "Italiano"],
+  "Nederlands（荷兰语）": ["Nederlands（荷蘭語）", "Nederlands"],
+  "Русский（俄语）": ["Русский（俄語）", "Русский"],
+  "Українська（乌克兰语）": ["Українська（烏克蘭語）", "Українська"],
+  "Polski（波兰语）": ["Polski（波蘭語）", "Polski"],
+  "Čeština（捷克语）": ["Čeština（捷克語）", "Čeština"],
+  "Svenska（瑞典语）": ["Svenska（瑞典語）", "Svenska"],
+  "Dansk（丹麦语）": ["Dansk（丹麥語）", "Dansk"],
+  "Norsk（挪威语）": ["Norsk（挪威語）", "Norsk"],
+  "Suomi（芬兰语）": ["Suomi（芬蘭語）", "Suomi"],
+  "Ελληνικά（希腊语）": ["Ελληνικά（希臘語）", "Ελληνικά"],
+  "Türkçe（土耳其语）": ["Türkçe（土耳其語）", "Türkçe"],
+  "العربية（阿拉伯语）": ["العربية（阿拉伯語）", "العربية"],
+  "עברית（希伯来语）": ["עברית（希伯來語）", "עברית"],
+  "فارسی（波斯语）": ["فارسی（波斯語）", "فارسی"],
+  "हिन्दी（印地语）": ["हिन्दी（印地語）", "हिन्दी"],
+  "বাংলা（孟加拉语）": ["বাংলা（孟加拉語）", "বাংলা"],
+  "ไทย（泰语）": ["ไทย（泰語）", "ไทย"],
+  "Tiếng Việt（越南语）": ["Tiếng Việt（越南語）", "Tiếng Việt"],
+  "Bahasa Indonesia（印尼语）": ["Bahasa Indonesia（印尼語）", "Bahasa Indonesia"],
+  "Bahasa Melayu（马来语）": ["Bahasa Melayu（馬來語）", "Bahasa Melayu"],
+  "Filipino（菲律宾语）": ["Filipino（菲律賓語）", "Filipino"],
+  "翻译": ["翻譯", "Translate"],
+  "校对": ["校對", "Proofread"],
+  "自然": ["自然", "Natural"],
+  "专业": ["專業", "Professional"],
+  "友好": ["友好", "Friendly"],
+  "简洁": ["簡潔", "Concise"],
+  "精准": ["精準", "Precise"],
+  "自定义": ["自定義", "Custom"],
+  "请先选中需要处理的文字。": ["請先選中需要處理的文字。", "Select the text you want to process first."],
+  "选中文字过长，请缩短到 16,000 个字符以内。": ["選中文字過長，請縮短到 16,000 個字元以內。", "The selection is too long. Keep it within 16,000 characters."],
+  "不支持的操作。": ["不支援的操作。", "Unsupported action."],
+  "请选择支持的目标语言。": ["請選擇支援的目標語言。", "Select a supported target language."],
+  "请填写 1–1,000 个字符的修改要求。": ["請填寫 1–1,000 個字元的修改要求。", "Enter an editing request of 1–1,000 characters."],
+  "返回数据过大，请缩短原文后重试。": ["返回資料過大，請縮短原文後重試。", "The response is too large. Shorten the source text and try again."],
+  "API Key 无效或已失效，请在设置中更新。": ["API Key 無效或已失效，請在設定中更新。", "The API Key is invalid or expired. Update it in settings."],
+  "该 Key 无权访问此模型或服务，请检查项目权限。": ["該 Key 無權訪問此模型或服務，請檢查專案許可權。", "This Key cannot access the model or service. Check your permissions."],
+  "服务地址或模型不存在，请检查 Base URL 和模型名称。": ["服務地址或模型不存在，請檢查 Base URL 和模型名稱。", "Service address or model not found. Check the Base URL and model name."],
+  "API 额度不足，请检查 服务账户的余额与用量限制。": ["API 額度不足，請檢查 服務賬戶的餘額與用量限制。", "API quota exhausted. Check your service account balance and usage limits."],
+  "请求过于频繁或触及用量限制，请稍后重试。": ["請求過於頻繁或觸及用量限制，請稍後重試。", "Rate or usage limit reached. Please try again later."],
+  "API 服务暂时不可用，请稍后重试。": ["API 服務暫時不可用，請稍後重試。", "The API service is temporarily unavailable. Please try again."],
+  "请求失败（HTTP {0}），请检查模型设置后重试。": ["請求失敗（HTTP {0}），請檢查模型設定後重試。", "Request failed (HTTP {0}). Check your model settings and retry."],
+  "请输入有效的 HTTPS Base URL，不包含账号、查询参数或片段；本机服务可使用 HTTP。": ["請輸入有效的 HTTPS Base URL，不包含賬號、查詢引數或片段；本機服務可使用 HTTP。", "Enter a valid HTTPS Base URL without credentials, query parameters or fragments. Localhost may use HTTP."],
+  "服务返回生成错误，请检查模型、额度与服务状态。": ["服務返回生成錯誤，請檢查模型、額度與服務狀態。", "The service returned a generation error. Check the model, quota and service status."],
+  "模型未能处理这段文字，请调整原文或要求。": ["模型未能處理這段文字，請調整原文或要求。", "The model could not process this text. Adjust the source or request."],
+  "结果过长，请缩短原文后重试。": ["結果過長，請縮短原文後重試。", "The result is too long. Shorten the source text and retry."],
+  "结果未生成完整，请缩短原文后重试。": ["結果未生成完整，請縮短原文後重試。", "The result is incomplete. Shorten the source text and retry."],
+  "模型返回了工具调用，未返回可用文字。": ["模型返回了工具呼叫，未返回可用文字。", "The model returned a tool call instead of usable text."],
+  "服务返回格式不正确，需要 Chat Completions 格式。": ["服務返回格式不正確，需要 Chat Completions 格式。", "Unexpected response format. Chat Completions format is required."],
+  "服务未返回内容，请重试。": ["服務未返回內容，請重試。", "The service returned no content. Please retry."],
+  "连接中断，结果未完整返回，请重试。": ["連線中斷，結果未完整返回，請重試。", "Connection interrupted before the result completed. Please retry."],
+  "模型返回了空结果，请重试。": ["模型返回了空結果，請重試。", "The model returned an empty result. Please retry."],
+  "无法访问本机凭据存储。": ["無法訪問本機憑據儲存。", "Cannot access local credential storage."],
+  "本机凭据存储正忙，请重试。": ["本機憑據儲存正忙，請重試。", "Local credential storage is busy. Please retry."],
+  "本机凭据存储失败，请重试。": ["本機憑據儲存失敗，請重試。", "Local credential storage failed. Please retry."],
+  "数据传送到：": ["資料傳送到：", "Data destination: "],
+  "请检查 Base URL。": ["請檢查 Base URL。", "Check the Base URL."],
+  "移除 {0}": ["移除 {0}", "Remove {0}"],
+  "显示": ["顯示", "Show"],
+  "保存一次，重启 Chrome 后也可直接使用，无需解锁。": ["儲存一次，重啟 Chrome 後也可直接使用，無需解鎖。", "Save once and use it after restarting Chrome, without unlocking."],
+  "重启 Chrome 或重载扩展后解锁一次，之后的划词与打开浮窗都不需要重复输入密码。": ["重啟 Chrome 或過載擴充套件後解鎖一次，之後的劃詞與開啟浮窗都不需要重複輸入密碼。", "Unlock once after restarting Chrome or reloading the extension. Opening the panel does not require unlocking again."],
+  "关闭浏览器或重载扩展后，需要重新填写 Key。": ["關閉瀏覽器或過載擴充套件後，需要重新填寫 Key。", "Enter your Key again after closing Chrome or reloading the extension."],
+  "Key 已配置": ["Key 已配置", "Key configured"],
+  "Key 已锁定": ["Key 已鎖定", "Key locked"],
+  "尚未配置 Key": ["尚未配置 Key", "No Key configured"],
+  "已保存 · 留空保留，输入新 Key 可替换": ["已儲存 · 留空保留，輸入新 Key 可替換", "Saved · Leave blank to keep, enter a new Key to replace"],
+  "已记住 Key，本机自动加密，重启 Chrome 后无需解锁。": ["已記住 Key，本機自動加密，重啟 Chrome 後無需解鎖。", "Key remembered with local encryption. No unlock needed after restarting Chrome."],
+  "已加密保存到本机，本次会话已解锁。": ["已加密儲存到本機，本次會話已解鎖。", "Encrypted locally and unlocked for this session."],
+  "已加密保存到本机，请输入解锁密码。": ["已加密儲存到本機，請輸入解鎖密碼。", "Encrypted locally. Enter your unlock password."],
+  "仅保留在本次浏览器会话，不写入磁盘。": ["僅保留在本次瀏覽器會話，不寫入磁碟。", "Kept only for this browser session, never written to disk."],
+  "Key 仅在扩展后台使用，不会传给网页脚本。": ["Key 僅在擴充套件後臺使用，不會傳給網頁尾本。", "The Key is used only in the extension background, never shared with webpage scripts."],
+  "已暂停的站点": ["已暫停的站點", "Paused sites"],
+  "恢复": ["恢復", "Resume"],
+  "未授权 API 服务，设置未保存。": ["未授權 API 服務，設定未儲存。", "API service access was denied. Settings were not saved."],
+  "设置已保存。已打开的窗口可点击重试，或关闭后重新划词。": ["設定已儲存。已開啟的視窗可點選重試，或關閉後重新劃詞。", "Settings saved. Retry in an open panel or select text again."],
+  "已解锁，本次浏览器会话可用。": ["已解鎖，本次瀏覽器會話可用。", "Unlocked for this browser session."],
+  "已清除会话中的 Key 并停止正在进行的请求。": ["已清除會話中的 Key 並停止正在進行的請求。", "Session Key cleared and ongoing requests stopped."],
+  "隐藏": ["隱藏", "Hide"],
+  "删除此扩展保存的 Key？这不会撤销服务商平台上的密钥。": ["刪除此擴充套件儲存的 Key？這不會撤銷服務商平臺上的金鑰。", "Delete the Key saved in this extension? This does not revoke it at your provider."],
+  "已删除扩展中的 Key。": ["已刪除擴充套件中的 Key。", "The Key was deleted from the extension."],
+  "测试连接": ["測試連線", "Test connection"],
+  "测试已停止。": ["測試已停止。", "Test stopped."],
+  "请先保存服务地址、模型和 Key，再测试连接。": ["請先儲存服務地址、模型和 Key，再測試連線。", "Save the service address, model and Key before testing."],
+  "正在使用已保存的模型翻译固定示例…": ["正在使用已儲存的模型翻譯固定示例…", "Translating a fixed example with the saved model…"],
+  "停止测试": ["停止測試", "Stop test"],
+  "连接超时，请稍后再试。": ["連線超時，請稍後再試。", "Connection timed out. Please retry."],
+  "连接成功 · {0}": ["連線成功 · {0}", "Connected · {0}"],
+  "关闭所有网站授权": ["關閉所有網站授權", "Revoke access to all websites"],
+  "一键授权所有普通网页": ["一鍵授權所有普通網頁", "Allow all regular webpages"],
+  "已授权所有普通网页 · 划词即可使用": ["已授權所有普通網頁 · 劃詞即可使用", "All regular webpages allowed · Select text to begin"],
+  "已授权部分站点 · 可开启所有普通网页": ["已授權部分站點 · 可開啟所有普通網頁", "Some sites allowed · You can allow all regular webpages"],
+  "还差一步：授权网站后，划词才会自动出现入口": ["還差一步：授權網站後，劃詞才會自動出現入口", "One more step: allow website access for the selection button"],
+  "移除": ["移除", "Remove"],
+  "已移除授权，请刷新该站点已打开的页面。": ["已移除授權，請重新整理該站點已開啟的頁面。", "Permission removed. Refresh open pages on that site."],
+  "已关闭所有网站授权，请刷新已打开的网页。": ["已關閉所有網站授權，請重新整理已開啟的網頁。", "All-websites permission revoked. Refresh open webpages."],
+  "已启用，请刷新网页后划选文字。": ["已啟用，請重新整理網頁後劃選文字。", "Enabled. Refresh the webpage and select text."],
+  "未授权；仍可从扩展菜单临时调用。": ["未授權；仍可從擴充套件選單臨時呼叫。", "Access not granted. You can still use the extension menu temporarily."],
+  "请输入 HTTP 或 HTTPS 网站地址。": ["請輸入 HTTP 或 HTTPS 網站地址。", "Enter an HTTP or HTTPS website address."],
+  "站点已添加，请刷新网页后使用。": ["站點已新增，請重新整理網頁後使用。", "Site added. Refresh the webpage to begin."],
+  "未授权该站点。": ["未授權該站點。", "Site access was not granted."],
+  "请在设置中确认数据处理说明": ["請在設定中確認資料處理說明", "Review the data processing notice in settings"],
+  "Key 已就绪 · {0}": ["Key 已就緒 · {0}", "Key ready · {0}"],
+  "Key 已锁定，请打开设置解锁": ["Key 已鎖定，請開啟設定解鎖", "Key locked. Open settings to unlock"],
+  "首次使用：请在设置中填写 API Key": ["首次使用：請在設定中填寫 API Key", "First use: enter an API Key in settings"],
+  "恢复此站点": ["恢復此站點", "Resume on this site"],
+  "暂停此站点": ["暫停此站點", "Pause on this site"],
+  "已授权划词入口": ["已授權劃詞入口", "Selection access enabled"],
+  "在此网站启用划词": ["在此網站啟用劃詞", "Enable on this website"],
+  "此页面不支持": ["此頁面不支援", "This page is not supported"],
+  "请打开普通网页后使用。": ["請開啟普通網頁後使用。", "Open a regular webpage to use Lingo."],
+  "无法读取当前页，请重新打开扩展。": ["無法讀取當前頁，請重新開啟擴充套件。", "Cannot read the current page. Reopen the extension."],
+  "请先选中文字。": ["請先選中文字。", "Select text first."],
+  "未授权；可以用上方按钮临时打开。": ["未授權；可以用上方按鈕臨時開啟。", "Access not granted. Use the button above for temporary access."],
+  "已启用。关闭菜单，重新划选文字即可。": ["已啟用。關閉選單，重新劃選文字即可。", "Enabled. Close the menu and select text again."],
+  "此页面无法注入扩展，请刷新或换一个普通网页。": ["此頁面無法注入擴充套件，請重新整理或換一個普通網頁。", "Cannot inject the extension here. Refresh or try a regular webpage."],
+  "站点设置已更新。": ["站點設定已更新。", "Site settings updated."],
+  "原文已变化或选区已失效，请重新划选。结果仍可复制。": ["原文已變化或選區已失效，請重新劃選。結果仍可複製。", "The text or selection changed. Select it again. You can still copy the result."],
+  "结果为空，无法替换。": ["結果為空，無法替換。", "The result is empty and cannot replace text."],
+  "编辑框内容已变化，请重新划选。": ["編輯框內容已變化，請重新劃選。", "The input text changed. Select it again."],
+  "此编辑框不支持可靠替换，请使用复制。": ["此編輯框不支援可靠替換，請使用複製。", "This input cannot be replaced reliably. Use Copy."],
+  "网站重新处理了文字，请检查编辑框内容；可按撤销恢复。": ["網站重新處理了文字，請檢查編輯框內容；可按撤銷恢復。", "The website changed the inserted text. Check the input; use Undo to restore it."],
+  "编辑区已变化，请重新划选。": ["編輯區已變化，請重新劃選。", "The editor changed. Select the text again."],
+  "此编辑区不支持可靠替换，请使用复制。": ["此編輯區不支援可靠替換，請使用複製。", "This editor cannot be replaced reliably. Use Copy."],
+  "网站重新处理了文字，请检查编辑区内容；可按撤销恢复。": ["網站重新處理了文字，請檢查編輯區內容；可按撤銷恢復。", "The website changed the inserted text. Check the editor; use Undo to restore it."],
+  "无法读取设置。": ["無法讀取設定。", "Cannot read settings."],
+  "本机解锁密码需要 12–1,024 个字符。": ["本機解鎖密碼需要 12–1,024 個字元。", "The local unlock password must contain 12–1,024 characters."],
+  "解锁失败：密码不正确，或加密数据已损坏。": ["解鎖失敗：密碼不正確，或加密資料已損壞。", "Unlock failed: incorrect password or damaged encrypted data."],
+  "Lingo · 设置": ["Lingo · 設定", "Lingo · Settings"],
+  "读懂每一句。": ["讀懂每一句。", "Understand every sentence."],
+  "写好每一句。": ["寫好每一句。", "Write every sentence well."],
+  "划选、翻译，或换一种更合适的表达。": ["劃選、翻譯，或換一種更合適的表達。", "Select, translate, or find a better way to say it."],
+  "你的文字，始终由你决定。": ["你的文字，始終由你決定。", "Your words stay in your hands."],
+  "一段文字，多一种表达": ["一段文字，多一種表達", "One sentence, another way to say it"],
+  "↓   校对": ["↓   校對", "↓   Proofread"],
+  "示例 · 并非实际 API 结果": ["示例 · 並非實際 API 結果", "Example · Not a live API result"],
+  "按需调用 · 使用自己的 API · 不保存文字历史": ["按需呼叫 · 使用自己的 API · 不儲存文字歷史", "On demand · Your own API · No text history"],
+  "设置你的 Lingo": ["設定你的 Lingo", "Set up your Lingo"],
+  "未配置 Key": ["未配置 Key", "No Key configured"],
+  "检查网站授权…": ["檢查網站授權…", "Checking website access…"],
+  "完成 Key、目标语言和网站授权设置，即可划词使用。": ["完成 Key、目標語言和網站授權設定，即可劃詞使用。", "Set your Key, translation languages and website access to begin."],
+  "设置网站授权 ↓": ["設定網站授權 ↓", "Set website access ↓"],
+  "界面语言": ["介面語言", "Interface language"],
+  "显示语言（与翻译目标语言独立）": ["顯示語言（與翻譯目標語言獨立）", "Display language (independent of translation language)"],
+  "跟随浏览器": ["跟隨瀏覽器", "Follow browser"],
+  "连接 API 服务": ["連線 API 服務", "Connect an API service"],
+  "翻译、校对和改写，共用一个连接。": ["翻譯、校對和改寫，共用一個連線。", "One connection for translation, proofreading and rewriting."],
+  "填写 API 根地址，例如 https://api.openai.com/v1 或 https://api.deepseek.com。自动追加 /chat/completions。更换地址需重新填写对应 Key。": ["填寫 API 根地址，例如 https://api.openai.com/v1 或 https://api.deepseek.com。自動追加 /chat/completions。更換地址需重新填寫對應 Key。", "Enter the API base, e.g. https://api.openai.com/v1 or https://api.deepseek.com. /chat/completions is appended automatically. A new address requires its own Key."],
+  "旧版明文 Key 已转为仅本次会话可用，并从本机持久存储中移除。请选择“记住 Key，免解锁”或加密保存；仅本次会话模式会在浏览器关闭后清除 Key。": ["舊版明文 Key 已轉為僅本次會話可用，並從本機持久儲存中移除。請選擇“記住 Key，免解鎖”或加密儲存；僅本次會話模式會在瀏覽器關閉後清除 Key。", "Your legacy plaintext Key was moved to session-only storage and removed from persistent storage. Choose remember mode or password encryption; session-only mode clears the Key when Chrome closes."],
+  "本机解锁密码": ["本機解鎖密碼", "Local unlock password"],
+  "解锁": ["解鎖", "Unlock"],
+  "Key 保存方式": ["Key 儲存方式", "Key storage"],
+  "记住 Key，免解锁（默认）": ["記住 Key，免解鎖（預設）", "Remember Key, no unlock (default)"],
+  "仅本次会话": ["僅本次會話", "This session only"],
+  "加密保存，每次启动后解锁": ["加密儲存，每次啟動後解鎖", "Password encryption, unlock after startup"],
+  "Key 使用本机自动加密保存，无需解锁密码。": ["Key 使用本機自動加密儲存，無需解鎖密碼。", "The Key is encrypted automatically on this device. No password needed."],
+  "适合自己的可信电脑。解密密钥也保存在此浏览器中，不能防护完整浏览器配置被窃取；保护能力不等同于系统钥匙串。不会同步到 Chrome 云端、上传 GitHub 或发送给开发者。": ["適合自己的可信電腦。解密金鑰也儲存在此瀏覽器中，不能防護完整瀏覽器配置被竊取；保護能力不等同於系統鑰匙串。不會同步到 Chrome 雲端、上傳 GitHub 或傳送給開發者。", "For a trusted personal computer. The decryption key also lives in this browser; it does not protect against theft of the entire browser profile and is not an OS keychain. No Chrome cloud sync, GitHub upload or developer access."],
+  "设置本机解锁密码（至少 12 个字符）": ["設定本機解鎖密碼（至少 12 個字元）", "Set a local unlock password (at least 12 characters)"],
+  "再次输入解锁密码": ["再次輸入解鎖密碼", "Repeat unlock password"],
+  "已有加密 Key 且不修改时可留空。密码不会保存，也无法找回；忘记后需删除加密 Key 并重新填写。解锁后 Key 仅在本次会话内可用。": ["已有加密 Key 且不修改時可留空。密碼不會儲存，也無法找回；忘記後需刪除加密 Key 並重新填寫。解鎖後 Key 僅在本次會話內可用。", "Leave blank to keep an existing encrypted Key unchanged. The password is never saved and cannot be recovered. If forgotten, delete the encrypted Key and enter it again. Unlocking lasts for this session only."],
+  "发送给所选服务的内容": ["傳送給所選服務的內容", "What is sent to the selected service"],
+  "当你打开翻译窗口、点击写作操作或测试连接时，选中文字、目标语言和修改要求会发送给所选服务，并使用你的 API Key 验证请求。不会自动上传整页或整封邮件。API 服务需要单独的账户与额度，可能产生费用。": ["當你開啟翻譯視窗、點選寫作操作或測試連線時，選中文字、目標語言和修改要求會傳送給所選服務，並使用你的 API Key 驗證請求。不會自動上傳整頁或整封郵件。API 服務需要單獨的賬戶與額度，可能產生費用。", "Opening a translation panel, choosing a writing action or testing sends selected text, target language and editing instructions to the selected service, authenticated with your API Key. Entire webpages or emails are not uploaded automatically. An API account and credit may be required; usage may incur charges."],
+  "阅读完整隐私政策 ↗": ["閱讀完整隱私政策 ↗", "Read the full privacy policy ↗"],
+  "我同意将选中文字和修改要求发送给所选服务 处理": ["我同意將選中文字和修改要求傳送給所選服務 處理", "I agree to send selected text and editing instructions to the selected service"],
+  "模型": ["模型", "Model"],
+  "需支持 Chat Completions 格式；填写服务商提供的模型名称。": ["需支援 Chat Completions 格式；填寫服務商提供的模型名稱。", "Requires Chat Completions format. Enter the model name from your provider."],
+  "浮窗翻译语言": ["浮窗翻譯語言", "Panel translation languages"],
+  "只把常用语言放进浮窗，随时添加或移除。": ["只把常用語言放進浮窗，隨時新增或移除。", "Keep your frequent languages in the panel. Add or remove them anytime."],
+  "浮窗中的语言": ["浮窗中的語言", "Languages in the panel"],
+  "添加目标语言": ["新增目標語言", "Add a target language"],
+  "添加到浮窗": ["新增到浮窗", "Add to panel"],
+  "浮窗默认目标语言": ["浮窗預設目標語言", "Default translation language"],
+  "从 31 种语言中挑选常用语言，至少保留一种。保存后，浮窗只显示上方列表。移除默认语言后会改用列表中的第一种；校对和改写默认保留原文语言。": ["從 31 種語言中挑選常用語言，至少保留一種。儲存後，浮窗只顯示上方列表。移除預設語言後會改用列表中的第一種；校對和改寫預設保留原文語言。", "Choose from 31 languages and keep at least one. After saving, the panel shows only this list. Removing the default selects the first remaining language. Proofreading and rewriting preserve the source language by default."],
+  "保存设置": ["儲存設定", "Save settings"],
+  "立即锁定": ["立即鎖定", "Lock now"],
+  "删除 Key": ["刪除 Key", "Delete Key"],
+  "测试会发送一句固定示例，产生少量 API 用量。先保存，再测试。": ["測試會傳送一句固定示例，產生少量 API 用量。先儲存，再測試。", "The test sends one fixed example and uses a small amount of API credit. Save first, then test."],
+  "在哪里使用": ["在哪裡使用", "Where to use Lingo"],
+  "授权后，划词即可出现小图标。尚未授权时可从扩展菜单临时调用。": ["授權後，劃詞即可出現小圖示。尚未授權時可從擴充套件選單臨時呼叫。", "Allow website access to show the selection button. Without it, use the extension menu temporarily."],
+  "所有普通网站": ["所有普通網站", "All regular websites"],
+  "推荐一次授权，在 HTTP / HTTPS 网页划词即用。点击后请在 Chrome 提示中确认；授权不会自动上传网页内容。": ["推薦一次授權，在 HTTP / HTTPS 網頁劃詞即用。點選後請在 Chrome 提示中確認；授權不會自動上傳網頁內容。", "Allow once to select text on HTTP / HTTPS pages. Confirm Chrome’s permission prompt after clicking. Permission does not automatically upload page content."],
+  "也可以只授权下方指定站点，或暂不授权、从工具栏临时调用。": ["也可以只授權下方指定站點，或暫不授權、從工具欄臨時呼叫。", "You can also allow individual sites below, or use temporary toolbar access."],
+  "要授权的网站地址": ["要授權的網站地址", "Website address to allow"],
+  "添加站点": ["新增站點", "Add site"],
+  "授权后刷新已打开的网页。浏览器内部页和扩展商店不支持浮窗。PDF 请选中文字后右键「用 Lingo 翻译」，在侧边栏查看结果。暂停名单适用于网页浮窗。": ["授權後重新整理已開啟的網頁。瀏覽器內部頁和擴充套件商店不支援浮窗。PDF 請選中文字後右鍵「用 Lingo 翻譯」，在側邊欄檢視結果。暫停名單適用於網頁浮窗。", "Refresh open webpages after allowing access. Browser internal pages and extension stores do not support the floating panel. In PDFs, select text and right-click “Translate with Lingo” to view it in the sidebar. Paused sites apply to webpage panels."],
+  "开始使用": ["開始使用", "Get started"],
+  "选中文字 → 点击「文」→ 自动翻译 → 按需修改。": ["選中文字 → 點選「文」→ 自動翻譯 → 按需修改。", "Select text → Click 文 → Translate → Edit as needed."],
+  "浮窗遮住页面？拖动标题栏移动，拖动四条边或四个角调整大小（最小 320 × 300，较小屏幕自动适配）；点击 ↺ 恢复默认。在当前页面内再次划词会沿用已调整的布局，刷新页面后恢复默认。": ["浮窗遮住頁面？拖動標題欄移動，拖動四條邊或四個角調整大小（最小 320 × 300，較小螢幕自動適配）；點選 ↺ 恢復預設。在當前頁面內再次劃詞會沿用已調整的佈局，重新整理頁面後恢復預設。", "Panel in the way? Drag its header to move, or any edge or corner to resize (minimum 320 × 300, adapted on small screens). Click ↺ to reset. Layout is kept for the current page session and resets on refresh."],
+  "快捷入口": ["快捷入口", "Quick access"],
+  "右键选中文字，或使用": ["右鍵選中文字，或使用", "Right-click selected text, or use"],
+  "（Mac 为 Option）。": ["（Mac 為 Option）。", "(Option on Mac)."],
+  "安全替换": ["安全替換", "Safe replacement"],
+  "只替换最初选中的部分。原文变动后请重新划选。复杂编辑器保留复制功能。": ["只替換最初選中的部分。原文變動後請重新劃選。複雜編輯器保留複製功能。", "Only the original selection is replaced. Select again if the source changes. Complex editors keep Copy available."],
+  "只在你打开窗口或点击操作时发送选中文字与必要指令至所选 API 服务。不会扫描整页，不会读取密码框，不会保存文字历史。所有内容均以纯文本显示。": ["只在你開啟視窗或點選操作時傳送選中文字與必要指令至所選 API 服務。不會掃描整頁，不會讀取密碼框，不會儲存文字歷史。所有內容均以純文字顯示。", "Only opening a panel or choosing an action sends selected text and instructions to your API service. No full-page scanning, password-field reading or text history. All content is displayed as plain text."],
+  "隐私政策": ["隱私政策", "Privacy policy"],
+  "Lingo / 少一点切换，多一点顺手。": ["Lingo / 少一點切換，多一點順手。", "Lingo / Less switching, more flow."],
+  "设置 ↗": ["設定 ↗", "Settings ↗"],
+  "让文字，更顺手。": ["讓文字，更順手。", "Make words work better."],
+  "先在页面选中文字，再打开翻译与写作工具。": ["先在頁面選中文字，再開啟翻譯與寫作工具。", "Select text on the page, then open translation and writing tools."],
+  "翻译当前选区": ["翻譯當前選區", "Translate current selection"],
+  "当前网站": ["當前網站", "Current website"],
+  "读取中…": ["讀取中…", "Loading…"],
+  "正在读取设置…": ["正在讀取設定…", "Loading settings…"],
+  "选中 → 翻译 → 修改 → 复制 / 替换": ["選中 → 翻譯 → 修改 → 複製 / 替換", "Select → Translate → Edit → Copy / Replace"],
+  "选中文字，查看翻译。": ["選中文字，檢視翻譯。", "Select text. See its translation."],
+  "在 PDF 或网页选中文字，右键「用 Lingo 翻译」。扫描图片型 PDF 需要先进行 OCR。": ["在 PDF 或網頁選中文字，右鍵「用 Lingo 翻譯」。掃描圖片型 PDF 需要先進行 OCR。", "Select text in a PDF or webpage, then right-click “Translate with Lingo”. Scanned PDFs need OCR first."],
+  "选中的原文": ["選中的原文", "Selected source text"],
+  "翻译目标语言": ["翻譯目標語言", "Translation target language"],
+  "清除": ["清除", "Clear"],
+  "移动浮窗：拖动标题栏，或聚焦后用方向键移动": ["移動浮窗：拖動標題欄，或聚焦後用方向鍵移動", "Move panel: drag the header or focus it and use arrow keys"],
+  "拖动标题栏移动浮窗": ["拖動標題欄移動浮窗", "Drag the header to move the panel"],
+  "读懂，也写得更好": ["讀懂，也寫得更好", "Read clearly. Write better."],
+  "恢复默认位置和大小": ["恢復預設位置和大小", "Reset position and size"],
+  "关闭 · Esc": ["關閉 · Esc", "Close · Esc"],
+  "关闭": ["關閉", "Close"],
+  "写作工具": ["寫作工具", "Writing tools"],
+  "始终基于原文": ["始終基於原文", "Always uses the source"],
+  "自定义修改要求": ["自定義修改要求", "Custom editing request"],
+  "试试：更委婉一点…": ["試試：更委婉一點…", "Try: make this more polite…"],
+  "执行自定义改写": ["執行自定義改寫", "Run custom rewrite"],
+  "仅发送选中文字": ["僅傳送選中文字", "Only selected text is sent"]
+};
+const roots = /* @__PURE__ */ new Set();
+const nodes = /* @__PURE__ */ new WeakMap();
+const attributes = /* @__PURE__ */ new WeakMap();
+function resolveLanguage(choice = "auto", browser = typeof chrome !== "undefined" && chrome.i18n ? chrome.i18n.getUILanguage() : "en") {
+  if (choice !== "auto" && ["zh-CN", "zh-TW", "en"].includes(choice)) return choice;
+  return /^zh(?:-|_)(?:TW|HK|MO|Hant)/i.test(browser) ? "zh-TW" : /^zh/i.test(browser) ? "zh-CN" : "en";
+}
+let locale = resolveLanguage();
+const catalog = messages;
+function t(text) {
+  if (locale === "zh-CN" || !text) return text;
+  const index = locale === "zh-TW" ? 0 : 1;
+  if (catalog[text]) return catalog[text][index];
+  for (const [source, values] of Object.entries(catalog)) {
+    if (!source.includes("{0}")) continue;
+    const parts = source.split("{0}");
+    if (text.startsWith(parts[0]) && text.endsWith(parts[1]) && text.length >= parts[0].length + parts[1].length) return values[index].replace("{0}", source === "调整浮窗大小：{0}" || source === "{0}结果" ? t(text.slice(parts[0].length, text.length - parts[1].length)) : text.slice(parts[0].length, text.length - parts[1].length));
+  }
+  return text;
+}
+function render(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode, el = node instanceof Element ? node : node.parentElement;
+    if (el?.closest('[translate="no"],script,style')) continue;
+    if (node.nodeType === Node.TEXT_NODE && node.nodeValue?.trim()) {
+      const value = node.nodeValue, prior = nodes.get(node), source = prior?.rendered === value ? prior.source : value;
+      const trimmed = source.trim(), translated = t(trimmed), rendered = source.replace(trimmed, translated);
+      nodes.set(node, { source, rendered });
+      if (rendered !== value) node.nodeValue = rendered;
+    }
+    if (node instanceof Element) for (const name of ["title", "aria-label", "placeholder"]) {
+      const value = node.getAttribute(name);
+      if (!value) continue;
+      let map = attributes.get(node);
+      if (!map) {
+        map = /* @__PURE__ */ new Map();
+        attributes.set(node, map);
+      }
+      const prior = map.get(name), source = prior?.rendered === value ? prior.source : value, rendered = t(source);
+      map.set(name, { source, rendered });
+      if (rendered !== value) node.setAttribute(name, rendered);
+    }
+  }
+  if (root instanceof Document) root.documentElement.lang = locale;
+}
+function setLanguage(value) {
+  locale = resolveLanguage(value);
+  for (const root of roots) render(root);
+}
+function localize(root) {
+  roots.add(root);
+  render(root);
+  new MutationObserver(() => render(root)).observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["title", "aria-label", "placeholder"] });
+}
+export {
+  localize as l,
+  setLanguage as s,
+  t
+};

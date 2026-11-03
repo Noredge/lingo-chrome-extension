@@ -1,7 +1,28 @@
-import "./ui-BOAe4Mgc.js";
-const DEFAULTS = { languages: ["简体中文", "English"] };
-const LANGUAGES = ["简体中文", "繁體中文", "English", "日本語", "한국어", "Français", "Deutsch", "Español", "Português（葡萄牙语）", "Italiano（意大利语）", "Nederlands（荷兰语）", "Русский（俄语）", "Українська（乌克兰语）", "Polski（波兰语）", "Čeština（捷克语）", "Svenska（瑞典语）", "Dansk（丹麦语）", "Norsk（挪威语）", "Suomi（芬兰语）", "Ελληνικά（希腊语）", "Türkçe（土耳其语）", "العربية（阿拉伯语）", "עברית（希伯来语）", "فارسی（波斯语）", "हिन्दी（印地语）", "বাংলা（孟加拉语）", "ไทย（泰语）", "Tiếng Việt（越南语）", "Bahasa Indonesia（印尼语）", "Bahasa Melayu（马来语）", "Filipino（菲律宾语）"];
-document.querySelector(".version").textContent = chrome.runtime.getManifest().version;
+import { l as localize, s as setLanguage, t } from "./i18n-BW9HZsYX.js";
+import { D as DEFAULTS, n as normalizeBaseUrl, a as apiOrigin, L as LANGUAGES } from "./core-DItjoKfo.js";
+document.querySelector(".version").textContent = chrome.runtime.getManifest().version_name || chrome.runtime.getManifest().version;
+localize(document);
+const base = document.getElementById("base-url");
+const ui = document.getElementById("ui-language");
+let savedBase = "", savedModel = "", allGranted = false;
+function destination() {
+  try {
+    document.getElementById("destination").textContent = t("数据传送到：") + normalizeBaseUrl(base.value) + "/chat/completions";
+  } catch {
+    document.getElementById("destination").textContent = t("请检查 Base URL。");
+  }
+}
+base.addEventListener("input", () => {
+  destination();
+  if (base.value.replace(/\/$/, "") !== savedBase) {
+    document.getElementById("data-consent").removeAttribute("checked");
+    document.getElementById("data-consent").checked = false;
+  }
+});
+ui.addEventListener("change", () => {
+  setLanguage(ui.value);
+  destination();
+});
 const $ = (id) => document.getElementById(id);
 const key = $("api-key"), model = $("model"), language = $("language"), storageMode = $("storage-mode");
 let selectedLanguages = [...DEFAULTS.languages];
@@ -10,12 +31,15 @@ function drawLanguages(preferred = language.value) {
   $("language-list").replaceChildren();
   for (const l of selectedLanguages) {
     const o = document.createElement("option");
-    o.value = o.textContent = l;
+    o.value = l;
+    o.textContent = l.split("（")[0];
+    o.translate = false;
     language.append(o);
     const chip = document.createElement("span");
     chip.className = "language-chip";
     const text = document.createElement("span");
-    text.textContent = l;
+    text.textContent = l.split("（")[0];
+    text.translate = false;
     const remove = document.createElement("button");
     remove.type = "button";
     remove.textContent = "×";
@@ -34,7 +58,9 @@ function drawLanguages(preferred = language.value) {
   add.replaceChildren();
   LANGUAGES.filter((l) => !selectedLanguages.includes(l)).forEach((l) => {
     const o = document.createElement("option");
-    o.value = o.textContent = l;
+    o.value = l;
+    o.textContent = l.split("（")[0];
+    o.translate = false;
     add.append(o);
   });
   add.disabled = selectedLanguages.length === LANGUAGES.length;
@@ -68,6 +94,11 @@ function drawStorage() {
   $("storage-help").textContent = mode === "device" ? "保存一次，重启 Chrome 后也可直接使用，无需解锁。" : mode === "encrypted" ? "重启 Chrome 或重载扩展后解锁一次，之后的划词与打开浮窗都不需要重复输入密码。" : "关闭浏览器或重载扩展后，需要重新填写 Key。";
 }
 function draw(c) {
+  base.value = savedBase = c.settings.baseUrl;
+  savedModel = c.settings.model;
+  ui.value = c.settings.uiLanguage;
+  setLanguage(ui.value);
+  destination();
   model.value = c.settings.model;
   selectedLanguages = [...c.settings.languages];
   drawLanguages(c.settings.language);
@@ -113,7 +144,10 @@ $("settings-form").addEventListener("submit", async (e) => {
   const b = document.querySelector('button[type="submit"]');
   b.disabled = true;
   try {
-    const c = await message({ type: "save", key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === "device", password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
+    const normalized = normalizeBaseUrl(base.value);
+    const granted = await chrome.permissions.request({ origins: [apiOrigin(normalized)] });
+    if (!granted) throw new Error("未授权 API 服务，设置未保存。");
+    const c = await message({ type: "save", baseUrl: normalized, uiLanguage: ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === "device", password: $("vault-password").value, passwordConfirm: $("vault-confirm").value, dataConsent: $("data-consent").checked });
     clearCredentialInputs();
     draw(c);
     status("save-status", "设置已保存。已打开的窗口可点击重试，或关闭后重新划词。");
@@ -157,7 +191,7 @@ $("reveal").addEventListener("click", () => {
   $("reveal").textContent = key.type === "password" ? "显示" : "隐藏";
 });
 $("delete-key").addEventListener("click", async () => {
-  if (!confirm("删除此扩展保存的 Key？这不会撤销 OpenAI 平台上的密钥。")) return;
+  if (!confirm(t("删除此扩展保存的 Key？这不会撤销服务商平台上的密钥。"))) return;
   try {
     draw(await message({ type: "deleteKey" }));
     clearCredentialInputs();
@@ -175,8 +209,8 @@ $("test").addEventListener("click", () => {
     status("save-status", "测试已停止。");
     return;
   }
-  if (key.value.trim()) {
-    status("save-status", "请先保存新 Key，再测试连接。", true);
+  if (key.value.trim() || base.value.replace(/\/$/, "") !== savedBase || model.value.trim() !== savedModel) {
+    status("save-status", "请先保存服务地址、模型和 Key，再测试连接。", true);
     return;
   }
   const port = chrome.runtime.connect({ name: "lingo-task" });
@@ -221,8 +255,10 @@ $("test").addEventListener("click", () => {
 });
 async function sites() {
   const p = await chrome.permissions.getAll();
-  const origins = (p.origins || []).filter((x) => /^https?:/.test(x) && x !== "https://api.openai.com/*");
+  const c = await message({ type: "config" });
+  const origins = (p.origins || []).filter((x) => /^https?:/.test(x) && x !== "https://api.openai.com/*" && !(c.apiOrigins || []).includes(x));
   const all = origins.includes("https://*/*") && origins.includes("http://*/*");
+  allGranted = all;
   $("all-sites").textContent = all ? "关闭所有网站授权" : "一键授权所有普通网页";
   $("permission-summary").textContent = all ? "已授权所有普通网页 · 划词即可使用" : origins.length ? "已授权部分站点 · 可开启所有普通网页" : "还差一步：授权网站后，划词才会自动出现入口";
   $("sites").replaceChildren();
@@ -245,7 +281,7 @@ async function sites() {
 }
 $("all-sites").addEventListener("click", async () => {
   try {
-    if ($("all-sites").textContent?.startsWith("关闭")) {
+    if (allGranted) {
       await chrome.permissions.remove({ origins: ["https://*/*", "http://*/*"] });
       status("site-status", "已关闭所有网站授权，请刷新已打开的网页。");
     } else {

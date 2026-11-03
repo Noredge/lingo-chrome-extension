@@ -1,20 +1,16 @@
-# Reviewer test instructions
+# Reviewer instructions — draft, not submitted
 
-Lingo is a bring-your-own-key translation and writing extension. There is no Lingo account, developer-hosted API proxy, payment flow, or bundled API key. Full AI operations require a valid OpenAI API key, model access and API quota. Do not use the invalid fixture keys in source tests for live review.
+Current build: 1.0.0-dev.1, manifest 0.9.0. Full AI operations require the reviewer’s valid compatible API account, Key, available Chat Completions model and quota. No live credential is included. Never use fixture keys for live access.
 
-1. Install the uploaded ZIP. Settings opens on first install. The runtime contains all JS/CSS and an offline privacy page.
-2. Enter a valid OpenAI API key and a Responses-compatible model accessible to that project. Default model: gpt-6-luna; change it if the reviewing project lacks access.
-3. Read and affirm the disclosure that selected text and instructions are sent to OpenAI. The default storage mode remembers the key with automatic device encryption, without a password. Save settings（保存设置）. Choose Session only if preferred.
-4. Test connection. It translates only the fixed sentence “A little clearer, a little better.” This uses the reviewing OpenAI project's quota.
-5. Add a specific test website, grant Chrome's permission prompt, and refresh that page. Alternatively select text and invoke Lingo through the toolbar/context menu without persistent host permission.
-6. Select “The quiet moments are often the ones we remember best.” Click the 文 icon. Translation begins. Check Copy and target-language switching.
-7. In a disposable textarea or simple contenteditable draft, use “Before. Can you send me it today? After.” Select only the middle sentence. Open Lingo, choose Proofread（校对）, and explicitly click Replace selected text on the writing result. Before/After must remain. Native Ctrl+Z / Cmd+Z restores the original. Do not send an email.
-8. Drag the title bar; resize from the four sides/corners. Minimum is 320×300 (smaller viewports take precedence). Reset restores automatic layout. Changing the original text disables replacement from the stale snapshot.
-9. In Settings, add/remove target languages and choose a default. Reopen the popup and verify only that shortlist appears.
-10. Optional persistence test: choose Password encryption（加密保存，每次启动后解锁）, enter and confirm a test password of at least 12 characters, save, then Lock（立即锁定）. A wrong password cannot unlock. The correct password unlocks. Restart Chrome or reload the extension: the vault remains locked. Preferences still save while locked. Delete Key removes encrypted/session copies and any automatic device key. To verify the default mode, save in Remember key（记住 Key，免解锁） mode, restart Chrome and confirm the key is ready without unlocking. Switch back to password mode and confirm the automatic device key is removed.
-11. Before consent, or after consent is revoked and saved, model requests are blocked. The extension never logs credentials or executes model output.
+1. Install the extension; choose English / 简体中文 / 繁體中文 or browser-follow in settings. Translation target language remains independent.
+2. Set Base URL (OpenAI example: https://api.openai.com/v1; DeepSeek example: https://api.deepseek.com), the correct provider Key and model. Review the exact destination and data disclosure. Confirm Chrome’s API origin permission and save. Default storage is automatic local encryption with no password; session and password modes are optional.
+3. Test connection. Only a fixed sample is sent and the provider may charge for it. Changing the Base URL requires a new service Key and consent; the old Key is not forwarded. Unsaved endpoint/model edits cannot be tested.
+4. Allow a test webpage and refresh, select text and click 文. Verify translation, target switching, proofreading, custom writing, copy, moving and all eight resize directions.
+5. In a disposable textarea/simple rich-text editor, select only “Can you send me it today?” within “Before. Can you send me it today? After.” Proofread and explicitly replace the selection; surrounding text stays, and native Undo restores it. Do not send email.
+6. Open a text-based PDF in Chrome’s built-in viewer, select a sentence, right-click “Translate with Lingo”. The native sidebar opens with the result. Repeat for a local PDF. Sidebar supports copy and limited writing presets, not modifying the PDF. Scanned PDFs require OCR.
+7. Verify English, Simplified Chinese and Traditional Chinese buttons/errors/disclosures. Generated content must not be translated by interface switching.
+8. Try invalid credentials, network failure and an incompatible model. Error messages must not expose server content or credentials; partial output cannot be applied.
+9. Verify optional password mode, incorrect-password rejection, locking and browser restart; device remember mode should work after restart without unlock. Deleting the Key removes ciphertext, session data and the device decryption key. Existing encrypted credentials retain their storage mode.
+10. Before consent or after revoking it and saving, API calls are blocked. Revoke API host permission and verify requests stop.
 
-Privacy: https://noredge.github.io/lingo-chrome-extension/privacy.html
-Support: hongbin.lei98@gmail.com
-
-Publisher note (do not paste as a reviewer credential): No real reviewer credential has been provisioned or included. If the review team needs publisher-provided test access, arrange a separate review-only API project/key through the dashboard's private Test instructions field; do not publish a key in the store listing, repo or extension ZIP. Do not use your everyday personal key. You may also provide a demonstration video, but it does not replace any live-access requirement the reviewer specifies.
+The current source repo is private. Public privacy/support URL and formal store submission are pending. An offline three-language privacy policy is included. Support: hongbin.lei98@gmail.com. Any publisher-supplied review-only credential must be arranged privately before submission, never bundled or published.

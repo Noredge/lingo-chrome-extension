@@ -1,22 +1,30 @@
 import './ui.css';
-import { LANGUAGES, DEFAULTS } from './core';
-document.querySelector('.version')!.textContent = chrome.runtime.getManifest().version;
+import { localize, setLanguage, t } from './i18n';
+import { LANGUAGES, DEFAULTS, normalizeBaseUrl, apiOrigin } from './core';
+document.querySelector('.version')!.textContent = chrome.runtime.getManifest().version_name || chrome.runtime.getManifest().version;
+localize(document);
+const base = document.getElementById('base-url') as HTMLInputElement;
+const ui = document.getElementById('ui-language') as HTMLSelectElement;
+let savedBase = '', savedModel = '', allGranted = false;
+function destination() { try { document.getElementById('destination')!.textContent = t('数据传送到：') + normalizeBaseUrl(base.value) + '/chat/completions'; } catch { document.getElementById('destination')!.textContent = t('请检查 Base URL。'); } }
+base.addEventListener('input', () => { destination(); if (base.value.replace(/\/$/,'') !== savedBase) { document.getElementById('data-consent')!.removeAttribute('checked'); (document.getElementById('data-consent') as HTMLInputElement).checked = false; } });
+ui.addEventListener('change', () => { setLanguage(ui.value); destination(); });
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const key = $<HTMLInputElement>('api-key'), model = $<HTMLInputElement>('model'), language = $<HTMLSelectElement>('language'), storageMode = $<HTMLSelectElement>('storage-mode');
 let selectedLanguages = [...DEFAULTS.languages];
 function drawLanguages(preferred = language.value) {
   language.replaceChildren(); $('language-list').replaceChildren();
   for (const l of selectedLanguages) {
-    const o = document.createElement('option'); o.value = o.textContent = l; language.append(o);
+    const o = document.createElement('option'); o.value = l; o.textContent = l.split('（')[0]; o.translate = false; language.append(o);
     const chip = document.createElement('span'); chip.className = 'language-chip';
-    const text = document.createElement('span'); text.textContent = l;
+    const text = document.createElement('span'); text.textContent = l.split('（')[0]; text.translate = false;
     const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '×'; remove.setAttribute('aria-label', `移除 ${l}`); remove.disabled = selectedLanguages.length === 1;
     remove.addEventListener('click', () => { const current = language.value; selectedLanguages = selectedLanguages.filter(x => x !== l); drawLanguages(current); });
     chip.append(text, remove); $('language-list').append(chip);
   }
   language.value = selectedLanguages.includes(preferred) ? preferred : selectedLanguages[0];
   const add = $<HTMLSelectElement>('add-language'); add.replaceChildren();
-  LANGUAGES.filter(l => !selectedLanguages.includes(l)).forEach(l => { const o = document.createElement('option'); o.value = o.textContent = l; add.append(o); });
+  LANGUAGES.filter(l => !selectedLanguages.includes(l)).forEach(l => { const o = document.createElement('option'); o.value = l; o.textContent = l.split('（')[0]; o.translate = false; add.append(o); });
   add.disabled = selectedLanguages.length === LANGUAGES.length;
   $<HTMLButtonElement>('add-language-button').disabled = add.disabled;
 }
@@ -37,6 +45,7 @@ function drawStorage() {
   $('storage-help').textContent = mode === 'device' ? '保存一次，重启 Chrome 后也可直接使用，无需解锁。' : mode === 'encrypted' ? '重启 Chrome 或重载扩展后解锁一次，之后的划词与打开浮窗都不需要重复输入密码。' : '关闭浏览器或重载扩展后，需要重新填写 Key。';
 }
 function draw(c: any) {
+  base.value = savedBase = c.settings.baseUrl; savedModel = c.settings.model; ui.value = c.settings.uiLanguage; setLanguage(ui.value); destination();
   model.value = c.settings.model; selectedLanguages = [...c.settings.languages]; drawLanguages(c.settings.language); storageMode.value = c.storageMode;
   $('key-status').textContent = c.hasKey ? 'Key 已配置' : c.hasVault ? 'Key 已锁定' : '尚未配置 Key'; $('key-status').classList.toggle('connected', c.hasKey);
   key.placeholder = c.hasKey ? '已保存 · 留空保留，输入新 Key 可替换' : 'sk-…';
@@ -61,7 +70,10 @@ async function load() { draw(await message({ type: 'config' })); await sites(); 
 void load().catch(e => status('save-status', e.message, true));
 $('settings-form').addEventListener('submit', async e => {
   e.preventDefault(); const b = document.querySelector<HTMLButtonElement>('button[type="submit"]')!; b.disabled = true;
-  try { const c = await message({ type: 'save', key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === 'device', password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); clearCredentialInputs(); draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
+  try { const normalized = normalizeBaseUrl(base.value);
+    const granted = await chrome.permissions.request({origins:[apiOrigin(normalized)]});
+    if (!granted) throw new Error('未授权 API 服务，设置未保存。');
+    const c = await message({ type: 'save', baseUrl:normalized, uiLanguage:ui.value, key: key.value.trim(), model: model.value.trim(), language: language.value, languages: selectedLanguages, storageMode: storageMode.value, deviceConsent: storageMode.value === 'device', password: $<HTMLInputElement>('vault-password').value, passwordConfirm: $<HTMLInputElement>('vault-confirm').value, dataConsent: $<HTMLInputElement>('data-consent').checked }); clearCredentialInputs(); draw(c); status('save-status', '设置已保存。已打开的窗口可点击重试，或关闭后重新划词。'); }
   catch (e) { status('save-status', (e as Error).message, true); } finally { b.disabled = false; }
 });
 storageMode.addEventListener('change', drawStorage);
@@ -80,13 +92,13 @@ $('lock-key').addEventListener('click', async () => {
 });
 $('reveal').addEventListener('click', () => { key.type = key.type === 'password' ? 'text' : 'password'; $('reveal').textContent = key.type === 'password' ? '显示' : '隐藏'; });
 $('delete-key').addEventListener('click', async () => {
-  if (!confirm('删除此扩展保存的 Key？这不会撤销 OpenAI 平台上的密钥。')) return;
+  if (!confirm(t('删除此扩展保存的 Key？这不会撤销服务商平台上的密钥。'))) return;
   try { draw(await message({ type: 'deleteKey' })); clearCredentialInputs(); status('save-status', '已删除扩展中的 Key。'); } catch (e) { status('save-status', (e as Error).message, true); }
 });
 let testPort: chrome.runtime.Port | null = null;
 $('test').addEventListener('click', () => {
   if (testPort) { testPort.disconnect(); testPort = null; $('test').textContent = '测试连接'; status('save-status', '测试已停止。'); return; }
-  if (key.value.trim()) { status('save-status', '请先保存新 Key，再测试连接。', true); return; }
+  if (key.value.trim() || base.value.replace(/\/$/,'') !== savedBase || model.value.trim() !== savedModel) { status('save-status', '请先保存服务地址、模型和 Key，再测试连接。', true); return; }
   const port = chrome.runtime.connect({ name: 'lingo-task' }); testPort = port;
   let complete = false; let output = '';
   status('save-status', '正在使用已保存的模型翻译固定示例…'); $('test').textContent = '停止测试';
@@ -102,8 +114,9 @@ $('test').addEventListener('click', () => {
 });
 async function sites() {
   const p = await chrome.permissions.getAll();
-  const origins = (p.origins || []).filter(x => /^https?:/.test(x) && x !== 'https://api.openai.com/*');
-  const all = origins.includes('https://*/*') && origins.includes('http://*/*');
+  const c = await message({type:'config'});
+  const origins = (p.origins || []).filter(x => /^https?:/.test(x) && x !== 'https://api.openai.com/*' && !(c.apiOrigins || []).includes(x));
+  const all = origins.includes('https://*/*') && origins.includes('http://*/*'); allGranted = all;
   $('all-sites').textContent = all ? '关闭所有网站授权' : '一键授权所有普通网页';
   $('permission-summary').textContent = all ? '已授权所有普通网页 · 划词即可使用' : origins.length ? '已授权部分站点 · 可开启所有普通网页' : '还差一步：授权网站后，划词才会自动出现入口';
   $('sites').replaceChildren();
@@ -115,7 +128,7 @@ async function sites() {
 }
 $('all-sites').addEventListener('click', async () => {
   try {
-    if ($('all-sites').textContent?.startsWith('关闭')) {
+    if (allGranted) {
       await chrome.permissions.remove({ origins: ['https://*/*','http://*/*'] });
       status('site-status', '已关闭所有网站授权，请刷新已打开的网页。');
     } else {

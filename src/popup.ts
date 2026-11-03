@@ -1,10 +1,12 @@
 import './ui.css';
+import {localize, setLanguage} from './i18n';
+localize(document);
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let tab: chrome.tabs.Tab | undefined, origin = '';
 function status(text: string, error = false) { $('status').textContent = text; $('status').classList.toggle('error', error); }
 async function refresh() {
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const c = await chrome.runtime.sendMessage({ type: 'config' });
+  const c = await chrome.runtime.sendMessage({ type: 'config' }); setLanguage(c.settings.uiLanguage);
   $('key-state').textContent = !c.dataConsent ? '请在设置中确认数据处理说明' : c.hasKey ? `Key 已就绪 · ${c.settings.model}` : c.hasVault ? 'Key 已锁定，请打开设置解锁' : '首次使用：请在设置中填写 API Key';
   const supported = !!tab?.url && /^https?:/.test(tab.url);
   if (supported) {

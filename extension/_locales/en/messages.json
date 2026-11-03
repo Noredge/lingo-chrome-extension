@@ -1,0 +1,11 @@
+{
+  "extensionName": {
+    "message": "Lingo · Translate & Write"
+  },
+  "extensionDescription": {
+    "message": "Translate and edit selected text with your own compatible API. PDF sidebar and three interface languages."
+  },
+  "commandDescription": {
+    "message": "Translate selected text"
+  }
+}

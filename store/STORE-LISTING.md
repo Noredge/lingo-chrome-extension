@@ -1,73 +1,61 @@
-# Chrome Web Store 文案 · Lingo 1.0.0
+# 商店文案草稿 · 1.0.0-dev.1
 
-发布者：Noredge
-公开支持邮箱：hongbin.lei98@gmail.com
-支持网址：https://noredge.github.io/lingo-chrome-extension/
-隐私政策：https://noredge.github.io/lingo-chrome-extension/privacy.html
-建议主语言：简体中文；可添加英文商店本地化。
-类别：Productivity（如当前后台提供子分类，可选 Tools / Workflow & Planning 中最贴近者）。
-分发：Unlisted / 不公开列出。免费安装；OpenAI API 费用由用户自己的 OpenAI 账户承担。不要宣称“免费 AI”或暗示包含 API 额度。
+尚未上架。当前仓库私有；原 GitHub Pages 网址不能作为已验证的公开政策链接。正式 1.0 前恢复公开政策页面、补齐最终截图并重新检查商店字段。计划 Unlisted，由用户完成开发者注册、付款及最终提交。
+
+发布者：Noredge · 支持：hongbin.lei98@gmail.com。免费安装，API 用量由用户所选服务商单独计费。无内置额度，不承诺“免费 AI”。
 
 ## 简体中文
 
 名称：Lingo · 划词翻译与写作
 
-简短说明：选中文字，翻译、校对与改写。常用语言自选，浮窗可拖动缩放。需要自备 OpenAI API Key，API 用量另计。
+简短说明：划词翻译、校对与改写，支持 PDF 侧边栏与三语界面。自备兼容 API Key，用量另计。
 
-详细说明（以下正文可复制）：
+详细说明：
 
-Lingo 把划词翻译和按需写作工具放在一个小浮窗里。选中文字，先看翻译，再选择校对、改写或输入自己的修改要求。
+Lingo 把翻译和按需写作放进一个可移动、可缩放的浮窗。选中文字，先看翻译，再校对、改写或输入自己的要求；在支持的输入框中只替换最初选中的部分，保留原生撤销。
 
-使用前需要你自己的 OpenAI API Key、可用模型及 API 额度。扩展免费安装，不提供 API 额度；费用按你的 OpenAI 账户政策收取。
+Chrome 内置阅读器中的 PDF 可选中文字后右键“用 Lingo 翻译”，在旁边的原生侧边栏查看并复制结果。支持文字型网页 PDF 和本机 PDF；扫描图片需要先 OCR。不会上传整个 PDF，不修改 PDF 文件。
 
-你可以做什么：
-• 在普通网页阅读时选中文字，点击「文」查看翻译。
-• 校对拼写、语法和标点，或选择自然、专业、友好、简洁、精准语气。
-• 输入自定义要求，例如“更委婉一点”或“保留原意但缩短”。
-• 在设置页从 31 种语言中挑选常用语言，浮窗只显示你添加的语言。
-• 拖动标题栏移动浮窗，从四边或四角调整大小。
-• 复制结果；在支持的输入框和简单富文本编辑器中，由你主动点击替换最初选中的部分，并可用系统撤销快捷键恢复。
+界面支持简体中文、繁體中文与 English，默认跟随 Chrome，也可手动切换。界面语言与翻译目标语言独立；从 31 种目标语言中挑选浮窗常用列表。浮窗可拖动标题栏移动，从四边/四角缩放，最小 320×300。
 
-数据与 Key：
-在你确认数据说明后，打开翻译窗口或点击写作操作会把选中文字、目标语言和必要修改要求直接发送给 OpenAI。API Key 用于验证该请求。扩展不自动上传整页或整封邮件，不记录文字历史，没有广告或分析服务。
+使用自己的 OpenAI、DeepSeek 或其他 Chat Completions 相容服务：填写 Base URL、API Key、模型，再测试连接。所有服务共用标准接口；无需开发者账户，不包含 API 额度。服务商可能按其政策收费。
 
-Key 默认记住并免解锁，使用随机本机 AES-256-GCM 密钥自动加密。自动解密密钥也在此浏览器中，不能防护完整浏览器配置被窃取，不等同于系统钥匙串。你也可选仅本次会话，或密码加密保存。密码模式在重启 Chrome 或重载扩展后解锁一次，普通划词无需重复解锁。
+只有你确认说明并打开翻译/写作操作时，选中文字和必要指令才发往设置中显示的服务地址。Key 与完整地址绑定；换服务须填写相应 Key。不自动上传整页、整封邮件或浏览历史，无开发者代理、广告、分析或文字历史。服务端保留由服务商政策决定。
 
-网站授权由你决定：可以授权指定站点或所有普通网页，也可以从工具栏、右键菜单或快捷键临时调用。授权站点后请刷新已打开的页面。
+Key 默认本机自动 AES-256-GCM 加密并免解锁，也可选 session-only 或密码加密。自动解密密钥也在浏览器配置中，不能防护完整配置被窃取，不等同于系统钥匙串。密码模式在浏览器重启/扩展重载后解锁一次。
 
-兼容范围：支持普通 HTTP/HTTPS 网页、标准输入框和部分简单 contenteditable 编辑器。复杂编辑器、图片/表格嵌入、Chrome 内部页面、扩展商店和内置 PDF 阅读器存在限制；不支持安全替换的区域保留复制功能。模型可能产生错误，请检查结果再使用。
+复杂编辑器仅保留复制；浏览器内部页与扩展商店不支持网页浮窗。模型可能出错，请核对后使用。
 
-隐私政策：https://noredge.github.io/lingo-chrome-extension/privacy.html
-支持：hongbin.lei98@gmail.com（请勿发送 API Key、解锁密码或私人邮件内容）
-Lingo 是独立开发的工具，并非 OpenAI 或 Google 官方产品。
+支持：hongbin.lei98@gmail.com，请勿发送 Key、密码或私人文档。Lingo 是独立工具，并非 OpenAI、DeepSeek 或 Google 官方产品。
+
+## 繁體中文
+
+名稱：Lingo · 劃詞翻譯與寫作
+
+簡短說明：劃詞翻譯、校對與改寫，支援 PDF 側邊欄與三語介面。自備相容 API Key，用量另計。
+
+介面可跟隨瀏覽器，或選擇簡體中文、繁體中文、English；翻譯目標語言獨立設定。一般網頁選取文字後使用可移動、八方向縮放的浮窗；Chrome PDF 選取文字後右鍵「用 Lingo 翻譯」，在側邊欄查看結果。圖片型 PDF 需先 OCR。
+
+填入自己的 Base URL、API Key 與模型，透過統一 Chat Completions 協定連接 OpenAI、DeepSeek 或其他相容服務。Key 與完整服務網址綁定；資料接收方會明確顯示。服務費用與資料保留依所選服務商政策，擴充功能不提供額度。預設免解鎖的本機加密，也可選密碼加密或僅本次工作階段。自動解密金鑰亦在瀏覽器設定檔中，無法防範完整設定檔失竊。
+
+只傳送明確選取的文字與指令，不自動上傳完整頁面、郵件、PDF 或瀏覽歷程，不設開發者代理、分析或廣告。請核對 AI 結果。支援信箱：hongbin.lei98@gmail.com，請勿寄送憑證或私人文件。
 
 ## English
 
-Name: Lingo — Selection Translator & Writing Tools
+Name: Lingo — Translate & Write
 
-Short description: Translate and edit selected text in a movable popup. Bring your own OpenAI API key; API usage is billed separately.
+Short description: Translate and edit selections, including PDFs in a sidebar. Three UI languages. Bring your own compatible API key.
 
-Detailed description:
+Lingo translates selected text and offers proofreading, tone presets and custom rewriting in a movable, resizable panel. Copy results or explicitly replace the original selection in supported inputs and simple editors, with native undo.
 
-Select text, see a translation, then proofread or rewrite it without switching tabs. Lingo combines selection translation and on-demand writing tools in one movable, resizable popup.
+In Chrome’s built-in PDF viewer, select text, right-click “Translate with Lingo”, and see the result in the sidebar. Text-based web and local PDFs are supported; scanned images need OCR first. No entire-document upload or PDF modification.
 
-Requires your own OpenAI API key, an accessible model and API quota. Installation is free; API usage is billed separately under your OpenAI account. No API credits are included.
+Choose English, Simplified Chinese or Traditional Chinese for the interface, or follow Chrome. Translation targets are independent, with a shortlist selected from 31 languages.
 
-• Translate selected text on ordinary web pages.
-• Proofread spelling, grammar and punctuation.
-• Rewrite in a natural, professional, friendly, concise or precise tone, or enter your own editing instruction.
-• Choose a shortlist from 31 target languages in settings.
-• Move the popup and resize it from any edge or corner.
-• Copy results or explicitly replace the original selection in supported inputs and simple rich-text editors, with native undo.
+Connect your own OpenAI, DeepSeek or compatible service using Base URL, API Key, model and Test connection. One shared Chat Completions protocol is used. Provider usage is billed separately; no API credits are included. Credentials bind to the full service address, and the destination is visible. Changing addresses requires a Key for the new service.
 
-After you acknowledge the data disclosure, selected text, the target language and necessary editing instructions are sent directly to OpenAI. Your API key authenticates the request. Lingo does not automatically upload entire pages or emails, keep a text history, or include advertising or analytics.
+After consent, only deliberate translation or writing actions send selected text and instructions to your chosen provider. No automatic full-page, whole-email, whole-PDF or browsing-history upload; no developer relay, analytics, ads or text history. Provider retention depends on its policies.
 
-Keys are remembered by default with automatic AES-256-GCM device encryption and no unlock prompt. The non-extractable automatic decryption key is also stored in this browser profile; this does not protect against theft of the complete profile and is not OS Keychain protection. Session-only storage and password encryption remain optional. Password mode requires unlocking once after browser restart or extension reload, not each time the popup opens.
+Keys are remembered with automatic local AES-256-GCM encryption by default. The decryption key is in the same browser profile, so this is not protection against whole-profile theft or an OS keychain. Password encryption and session-only storage are also available.
 
-You control website access: selected sites, all ordinary sites, or temporary invocation from the toolbar/context menu. Refresh existing pages after granting persistent access.
-
-Some complex editors and embedded images/tables are not supported for replacement. Chrome internal pages, the extension store and the built-in PDF viewer are restricted. Review model output before using it.
-
-Privacy: https://noredge.github.io/lingo-chrome-extension/privacy.html
-Support: hongbin.lei98@gmail.com — never send API keys, unlock passwords or private messages.
-Independent software; not an official OpenAI or Google product.
+Complex editors may support copying only. Browser internal pages and extension stores restrict floating panels. Review generated text before use. Support: hongbin.lei98@gmail.com. Never send Keys, passwords or private documents. Independent software, not an official OpenAI, DeepSeek or Google product.

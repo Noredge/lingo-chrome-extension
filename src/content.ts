@@ -1,3 +1,4 @@
+import { localize, setLanguage } from './i18n';
 import { DEFAULTS, MODES, MAX_TEXT, type Mode, type Settings } from './core';
 import { capture, canReplace, replaceSelection, sensitiveFieldActive, type Snapshot } from './selection';
 import css from './overlay.css?inline';
@@ -8,16 +9,16 @@ if (!window.__lingoInstalled) { window.__lingoInstalled = true; init(); }
 function init() {
   const host = document.createElement('div'); host.id = 'lingo-extension-root';
   host.style.cssText = 'all:initial!important;position:fixed!important;left:0!important;top:0!important;width:0!important;height:0!important;z-index:2147483647!important;color-scheme:light!important';
-  const root = host.attachShadow({ mode: 'open' });
+  const root = host.attachShadow({ mode: 'open' }); localize(root);
   const style = document.createElement('style'); style.textContent = css; root.append(style);
   const launcher = document.createElement('button'); launcher.className = 'launcher'; launcher.textContent = '文'; launcher.title = 'Lingo · 翻译与修改'; launcher.setAttribute('aria-label', '用 Lingo 翻译选中文字'); launcher.hidden = true; root.append(launcher);
   const panel = document.createElement('section'); panel.className = 'panel'; panel.hidden = true; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Lingo 翻译与写作'); root.append(panel);
   // Constant markup only. Selected text and model output are always assigned using textContent.
   panel.innerHTML = `<header class="drag-handle" tabindex="0" role="group" aria-label="移动浮窗：拖动标题栏，或聚焦后用方向键移动" title="拖动标题栏移动浮窗"><div class="brand"><span class="logo">文</span><div><strong>Lingo</strong><small>读懂，也写得更好</small></div></div><div class="header-actions"><button data-action="reset-layout" class="icon" title="恢复默认位置和大小" aria-label="恢复默认位置和大小">↺</button><button data-action="settings" class="icon" title="打开设置" aria-label="打开设置">⚙</button><button data-action="close" class="icon" title="关闭 · Esc" aria-label="关闭">×</button></div></header>
-    <div class="body"><details class="source"><summary>选中的原文 <span class="count"></span></summary><div class="source-text" dir="auto"></div></details>
-    <section class="translation"><div class="section-title"><span class="eyebrow">翻译</span><select aria-label="翻译目标语言" class="language"></select></div><div class="result translate-text" dir="auto"></div><div class="result-status translate-status" role="status" aria-live="polite"></div><div class="result-actions translate-actions"></div></section>
-    <section class="writing"><div class="section-title"><span class="eyebrow">写作工具</span><span class="hint">始终基于原文</span></div><div class="presets"></div><form class="custom"><input aria-label="自定义修改要求" maxlength="1000" placeholder="试试：更委婉一点…"><button type="submit" aria-label="执行自定义改写">↗</button></form><div class="write-output" hidden><div class="write-label"></div><div class="result write-text" dir="auto"></div><div class="result-status write-status" role="status" aria-live="polite"></div><div class="result-actions write-actions"></div></div></section></div>
-    <footer><span class="notice" role="status">仅发送选中文字</span><span class="model"></span></footer>`;
+    <div class="body"><details class="source"><summary>选中的原文 <span class="count"></span></summary><div class="source-text" translate="no" dir="auto"></div></details>
+    <section class="translation"><div class="section-title"><span class="eyebrow">翻译</span><select aria-label="翻译目标语言" class="language"></select></div><div class="result translate-text" translate="no" dir="auto"></div><div class="result-status translate-status" role="status" aria-live="polite"></div><div class="result-actions translate-actions"></div></section>
+    <section class="writing"><div class="section-title"><span class="eyebrow">写作工具</span><span class="hint">始终基于原文</span></div><div class="presets"></div><form class="custom"><input aria-label="自定义修改要求" maxlength="1000" placeholder="试试：更委婉一点…"><button type="submit" aria-label="执行自定义改写">↗</button></form><div class="write-output" hidden><div class="write-label"></div><div class="result write-text" translate="no" dir="auto"></div><div class="result-status write-status" role="status" aria-live="polite"></div><div class="result-actions write-actions"></div></div></section></div>
+    <footer><span class="notice" role="status">仅发送选中文字</span><span class="model" translate="no"></span></footer>`;
   const $ = <T extends Element = HTMLElement>(s: string) => panel.querySelector<T>(s)!;
   const language = $<HTMLSelectElement>('.language');
   const edges: Edge[] = ['n','s','e','w','ne','nw','se','sw'];
@@ -34,10 +35,10 @@ function init() {
   type Result = { text: string; state: 'loading' | 'done' | 'error'; error?: string; mode: Mode; instruction: string; language: string; port?: chrome.runtime.Port; timer?: ReturnType<typeof setTimeout> };
   const results = new Map<string, Result>();
   async function config() {
-    try { const c = await chrome.runtime.sendMessage({ type: 'config' }); if (c?.settings) { settings = c.settings; hasKey = c.hasKey; hasVault = c.hasVault; } }
+    try { const c = await chrome.runtime.sendMessage({ type: 'config' }); if (c?.settings) { const serviceChanged = settings.baseUrl !== c.settings.baseUrl || settings.model !== c.settings.model; settings = c.settings; setLanguage(settings.uiLanguage); if (serviceChanged && !panel.hidden) close(); hasKey = c.hasKey; hasVault = c.hasVault; } }
     catch { notify('扩展已更新，请刷新网页后使用。'); }
-    language.replaceChildren(...settings.languages.map(l => { const o = document.createElement('option'); o.value = o.textContent = l; return o; }));
-    language.value = settings.language; $('.model').textContent = settings.model;
+    language.replaceChildren(...settings.languages.map(l => { const o = document.createElement('option'); o.value = l; o.textContent = l.split('（')[0]; o.translate = false; return o; }));
+    language.value = settings.language; $('.model').textContent = new URL(settings.baseUrl).host + ' · ' + settings.model; $('.model').setAttribute('title', settings.baseUrl + '/chat/completions');
     if (settings.blockedHosts.includes(location.hostname)) close();
   }
   void config();
@@ -139,7 +140,7 @@ function init() {
     const result: Result = { text: '', state: 'loading', mode, instruction, language: language.value };
     results.set(k, result); render();
     const g = generation, id = crypto.randomUUID();
-    if (!hasKey) { result.state = 'error'; result.error = hasVault ? 'Key 已锁定，请打开设置并输入本机解锁密码。' : '首次使用，请打开设置并填写 OpenAI API Key。'; render(); return; }
+    if (!hasKey) { result.state = 'error'; result.error = hasVault ? 'Key 已锁定，请打开设置并输入本机解锁密码。' : '首次使用，请打开设置并填写 API Key。'; render(); return; }
     try {
       const port = chrome.runtime.connect({ name: 'lingo-task' }); result.port = port;
       const finish = () => { clearTimeout(result.timer); result.port = undefined; port.disconnect(); };

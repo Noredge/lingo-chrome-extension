@@ -1,13 +1,54 @@
 {
- "manifest_version":3,"name":"Lingo · 划词翻译与写作","version":"1.0.0",
- "description":"选中文字，翻译、校对、改写。使用自己的 OpenAI API Key，按需发送选中文字。",
- "minimum_chrome_version":"120",
- "permissions":["storage","activeTab","scripting","contextMenus","clipboardWrite"],
- "host_permissions":["https://api.openai.com/*"],
- "optional_host_permissions":["https://*/*","http://*/*"],
- "background":{"service_worker":"background.js","type":"module"},
- "action":{"default_popup":"popup.html","default_title":"Lingo · 翻译与写作"},
- "options_ui":{"page":"options.html","open_in_tab":true},
- "commands":{"open-selection":{"suggested_key":{"default":"Alt+Shift+L","mac":"Alt+Shift+L"},"description":"翻译当前选中文字"}},
- "icons":{"16":"icons/16.png","32":"icons/32.png","48":"icons/48.png","128":"icons/128.png"}
+  "manifest_version": 3,
+  "name": "__MSG_extensionName__",
+  "version": "0.9.0",
+  "description": "__MSG_extensionDescription__",
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "contextMenus",
+    "clipboardWrite",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "https://api.openai.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "__MSG_extensionName__"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "open-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+L",
+        "mac": "Alt+Shift+L"
+      },
+      "description": "__MSG_commandDescription__"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "version_name": "1.0.0-dev.1",
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "default_locale": "en"
 }

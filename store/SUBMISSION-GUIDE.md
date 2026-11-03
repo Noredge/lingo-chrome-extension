@@ -1,36 +1,15 @@
-# Unlisted 上架操作单 · Lingo 1.0.0
+# 上架暂缓 · 开发预览 1.0.0-dev.1
 
-## 已准备
+当前仓库已改为私有；历史 v1.0.0 也标记为开发预发布。不要上传此前的 1.0.0 / 1.3.0 / 1.4.0 包。当前开发运行包的 Chrome version 是 0.9.0，version_name 是 1.0.0-dev.1。
 
-- 仅扩展运行文件的 Lingo-1.0.0-webstore.zip，manifest.json 位于根目录。
-- 中英文商店文案：STORE-LISTING.md。
-- 权限、单一用途与数据披露：PRIVACY-FIELDS.md。
-- 审核测试步骤：REVIEWER-INSTRUCTIONS.md（未包含真实 Key）。
-- 四张 1280×800 截图、128×128 图标、440×280 宣传图：assets/。
-- 公开隐私政策：https://noredge.github.io/lingo-chrome-extension/privacy.html
-- 公开支持页：https://noredge.github.io/lingo-chrome-extension/
-- 发布者 Noredge；公开支持邮箱 hongbin.lei98@gmail.com。
+待正式 1.0 前：
 
-## 你来完成的后台步骤
+1. 用各自账户测试真实 OpenAI 和选用的其他相容服务，核对模型名、余额、质量与延迟；当前新增验证使用模拟 API。
+2. 核对三语 UI 和 PDF/网页交互、隐私说明及权限用途。参考 verification/DEVELOPMENT-1.0.md。
+3. 再由用户确定正式发布。将 manifest/package 的数字版本设为 1.0.0，清除 dev 的 version_name；不可误用旧历史 tag 的开发制品。
+4. 恢复公开可访问的隐私/支持页面。现在仓库私有，原 GitHub Pages 设置已不可用；不能把旧地址当作有效页面提交。
+5. 更新商店文案三语本地化，重新生成正式版截图、截图构建来源记录和最终包。npm run package:store 会拒绝 dev 版本。
+6. 开发者注册及付款由用户完成；设置 Unlisted，填写真实的 Single purpose / 数据处理 / 权限说明，单独提供审核测试安排。不得把真实 Key 写进源代码、公开文案或包。
+7. 最终提交由用户授权后进行。本轮未注册、未付款、未提交。
 
-1. 在 https://chrome.google.com/webstore/devconsole 注册开发者账号、接受协议并支付注册费，开启 Google 账号两步验证。联系邮箱可后改，但更换开发者登录账号通常需要转移扩展。
-2. 填写发布者信息并验证公开联系邮箱；按后台提示完成适用的身份/经营者信息。这里只提供发布材料，不代替后台审核要求。
-3. 新建项目，上传 **Lingo-1.0.0-webstore.zip**。不要上传含 source/store/verification 的完整交付 ZIP。
-4. Store listing：粘贴文案，上传 assets 中的图标与四张截图，填写支持和隐私网址。
-5. Privacy practices：使用 PRIVACY-FIELDS.md，核对当前表单字眼，确保声明和代码实际一致。
-6. Distribution：选择 **Unlisted**。Unlisted 不出现在搜索中，但任何拿到链接的人都可安装，它不是私密访问控制。首版保持免费安装，自备 OpenAI Key/API 额度已在文案说明。
-7. Test instructions：填写审核步骤，明确 BYOK 前提。如审核需要你提供凭据，另行准备专用测试访问，不能把真实 Key 放进 ZIP/公开文案。此交付没有创建或共享真实审核 Key。
-8. 最终检查后 Submit for review。建议选择“审核通过后手动发布”，以便先检查上线信息。审核通过后按后台给出的期限发布。
-9. 安装商店版本时，它与现有本地加载版本通常具有不同扩展 ID，Key 与设置不会自动跨 ID 迁移。手动配置新版本，确认后停用旧本地版本，避免双重浮窗。
-
-## 本机版本升级提示
-
-1.0.0 新安装默认“记住 Key，免解锁”，本机自动加密；仅本次会话和密码加密为可选项。已有密码加密 Key 保留原模式，先解锁，再选择免解锁并保存即可。自动解密密钥也在本机，不能宣称等同于系统钥匙串。旧版明文记录仍迁入会话并删除原持久字段，等待用户选择保存方式。
-
-## 后续更新
-
-改源码 → npm run typecheck → npm test → npm run build → npm run test:browser → npm run test:security → npm run test:review → node tests/release-smoke.mjs → npm run store:assets → npm run package:store。更新 manifest/package 版本号，上传新 ZIP，重新提交审核。正式打包前重新生成截图；打包脚本核对截图来源构建、版本和图片哈希，拒绝旧图混入。
-
-公开支持邮箱可更新，改动后同步商店联系邮箱（按后台提示重新验证）、公开政策页和扩展内离线政策。源码和隐私支持文档统一在公开仓库 Noredge/lingo-chrome-extension 中维护。
-
-本次正式版本编号统一为 1.0.0。此前 GitHub 1.3/1.4 包为开发预发布；首个 Chrome Web Store 项目使用本次 1.0.0 ZIP，后续商店更新须递增版本号。
+开发构建：npm run build && npm run store:assets && npm run package:dev。

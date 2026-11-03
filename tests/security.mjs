@@ -6,7 +6,7 @@ const fake='sk-test-fixture-not-a-real-secret',password='fixture-only password 2
 let context,worker,options,id,requests=0;
 const check=name=>{checks.push(name);console.log('PASS',name)};
 async function boot(){
- context=await chromium.launchPersistentContext(temp,{channel:'chromium',headless:true,args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`]});
+ context=await chromium.launchPersistentContext(temp,{channel:'chromium',locale:'zh-CN',headless:true,args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`]});
  await context.route('https://api.openai.com/**',r=>{requests++;return r.abort();});
  worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker');id=worker.url().split('/')[2];
  options=await context.newPage();await options.goto(`chrome-extension://${id}/options.html`);await options.getByRole('heading',{name:'设置你的 Lingo'}).waitFor();

@@ -1,5 +1,5 @@
 // Automatic device encryption: no password, no hard-coded key. This is not OS Keychain protection.
-export type DeviceEnvelope = { version: 1; algorithm: 'AES-GCM'; iv: string; ciphertext: string };
+export type DeviceEnvelope = { version: 1; baseUrl?: string; algorithm: 'AES-GCM'; iv: string; ciphertext: string };
 const aad = new TextEncoder().encode('Lingo/device-key/v1');
 const encode = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 function decode(value: unknown, maximum: number) {
@@ -29,25 +29,26 @@ async function keyOperation(mode: 'read' | 'write' | 'delete', key?: CryptoKey):
     });
   } finally { db.close(); }
 }
-export async function encryptDeviceKey(secret: string): Promise<DeviceEnvelope> {
+export async function encryptDeviceKey(secret: string, baseUrl?: string): Promise<DeviceEnvelope> {
   let key = await keyOperation('read');
   if (!key) {
     key = await crypto.subtle.generateKey({name:'AES-GCM',length:256}, false, ['encrypt','decrypt']);
     await keyOperation('write', key);
   }
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ciphertext = await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:aad}, key, new TextEncoder().encode(secret));
-  return {version:1,algorithm:'AES-GCM',iv:encode(iv),ciphertext:encode(new Uint8Array(ciphertext))};
+  const ciphertext = await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:baseUrl ? new TextEncoder().encode('Lingo/service/' + baseUrl) : aad}, key, new TextEncoder().encode(secret));
+  return {version:1,...(baseUrl ? {baseUrl} : {}),algorithm:'AES-GCM',iv:encode(iv),ciphertext:encode(new Uint8Array(ciphertext))};
 }
-export async function decryptDeviceKey(input: unknown): Promise<string> {
+export async function decryptDeviceKey(input: unknown, expectedBaseUrl = 'https://api.openai.com/v1'): Promise<string> {
   try {
     const record = input as DeviceEnvelope;
+    if ((record?.baseUrl || 'https://api.openai.com/v1') !== expectedBaseUrl) throw new Error('wrong service');
     if (!record || record.version !== 1 || record.algorithm !== 'AES-GCM') throw new Error('Invalid device vault');
     const iv = decode(record.iv,12), ciphertext = decode(record.ciphertext,1024);
     if (iv.length !== 12 || ciphertext.length < 16) throw new Error('Invalid device vault');
     const key = await keyOperation('read');
     if (!key) throw new Error('Missing device key');
-    return new TextDecoder('utf-8',{fatal:true}).decode(await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:aad},key,ciphertext));
+    return new TextDecoder('utf-8',{fatal:true}).decode(await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:record.baseUrl ? new TextEncoder().encode('Lingo/service/' + record.baseUrl) : aad},key,ciphertext));
   } catch { throw new Error('本机凭据无法读取，请重新填写 API Key 并保存。'); }
 }
 export async function removeDeviceKey() { await keyOperation('delete'); }

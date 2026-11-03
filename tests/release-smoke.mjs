@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 const profile=await mkdtemp(path.join(tmpdir(),'lingo-release-'));
 const dist=path.resolve('dist');
-const context=await chromium.launchPersistentContext(profile,{channel:'chromium',headless:true,args:[`--disable-extensions-except=${dist}`,`--load-extension=${dist}`],viewport:{width:1320,height:950}});
+const context=await chromium.launchPersistentContext(profile,{channel:'chromium',locale:'zh-CN',headless:true,args:[`--disable-extensions-except=${dist}`,`--load-extension=${dist}`],viewport:{width:1320,height:950}});
 try{
  const sw=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'); const id=sw.url().split('/')[2];
  const page=await context.newPage();await page.goto(`chrome-extension://${id}/options.html`);await page.getByText('尚未配置 Key',{exact:true}).waitFor();

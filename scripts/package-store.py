@@ -2,8 +2,12 @@ from pathlib import Path
 import json, zipfile, hashlib, re, sys, struct
 root=Path(__file__).resolve().parents[1]
 dist=root/'dist'; manifest=json.loads((dist/'manifest.json').read_text()); version=manifest['version']
-output=Path(sys.argv[1]) if len(sys.argv)>1 else root/'store'/'packages'
-output.mkdir(parents=True,exist_ok=True);archive=output/f'Lingo-{version}-webstore.zip'
+development = '--development' in sys.argv
+assert development or 'dev' not in manifest.get('version_name',''), '开发预览不可作为正式上架包；使用 npm run package:dev'
+args=[x for x in sys.argv[1:] if x != '--development']
+output=Path(args[0]) if args else root/'store'/'packages'
+output.mkdir(parents=True,exist_ok=True);label=manifest.get('version_name',version) if development else version
+archive=output/f"Lingo-{label}-{'development' if development else 'webstore'}.zip"
 assert manifest['manifest_version']==3
 assert manifest['host_permissions']==['https://api.openai.com/*']
 assert (dist/'privacy.html').exists()
@@ -29,7 +33,7 @@ for p in files:
  if p.suffix in ['.js','.html','.json','.css']:
   text=p.read_text()
   assert not re.search(r'sk-[A-Za-z0-9_-]{15,}',text),f'Possible credential in {p.name}'
-  assert 'sk-test-fixture' not in text and '127.0.0.1' not in text,f'Test fixture in {p.name}'
+  assert 'sk-test-fixture' not in text,f'Test fixture in {p.name}'
 with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED) as z:
  for p in files:z.write(p,p.relative_to(dist))
 with zipfile.ZipFile(archive) as z:

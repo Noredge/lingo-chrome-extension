@@ -13,19 +13,19 @@ manifest.host_permissions.push('http://127.0.0.1/*','https://mail.google.com/*')
 const fixture=await readFile('tests/fixture.html');
 const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(fixture);});
 await new Promise(r=>server.listen(0,'127.0.0.1',r)); const url=`http://127.0.0.1:${server.address().port}`;
-const context=await chromium.launchPersistentContext(path.join(temp,'profile'),{channel:'chromium',headless:process.env.HEADED!=='1',args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`],viewport:{width:1320,height:950}});
+const context=await chromium.launchPersistentContext(path.join(temp,'profile'),{channel:'chromium',locale:'zh-CN',headless:process.env.HEADED!=='1',args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`],viewport:{width:1320,height:950}});
 const checks=[];const errors=[];const calls=[];let next='ok',delay=0;let apiSeen;
 const check=(name)=>{checks.push(name);console.log('PASS',name);};
 let worker=context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');const id=worker.url().split('/')[2];
-await context.route('https://api.openai.com/v1/responses',async route=>{
+await context.route('https://api.openai.com/v1/chat/completions',async route=>{
  const body=route.request().postDataJSON();calls.push(body);apiSeen?.();const mode=next;next='ok';const wait=delay;delay=0;
  if(wait)await new Promise(r=>setTimeout(r,wait));
  if(mode==='401')return route.fulfill({status:401,contentType:'application/json',body:JSON.stringify({error:{message:'test only'}})}).catch(()=>{});
  if(mode==='429')return route.fulfill({status:429,contentType:'application/json',body:JSON.stringify({error:{code:'insufficient_quota'}})}).catch(()=>{});
- const input=JSON.parse(body.input);let text=body.instructions.includes('Translate the source')?(input.source_text.includes('Can you')?'你今天能把它发给我吗？':'那些安静的时刻，往往最令人难忘。'):input.source_text.replace('Can you send me it today?','Can you send it to me today?').replace('I has a plan.','I have a plan.');
+ const input=JSON.parse(body.messages[1].content);let text=body.messages[0].content.includes('Translate the source')?(input.source_text.includes('Can you')?'你今天能把它发给我吗？':'那些安静的时刻，往往最令人难忘。'):input.source_text.replace('Can you send me it today?','Can you send it to me today?').replace('I has a plan.','I have a plan.');
  if(input.editing_request)text='Could you send it to me today, please?';
  if(mode==='html')text='<img src=x onerror="window.injected=true"> Safe text.';
- const payload=[{type:'response.output_text.delta',delta:text.slice(0,5)},{type:'response.output_text.delta',delta:text.slice(5)},...(mode==='incomplete'?[{type:'response.incomplete'}]:[{type:'response.completed'}])].map(e=>`data: ${JSON.stringify(e)}\n\n`).join('');
+ const payload=[{choices:[{index:0,delta:{content:text.slice(0,5)},finish_reason:null}]},{choices:[{index:0,delta:{content:text.slice(5)},finish_reason:null}]},...(mode==='incomplete'?[{choices:[{index:0,delta:{},finish_reason:'length'}]}]:[{choices:[{index:0,delta:{},finish_reason:'stop'}]}])].map(e=>`data: ${JSON.stringify(e)}\n\n`).join('');
  await route.fulfill({status:200,contentType:'text/event-stream',body:payload}).catch(()=>{});
 });
 try{
@@ -49,9 +49,9 @@ try{
   await page.locator(selector).evaluate((el,[s,e])=>{el.setSelectionRange(s,e);el.dispatchEvent(new KeyboardEvent('keyup',{key:'Shift',bubbles:true}));},[start,end]);
   await host.locator('.launcher').waitFor({state:'visible'});await host.locator('.launcher').click();
  };
- await selectRead(); await host.getByText('首次使用，请打开设置并填写 OpenAI API Key。').waitFor();assert.equal(calls.length,0);check('missing Key shows setup action and sends no request');await close();
+ await selectRead(); await host.getByText('首次使用，请打开设置并填写 API Key。').waitFor();assert.equal(calls.length,0);check('missing Key shows setup action and sends no request');await close();
  await options.getByLabel('API Key',{exact:true}).fill('sk-test-fixture-not-a-real-secret');
- await options.getByRole('checkbox',{name:'我同意将选中文字和修改要求发送给 OpenAI 处理',exact:true}).check();
+ await options.getByRole('checkbox',{name:'我同意将选中文字和修改要求发送给所选服务 处理',exact:true}).check();
  await options.getByRole('button',{name:'保存设置',exact:true}).click();await options.getByText('Key 已配置',{exact:true}).waitFor();
  assert.equal(await options.getByLabel('API Key',{exact:true}).inputValue(),'');
  const storage=await worker.evaluate(async()=>({local:!!(await chrome.storage.local.get('deviceKey')).deviceKey,session:!!(await chrome.storage.session.get('apiKey')).apiKey}));
@@ -64,19 +64,19 @@ try{
  assert.match(credentialMutation.error,/设置页/);check('webpage content scripts cannot unlock, save, lock or delete credentials');
  await selectRead();await done();assert.equal(await host.locator('.translate-text').textContent(),'那些安静的时刻，往往最令人难忘。');check('site-authorized selection launcher and streamed translation');
  await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:url});await page.bringToFront();await host.locator('.translate-actions').getByRole('button',{name:'复制',exact:true}).click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'那些安静的时刻，往往最令人难忘。');check('copy writes the complete result to clipboard');
- await host.getByRole('button',{name:'专业',exact:true}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).input).source_text,'The quiet moments are often the ones we remember best.');check('rewrite receives original text instead of translation');
+ await host.getByRole('button',{name:'专业',exact:true}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).messages[1].content).source_text,'The quiet moments are often the ones we remember best.');check('rewrite receives original text instead of translation');
  const count=calls.length;await host.getByRole('button',{name:'专业',exact:true}).click();await page.waitForTimeout(100);assert.equal(calls.length,count);check('same-selection completed results reused without duplicate request');
- await host.getByLabel('自定义修改要求').fill('More polite');await host.getByRole('button',{name:'执行自定义改写'}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).input).editing_request,'More polite');check('custom instruction stays separate from source');
- await host.getByLabel('翻译目标语言').selectOption('English');await done();assert.match(calls.at(-1).instructions,/into English/);check('target language changes trigger translation');await close();
+ await host.getByLabel('自定义修改要求').fill('More polite');await host.getByRole('button',{name:'执行自定义改写'}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).messages[1].content).editing_request,'More polite');check('custom instruction stays separate from source');
+ await host.getByLabel('翻译目标语言').selectOption('English');await done();assert.match(calls.at(-1).messages[0].content,/into English/);check('target language changes trigger translation');await close();
  assert.deepEqual(await options.getByLabel('浮窗默认目标语言').locator('option').allTextContents(),['简体中文','English']);
  await options.getByLabel('添加目标语言',{exact:true}).selectOption('ไทย（泰语）');await options.getByRole('button',{name:'添加到浮窗',exact:true}).click();
  await options.getByRole('button',{name:'移除 English',exact:true}).click();
  await options.getByLabel('浮窗默认目标语言').selectOption('ไทย（泰语）');
  await options.getByRole('button',{name:'保存设置',exact:true}).click();
  await options.waitForFunction(async()=> (await chrome.runtime.sendMessage({type:'config'})).settings.language === 'ไทย（泰语）');
- await selectRead();await done();assert.equal(await host.getByLabel('翻译目标语言').inputValue(),'ไทย（泰语）');assert.match(calls.at(-1).instructions,/into ไทย/);
- assert.deepEqual(await host.getByLabel('翻译目标语言').locator('option').allTextContents(),['简体中文','ไทย（泰语）']);
- await options.reload();assert.deepEqual(await options.getByLabel('浮窗默认目标语言').locator('option').allTextContents(),['简体中文','ไทย（泰语）']);
+ await selectRead();await done();assert.equal(await host.getByLabel('翻译目标语言').inputValue(),'ไทย（泰语）');assert.match(calls.at(-1).messages[0].content,/into ไทย/);
+ assert.deepEqual(await host.getByLabel('翻译目标语言').locator('option').allTextContents(),['简体中文','ไทย']);
+ await options.reload();assert.deepEqual(await options.getByLabel('浮窗默认目标语言').locator('option').allTextContents(),['简体中文','ไทย']);
  check('settings add and remove languages; persisted shortlist and default reach overlay and API');
  const drag=async(selector,dx,dy)=>{const b=await host.locator(selector).boundingBox();const x=b.x+b.width/2,y=b.y+b.height/2;await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx,y+dy,{steps:8});await page.mouse.up();};
  const initial=await host.locator('.panel').boundingBox();await drag('.drag-handle',20-initial.x,20-initial.y);
@@ -141,7 +141,7 @@ try{
  await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');assert.equal(await host.locator('.write-actions').getByRole('button',{name:'替换选中文字'}).isDisabled(),true);check('real rich-text changes still invalidate replacement');await close();
 
  next='401';await selectRead();await host.getByText('API Key 无效或已失效，请在设置中更新。').waitFor();await host.locator('.translate-actions').getByRole('button',{name:'重试'}).click();await done();check('401 error and explicit retry recover');await close();
- next='429';await selectRead();await host.getByText('API 额度不足，请检查 OpenAI 项目的余额与用量限制。').waitFor();check('quota failure is explained without leaking server payload');await close();
+ next='429';await selectRead();await host.getByText('API 额度不足，请检查 服务账户的余额与用量限制。').waitFor();check('quota failure is explained without leaking server payload');await close();
  next='incomplete';await selectRead();await host.getByText('结果未生成完整，请缩短原文后重试。').waitFor();assert.equal(await host.locator('.translate-actions').getByRole('button',{name:'复制',exact:true}).count(),0);check('incomplete output cannot be applied');await close();
  next='html';await selectRead();await done();assert.equal(await host.locator('.translate-text img').count(),0);assert.match(await host.locator('.translate-text').textContent(),/<img/);check('model HTML renders as plain text');await close();
  delay=1200;await selectRead();await host.locator('.translate-actions').getByRole('button',{name:'停止'}).click();await host.getByText('已停止生成。',{exact:true}).waitFor();await page.waitForTimeout(1400);assert.equal(await host.locator('.translate-actions').getByRole('button',{name:'复制',exact:true}).count(),0);check('cancelled request cannot restore late results');await close();

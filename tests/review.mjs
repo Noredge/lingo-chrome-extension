@@ -3,7 +3,7 @@ import {mkdtemp,rm,mkdir,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import path from 'node:path';import assert from 'node:assert/strict';
 const profile=await mkdtemp(path.join(tmpdir(),'lingo-review-')),checks=[],failures=[];
 const fake='sk-test-fixture-not-a-real-secret',password='fixture-only password 2026';
-const context=await chromium.launchPersistentContext(profile,{channel:'chromium',headless:true,args:[`--disable-extensions-except=${path.resolve('dist')}`,`--load-extension=${path.resolve('dist')}`]});
+const context=await chromium.launchPersistentContext(profile,{channel:'chromium',locale:'zh-CN',headless:true,args:[`--disable-extensions-except=${path.resolve('dist')}`,`--load-extension=${path.resolve('dist')}`]});
 try{
  const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),id=worker.url().split('/')[2];
  const options=await context.newPage();await options.goto(`chrome-extension://${id}/options.html`);

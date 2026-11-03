@@ -1,3 +1,7 @@
+# 当前状态：开发预览 1.0.0-dev.1
+
+最新验证见 verification/DEVELOPMENT-1.0.md；以下为旧版审查记录，固定 OpenAI/Responses 的结论不适用于新版通用 API。
+
 # 发布前凭据检查
 
 2026-11-02。检查范围包含所有可达 Git 历史 blob 与当前待发布文件。使用 scripts/audit-secrets.py 扫描 OpenAI/GitHub/AWS/Google API 凭据模式及私钥标记，同时检查环境文件、浏览器配置、node_modules 是否混入提交。
