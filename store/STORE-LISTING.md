@@ -1,6 +1,6 @@
 # Lingo 1.0.0 · 商店文案
 
-发布者：Noredge · 支持：hongbin.lei98@gmail.com · 分发：Unlisted（不公开列出）
+发布者：Noredge · 支持：hongbin.lei98@gmail.com · 分发：Public（公开）
 
 ## 简体中文
 
