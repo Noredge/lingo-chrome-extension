@@ -3,6 +3,13 @@ import {localize, setLanguage} from './i18n';
 localize(document);
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 let tab: chrome.tabs.Tab | undefined, origin = '';
+let panelWindowId:number|undefined;
+void chrome.windows.getCurrent().then(w=>{panelWindowId=w.id;$<HTMLButtonElement>('open-panel').disabled=panelWindowId===undefined;}).catch(()=>status('无法打开面板，请重新打开插件菜单。',true));
+$('open-panel').addEventListener('click',()=>{
+  if(panelWindowId===undefined)return;
+  // Call directly in the click gesture; no site injection or clipboard read is needed.
+  void chrome.sidePanel.open({windowId:panelWindowId}).then(()=>window.close()).catch(()=>status('无法打开面板，请重新打开插件菜单。',true));
+});
 function status(text: string, error = false) { $('status').textContent = text; $('status').classList.toggle('error', error); }
 async function refresh() {
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -15,9 +22,9 @@ async function refresh() {
     const has = await chrome.permissions.contains({ origins: [origin] });
     $('enable').textContent = has ? '已授权划词入口' : '在此网站启用划词'; $<HTMLButtonElement>('enable').disabled = has;
   } else {
-    $('host').textContent = '此页面不支持';
+    $('host').textContent = '此页面不支持划词';
     for (const id of ['open','enable','toggle']) $<HTMLButtonElement>(id).disabled = true;
-    status('请打开普通网页后使用。');
+    status('可打开面板，粘贴文字进行翻译和修改。');
   }
 }
 void refresh().catch(() => status('无法读取当前页，请重新打开扩展。', true));

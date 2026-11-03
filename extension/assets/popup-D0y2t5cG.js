@@ -1,8 +1,17 @@
-import { l as localize, s as setLanguage } from "./i18n-S53oJ_oW.js";
+import { l as localize, s as setLanguage } from "./i18n-Cvij1gh3.js";
 /* empty css            */
 localize(document);
 const $ = (id) => document.getElementById(id);
 let tab, origin = "";
+let panelWindowId;
+void chrome.windows.getCurrent().then((w) => {
+  panelWindowId = w.id;
+  $("open-panel").disabled = panelWindowId === void 0;
+}).catch(() => status("无法打开面板，请重新打开插件菜单。", true));
+$("open-panel").addEventListener("click", () => {
+  if (panelWindowId === void 0) return;
+  void chrome.sidePanel.open({ windowId: panelWindowId }).then(() => window.close()).catch(() => status("无法打开面板，请重新打开插件菜单。", true));
+});
 function status(text, error = false) {
   $("status").textContent = text;
   $("status").classList.toggle("error", error);
@@ -22,9 +31,9 @@ async function refresh() {
     $("enable").textContent = has ? "已授权划词入口" : "在此网站启用划词";
     $("enable").disabled = has;
   } else {
-    $("host").textContent = "此页面不支持";
+    $("host").textContent = "此页面不支持划词";
     for (const id of ["open", "enable", "toggle"]) $(id).disabled = true;
-    status("请打开普通网页后使用。");
+    status("可打开面板，粘贴文字进行翻译和修改。");
   }
 }
 void refresh().catch(() => status("无法读取当前页，请重新打开扩展。", true));

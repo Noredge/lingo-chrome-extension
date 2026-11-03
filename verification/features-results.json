@@ -38,7 +38,10 @@
     "writing presets use manually edited source and never the stale PDF snapshot",
     "blank or oversized pasted source cannot be submitted or sent by presets",
     "empty sidebar accepts paste and keyboard translation; reset clears editor",
-    "deleting the last active profile removes credentials and leaves a blank default without fallback"
+    "deleting the last active profile removes credentials and leaves a blank default without fallback",
+    "manual panel menu entry works without selection or webpage access and calls sidePanel.open in the click gesture without an API request",
+    "side panel open failure stays in the menu with a localized retry message",
+    "manual panel entry is available in all three interface languages"
   ],
   "fixtureOnly": true,
   "apiRequests": 28,

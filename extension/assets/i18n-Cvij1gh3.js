@@ -402,7 +402,14 @@ const messages = {
   "关闭设置引导": ["關閉設定引導", "Close setup guide"],
   "已保存此配置。": ["已儲存此設定。", "Profile saved."],
   "保存修改后，发送固定示例测试连接。": ["儲存修改後，傳送固定範例測試連線。", "Saves your changes, then tests with a short sample."],
-  "保存并测试此配置，不切换当前服务。": ["儲存並測試此設定，不切換目前服務。", "Saves and tests this profile without switching the active service."]
+  "保存并测试此配置，不切换当前服务。": ["儲存並測試此設定，不切換目前服務。", "Saves and tests this profile without switching the active service."],
+  "选中文字，或打开面板粘贴原文。": ["選取文字，或開啟面板貼上原文。", "Select text, or open the panel and paste your text."],
+  "打开翻译与写作面板": ["開啟翻譯與寫作面板", "Open translation & writing panel"],
+  "可直接粘贴文字，适用于 Google Docs 等编辑器。": ["可直接貼上文字，適用於 Google Docs 等編輯器。", "Paste text directly, including from Google Docs and other editors."],
+  "无法打开面板，请重新打开插件菜单。": ["無法開啟面板，請重新開啟擴充功能選單。", "Could not open the panel. Reopen the extension menu and try again."],
+  "此页面不支持划词": ["此頁面不支援劃詞", "Selection tools are unavailable on this page"],
+  "可打开面板，粘贴文字进行翻译和修改。": ["可開啟面板，貼上文字進行翻譯和修改。", "Open the panel to paste, translate, and edit text."],
+  "在上方粘贴原文，再翻译或选择写作工具。": ["在上方貼上原文，再翻譯或選擇寫作工具。", "Paste text above, then translate or choose a writing tool."]
 };
 const roots = /* @__PURE__ */ new Set();
 const nodes = /* @__PURE__ */ new WeakMap();

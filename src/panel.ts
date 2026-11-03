@@ -129,7 +129,7 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     generation++; stopAll(); snap?.cleanup?.(); candidate?.cleanup?.(); snap = candidate = null; panel.hidden = launcher.hidden = true;
     for (const selector of ['.source-text','.translate-text','.write-text','.translate-status','.write-status','.translate-actions','.write-actions']) $(selector).replaceChildren();
     $<HTMLInputElement>('.custom input').value = '';
-    if(docked){notify('仅发送当前原文 · 此处可复制结果');panel.hidden=false;$('.source').hidden=false;$<HTMLDetailsElement>('.source').open=true;sourceEditor!.value='';$<HTMLButtonElement>('.source-submit').disabled=true;$('.count').textContent='';$('.write-output').hidden=true;$('.translate-status').classList.remove('error');$('.translate-text').classList.remove('loading');$('.translate-status').textContent='在 PDF 中右键翻译，或在上方粘贴原文。';}
+    if(docked){notify('仅发送当前原文 · 此处可复制结果');panel.hidden=false;$('.source').hidden=false;$<HTMLDetailsElement>('.source').open=true;sourceEditor!.value='';$<HTMLButtonElement>('.source-submit').disabled=true;$('.count').textContent='';$('.write-output').hidden=true;$('.translate-status').classList.remove('error');$('.translate-text').classList.remove('loading');$('.translate-status').textContent='在上方粘贴原文，再翻译或选择写作工具。';}
   }
   function scan(pointer?: {x:number;y:number}) {
     if (composing || blocked() || !panel.hidden || root.activeElement) return;
@@ -277,6 +277,6 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     }
   });
   }
-  if(docked){for(const attr of ['tabindex','aria-label','title'])$('.drag-handle').removeAttribute(attr);mount();close();$('[data-action="reset-layout"]').setAttribute('title','清除');$('[data-action="reset-layout"]').setAttribute('aria-label','清除');}
+  if(docked){for(const attr of ['tabindex','aria-label','title'])$('.drag-handle').removeAttribute(attr);mount();close();$('[data-action="reset-layout"]').setAttribute('title','清除');$('[data-action="reset-layout"]').setAttribute('aria-label','清除');sourceEditor!.focus();}
   return {clear:close, refresh:config, showText:async(text:string)=>{await config();show({text,kind:'read',rect:new DOMRect()});}};
 }

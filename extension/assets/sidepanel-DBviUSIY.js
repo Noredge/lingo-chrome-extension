@@ -1,4 +1,4 @@
-import { l as localize, s as setLanguage } from "./i18n-S53oJ_oW.js";
+import { l as localize, s as setLanguage } from "./i18n-Cvij1gh3.js";
 import { M as MAX_TEXT, b as MODES, D as DEFAULTS } from "./core-Bo6TdJq8.js";
 function sensitiveFieldActive() {
   let active = document.activeElement;
@@ -451,7 +451,7 @@ function createPanel(options = {}) {
       $(".write-output").hidden = true;
       $(".translate-status").classList.remove("error");
       $(".translate-text").classList.remove("loading");
-      $(".translate-status").textContent = "在 PDF 中右键翻译，或在上方粘贴原文。";
+      $(".translate-status").textContent = "在上方粘贴原文，再翻译或选择写作工具。";
     }
   }
   function scan(pointer) {
@@ -764,6 +764,7 @@ function createPanel(options = {}) {
     close();
     $('[data-action="reset-layout"]').setAttribute("title", "清除");
     $('[data-action="reset-layout"]').setAttribute("aria-label", "清除");
+    sourceEditor.focus();
   }
   return { clear: close, refresh: config, showText: async (text) => {
     await config();
