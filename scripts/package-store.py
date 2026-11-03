@@ -3,7 +3,7 @@ import json, zipfile, hashlib, re, sys, struct
 root=Path(__file__).resolve().parents[1]
 dist=root/'dist'; manifest=json.loads((dist/'manifest.json').read_text()); version=manifest['version']
 development = '--development' in sys.argv
-assert development or 'dev' not in manifest.get('version_name',''), '开发预览不可作为正式上架包；使用 npm run package:dev'
+assert development or 'dev' not in manifest.get('version_name',''), '开发预览不可作为正式上架包；使用 --development 參數'
 args=[x for x in sys.argv[1:] if x != '--development']
 output=Path(args[0]) if args else root/'store'/'packages'
 output.mkdir(parents=True,exist_ok=True);label=manifest.get('version_name',version) if development else version
@@ -23,7 +23,7 @@ assert set(provenance['sourceRuntime'])=={str(p.relative_to(dist)) for p in dist
 for name,sha in provenance['images'].items():
  assert hashlib.sha256((assets/name).read_bytes()).hexdigest()==sha, f'截图变更后需重新生成来源记录: {name}'
 screenshots=sorted(assets.glob('0*-1280x800.png'))
-assert len(screenshots)==4
+assert len(screenshots)==5
 for screenshot in screenshots:
  data=screenshot.read_bytes(); assert data[:8]==b'\x89PNG\r\n\x1a\n' and struct.unpack('>II',data[16:24])==(1280,800)
 
