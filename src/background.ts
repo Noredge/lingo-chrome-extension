@@ -71,7 +71,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     if (msg.type === 'options') { await chrome.runtime.openOptionsPage(); return { ok: true }; }
     if (!trusted(sender)) throw new Error('此操作只能从扩展设置页执行。');
     if(msg.type === 'serviceConfig')return publicConfig(msg.profileId);
-    if (['save','unlock','lock','deleteKey','createProfile','deleteProfile','activateProfile','setUiLanguage'].includes(msg.type)) return mutateState(() => credentialAction(msg));
+    if (['save','unlock','lock','deleteKey','createProfile','deleteProfile','activateProfile','setUiLanguage','onboardingProgress','completeOnboarding','restartOnboarding','dismissOnboarding'].includes(msg.type)) return mutateState(() => credentialAction(msg));
     if (msg.type === 'panelSelection') {
       const windowId = msg.windowId; if (!Number.isInteger(windowId) || sender.url?.split(/[?#]/)[0] !== chrome.runtime.getURL('sidepanel.html')) throw new Error('未知操作。');
       const key = 'panel:'+windowId, items = await chrome.storage.session.get(key);

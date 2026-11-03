@@ -345,7 +345,32 @@ const messages = {
   "编辑原文": ["編輯原文", "Edit source text"],
   "选择或编辑连接，保存后使用。": ["選擇或編輯連線，儲存後使用。", "Choose or edit a connection, then save to use it."],
   "原文": ["原文", "Source text"],
-  "仅发送当前原文 · 此处可复制结果": ["僅傳送目前原文 · 此處可複製結果", "Only the current source is sent · Copy results here"]
+  "仅发送当前原文 · 此处可复制结果": ["僅傳送目前原文 · 此處可複製結果", "Only the current source is sent · Copy results here"],
+  "欢迎使用 Lingo": ["歡迎使用 Lingo", "Welcome to Lingo"],
+  "三个小步骤，开始读懂和写好每一句。": ["三個小步驟，開始讀懂和寫好每一句。", "Three quick steps to clearer reading and writing."],
+  "设置进度": ["設定進度", "Setup progress"],
+  "首次设置": ["首次設定", "First-time setup"],
+  "连接 API": ["連接 API", "Connect API"],
+  "网页访问": ["網頁存取", "Website access"],
+  "先选一种熟悉的语言": ["先選一種熟悉的語言", "Choose your interface language"],
+  "只改变界面显示，不影响翻译目标语言。": ["只改變介面顯示，不影響翻譯目標語言。", "This changes the interface, not your translation languages."],
+  "上一步": ["上一步", "Back"],
+  "下一步": ["下一步", "Next"],
+  "稍后配置 API": ["稍後設定 API", "Set up API later"],
+  "保存并继续": ["儲存並繼續", "Save and continue"],
+  "保存并测试连接": ["儲存並測試連線", "Save and test connection"],
+  "完成设置": ["完成設定", "Finish setup"],
+  "设置完成，可以开始使用 Lingo。": ["設定完成，可以開始使用 Lingo。", "Setup complete. You can start using Lingo."],
+  "请填写 API Key，或选择稍后配置。": ["請填寫 API Key，或選擇稍後設定。", "Enter an API Key, or choose to set it up later."],
+  "请同意将选中文字发送给此服务。": ["請同意將選取文字傳送給此服務。", "Allow selected text to be sent to this service to continue."],
+  "无效的设置步骤。": ["無效的設定步驟。", "Invalid setup step."],
+  "授权后，选中文字即可看到「文」。也可以稍后在设置中仅授权指定站点。": ["授權後，選取文字即可看到「文」。也可以稍後在設定中僅授權指定網站。", "Allow access to show 文 when you select text. You can also allow individual sites later in Settings."],
+  "发送一句固定示例，检查连接是否可用。": ["傳送一句固定範例，檢查連線是否可用。", "Sends a short sample to check the connection."],
+  "连接你的 API": ["連接你的 API", "Connect your API"],
+  "已授权网页访问": ["已授權網頁存取", "Website access allowed"],
+  "查看设置引导": ["查看設定引導", "View setup guide"],
+  "继续设置引导": ["繼續設定引導", "Continue setup"],
+  "关闭设置引导": ["關閉設定引導", "Close setup guide"]
 };
 const roots = /* @__PURE__ */ new Set();
 const nodes = /* @__PURE__ */ new WeakMap();
@@ -664,6 +689,10 @@ const serviceReady = Promise.all([
   chrome.storage.session.setAccessLevel({ accessLevel: "TRUSTED_CONTEXTS" })
 ]).then(async () => {
   const local = await chrome.storage.local.get(null), session = await chrome.storage.session.get(null);
+  if (typeof local.onboardingComplete !== "boolean") {
+    const existing = !!(local.settings || local.apiKey || local.encryptedKey || local.deviceKey || session.apiKey || Object.keys(session.serviceSessions || {}).length || local.serviceProfiles?.some((p) => p.deviceKey || p.encryptedKey || p.dataConsent || p.name !== "OpenAI" || p.baseUrl !== DEFAULT_BASE_URL || p.model !== DEFAULTS.model));
+    await chrome.storage.local.set({ onboardingComplete: existing, onboardingStep: 0 });
+  }
   if (!Array.isArray(local.serviceProfiles) || !local.serviceProfiles.length) {
     const baseUrl = normalizeBaseUrl(local.settings?.baseUrl || DEFAULT_BASE_URL), id = "default";
     const key = session.apiKey || local.apiKey || "";
@@ -677,7 +706,7 @@ const serviceReady = Promise.all([
 });
 async function serviceState(id) {
   await serviceReady;
-  const local = await chrome.storage.local.get(["settings", "serviceProfiles", "activeServiceId", "apiOrigins"]);
+  const local = await chrome.storage.local.get(["settings", "serviceProfiles", "activeServiceId", "apiOrigins", "onboardingComplete", "onboardingStep", "onboardingDismissed"]);
   const session = await chrome.storage.session.get(["serviceSessions", "legacyMigrated"]);
   const profiles = local.serviceProfiles;
   const profile = profiles.find((p) => p.id === (id || local.activeServiceId));
@@ -691,11 +720,11 @@ async function serviceState(id) {
       deviceError = true;
     }
   }
-  return { profile, profiles, activeServiceId: local.activeServiceId, apiOrigins: local.apiOrigins || [], sessions: session.serviceSessions || {}, settings: { ...DEFAULTS, ...local.settings, ...languagePreferences(local.settings || {}), baseUrl, model: profile.model }, apiKey, deviceError, deviceVault: profile.deviceKey, vault: profile.encryptedKey, storageMode: profile.storageMode, remember: !!profile.encryptedKey, credentialBaseUrl: profile.credentialBaseUrl, dataConsent: profile.dataConsent && profile.consentBaseUrl === baseUrl, migrated: !!session.legacyMigrated };
+  return { onboardingDismissed: local.onboardingDismissed === true, onboardingComplete: local.onboardingComplete === true, onboardingStep: Math.min(2, Math.max(0, Number(local.onboardingStep) || 0)), profile, profiles, activeServiceId: local.activeServiceId, apiOrigins: local.apiOrigins || [], sessions: session.serviceSessions || {}, settings: { ...DEFAULTS, ...local.settings, ...languagePreferences(local.settings || {}), baseUrl, model: profile.model }, apiKey, deviceError, deviceVault: profile.deviceKey, vault: profile.encryptedKey, storageMode: profile.storageMode, remember: !!profile.encryptedKey, credentialBaseUrl: profile.credentialBaseUrl, dataConsent: profile.dataConsent && profile.consentBaseUrl === baseUrl, migrated: !!session.legacyMigrated };
 }
 async function publicServiceConfig(id) {
   const c = await serviceState(id);
-  return { profileId: c.profile.id, profileName: c.profile.name, activeServiceId: c.activeServiceId, profiles: c.profiles.map((p) => ({ id: p.id, name: p.name, baseUrl: p.baseUrl, model: p.model, storageMode: p.storageMode })), apiOrigins: c.apiOrigins, settings: c.settings, hasKey: !!c.apiKey, hasVault: !!c.vault, remember: c.remember, storageMode: c.storageMode, deviceError: c.deviceError, dataConsent: c.dataConsent, migrated: c.migrated };
+  return { onboardingDismissed: c.onboardingDismissed, onboardingComplete: c.onboardingComplete, onboardingStep: c.onboardingStep, profileId: c.profile.id, profileName: c.profile.name, activeServiceId: c.activeServiceId, profiles: c.profiles.map((p) => ({ id: p.id, name: p.name, baseUrl: p.baseUrl, model: p.model, storageMode: p.storageMode })), apiOrigins: c.apiOrigins, settings: c.settings, hasKey: !!c.apiKey, hasVault: !!c.vault, remember: c.remember, storageMode: c.storageMode, deviceError: c.deviceError, dataConsent: c.dataConsent, migrated: c.migrated };
 }
 async function persistProfile(profile, c, extra = {}) {
   await chrome.storage.local.set({ serviceProfiles: c.profiles.map((p) => p.id === profile.id ? profile : p), ...extra });
@@ -711,6 +740,23 @@ async function serviceAction(msg) {
     else delete sessions[id];
     await chrome.storage.session.set({ serviceSessions: sessions });
   };
+  if (msg.type === "onboardingProgress") {
+    if (!Number.isInteger(msg.step) || msg.step < 0 || msg.step > 2) throw new Error("无效的设置步骤。");
+    await chrome.storage.local.set({ onboardingStep: msg.step });
+    return publicServiceConfig(id);
+  }
+  if (msg.type === "dismissOnboarding") {
+    await chrome.storage.local.set({ onboardingDismissed: true });
+    return publicServiceConfig();
+  }
+  if (msg.type === "restartOnboarding") {
+    await chrome.storage.local.set({ onboardingComplete: false, onboardingDismissed: false, onboardingStep: c.onboardingComplete ? 0 : c.onboardingStep });
+    return publicServiceConfig();
+  }
+  if (msg.type === "completeOnboarding") {
+    await chrome.storage.local.set({ onboardingComplete: true, onboardingDismissed: false });
+    return publicServiceConfig(id);
+  }
   if (msg.type === "setUiLanguage") {
     if (!["auto", "en", "zh-CN", "zh-TW"].includes(msg.uiLanguage)) throw new Error("请选择有效的界面语言。");
     await chrome.storage.local.set({ settings: { ...c.settings, uiLanguage: msg.uiLanguage } });
@@ -904,7 +950,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     }
     if (!trusted(sender)) throw new Error("此操作只能从扩展设置页执行。");
     if (msg.type === "serviceConfig") return publicConfig(msg.profileId);
-    if (["save", "unlock", "lock", "deleteKey", "createProfile", "deleteProfile", "activateProfile", "setUiLanguage"].includes(msg.type)) return mutateState(() => credentialAction(msg));
+    if (["save", "unlock", "lock", "deleteKey", "createProfile", "deleteProfile", "activateProfile", "setUiLanguage", "onboardingProgress", "completeOnboarding", "restartOnboarding", "dismissOnboarding"].includes(msg.type)) return mutateState(() => credentialAction(msg));
     if (msg.type === "panelSelection") {
       const windowId = msg.windowId;
       if (!Number.isInteger(windowId) || sender.url?.split(/[?#]/)[0] !== chrome.runtime.getURL("sidepanel.html")) throw new Error("未知操作。");

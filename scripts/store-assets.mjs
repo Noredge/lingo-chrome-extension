@@ -11,7 +11,7 @@ try{
   const output=b.instructions.includes('Translate the source')?(t.includes('quiet')?'那些安静的时刻，往往最令人难忘。':'你今天能把它发给我吗？'):'Can you send it to me today?';
   await route.fulfill({contentType:'text/event-stream',body:[{type:'response.output_text.delta',delta:output},{type:'response.completed',response:{status:'completed'}}].map(e=>'data: '+JSON.stringify(e)+'\n\n').join('')});
  });
- const options=await context.newPage();await options.goto(`chrome-extension://${id}/options.html`);
+ const options=await context.newPage();await options.goto(`chrome-extension://${id}/options.html`);await options.evaluate(()=>chrome.runtime.sendMessage({type:'completeOnboarding'}));await options.reload();
  await options.evaluate(()=>chrome.runtime.sendMessage({type:'save',key:'sk-test-fixture-not-a-real-secret',model:'gpt-6-luna',language:'简体中文',languages:['简体中文','English','日本語'],storageMode:'device',deviceConsent:true,dataConsent:true}));
  const page=await context.newPage();await page.goto(`http://127.0.0.1:${server.address().port}`);const host=page.locator('#lingo-extension-root');
  const select=async selector=>{await page.locator(selector).evaluate(el=>{if(el.closest('[contenteditable]'))el.closest('[contenteditable]').focus();const r=document.createRange();r.selectNodeContents(el);const s=getSelection();s.removeAllRanges();s.addRange(r);document.dispatchEvent(new KeyboardEvent('keyup',{key:'Shift',bubbles:true}))});await host.locator('.launcher').click();await host.locator('.translate-actions').getByRole('button',{name:'复制',exact:true}).waitFor()};

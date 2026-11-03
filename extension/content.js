@@ -347,7 +347,32 @@
     "编辑原文": ["編輯原文", "Edit source text"],
     "选择或编辑连接，保存后使用。": ["選擇或編輯連線，儲存後使用。", "Choose or edit a connection, then save to use it."],
     "原文": ["原文", "Source text"],
-    "仅发送当前原文 · 此处可复制结果": ["僅傳送目前原文 · 此處可複製結果", "Only the current source is sent · Copy results here"]
+    "仅发送当前原文 · 此处可复制结果": ["僅傳送目前原文 · 此處可複製結果", "Only the current source is sent · Copy results here"],
+    "欢迎使用 Lingo": ["歡迎使用 Lingo", "Welcome to Lingo"],
+    "三个小步骤，开始读懂和写好每一句。": ["三個小步驟，開始讀懂和寫好每一句。", "Three quick steps to clearer reading and writing."],
+    "设置进度": ["設定進度", "Setup progress"],
+    "首次设置": ["首次設定", "First-time setup"],
+    "连接 API": ["連接 API", "Connect API"],
+    "网页访问": ["網頁存取", "Website access"],
+    "先选一种熟悉的语言": ["先選一種熟悉的語言", "Choose your interface language"],
+    "只改变界面显示，不影响翻译目标语言。": ["只改變介面顯示，不影響翻譯目標語言。", "This changes the interface, not your translation languages."],
+    "上一步": ["上一步", "Back"],
+    "下一步": ["下一步", "Next"],
+    "稍后配置 API": ["稍後設定 API", "Set up API later"],
+    "保存并继续": ["儲存並繼續", "Save and continue"],
+    "保存并测试连接": ["儲存並測試連線", "Save and test connection"],
+    "完成设置": ["完成設定", "Finish setup"],
+    "设置完成，可以开始使用 Lingo。": ["設定完成，可以開始使用 Lingo。", "Setup complete. You can start using Lingo."],
+    "请填写 API Key，或选择稍后配置。": ["請填寫 API Key，或選擇稍後設定。", "Enter an API Key, or choose to set it up later."],
+    "请同意将选中文字发送给此服务。": ["請同意將選取文字傳送給此服務。", "Allow selected text to be sent to this service to continue."],
+    "无效的设置步骤。": ["無效的設定步驟。", "Invalid setup step."],
+    "授权后，选中文字即可看到「文」。也可以稍后在设置中仅授权指定站点。": ["授權後，選取文字即可看到「文」。也可以稍後在設定中僅授權指定網站。", "Allow access to show 文 when you select text. You can also allow individual sites later in Settings."],
+    "发送一句固定示例，检查连接是否可用。": ["傳送一句固定範例，檢查連線是否可用。", "Sends a short sample to check the connection."],
+    "连接你的 API": ["連接你的 API", "Connect your API"],
+    "已授权网页访问": ["已授權網頁存取", "Website access allowed"],
+    "查看设置引导": ["查看設定引導", "View setup guide"],
+    "继续设置引导": ["繼續設定引導", "Continue setup"],
+    "关闭设置引导": ["關閉設定引導", "Close setup guide"]
   };
   const roots = /* @__PURE__ */ new Set();
   const nodes = /* @__PURE__ */ new WeakMap();

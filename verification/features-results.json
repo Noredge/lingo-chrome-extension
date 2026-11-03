@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0-dev.3",
+  "version": "1.0.0-dev.5",
   "checks": [
     "fresh interface follows browser independently of translation target",
     "top-right interface language persists immediately in all three locales",

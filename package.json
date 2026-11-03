@@ -1,6 +1,6 @@
 {
   "name": "lingo-chrome-extension",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,8 @@
     "package:store": "python3 scripts/package-store.py",
     "test:review": "node tests/review.mjs",
     "test:features": "node tests/features.mjs",
-    "package:dev": "python3 scripts/package-store.py --development"
+    "package:dev": "python3 scripts/package-store.py --development",
+    "test:onboarding": "node tests/onboarding.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.0",

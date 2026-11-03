@@ -30,7 +30,7 @@ await context.route('https://api.openai.com/v1/responses',async route=>{
 });
 try{
  const options=await context.newPage();options.on('pageerror',e=>errors.push(e.message));
- await options.goto(`chrome-extension://${id}/options.html`);
+ await options.goto(`chrome-extension://${id}/options.html`);await options.evaluate(()=>chrome.runtime.sendMessage({type:'completeOnboarding'}));await options.reload();
  await options.getByRole('heading',{name:'设置你的 Lingo'}).waitFor();
  await options.screenshot({path:path.join(evidence,'settings.png'),fullPage:true});check('unpacked extension loads; settings renders without remote assets');
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));

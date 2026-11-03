@@ -9,7 +9,7 @@ async function boot(){
  context=await chromium.launchPersistentContext(temp,{channel:'chromium',locale:'zh-CN',headless:true,args:[`--disable-extensions-except=${extension}`,`--load-extension=${extension}`]});
  await context.route('https://api.openai.com/**',r=>{requests++;return r.abort();});
  worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker');id=worker.url().split('/')[2];
- options=await context.newPage();await options.goto(`chrome-extension://${id}/options.html`);await options.getByRole('heading',{name:'设置你的 Lingo'}).waitFor();
+ options=await context.newPage();await options.goto(`chrome-extension://${id}/options.html`);await options.evaluate(()=>chrome.runtime.sendMessage({type:'completeOnboarding'}));await options.reload();await options.getByRole('heading',{name:'设置你的 Lingo'}).waitFor();
 }
 const config=()=>options.evaluate(()=>chrome.runtime.sendMessage({type:'config'}));
 const msg=data=>options.evaluate(data=>chrome.runtime.sendMessage(data),data);

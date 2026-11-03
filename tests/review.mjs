@@ -6,11 +6,11 @@ const fake='sk-test-fixture-not-a-real-secret',password='fixture-only password 2
 const context=await chromium.launchPersistentContext(profile,{channel:'chromium',locale:'zh-CN',headless:true,args:[`--disable-extensions-except=${path.resolve('dist')}`,`--load-extension=${path.resolve('dist')}`]});
 try{
  const worker=context.serviceWorkers()[0]||await context.waitForEvent('serviceworker'),id=worker.url().split('/')[2];
- const options=await context.newPage();await options.goto(`chrome-extension://${id}/options.html`);
+ const options=await context.newPage();await options.goto(`chrome-extension://${id}/options.html`);await options.evaluate(()=>chrome.runtime.sendMessage({type:'completeOnboarding'}));await options.reload();
  const msg=data=>options.evaluate(data=>chrome.runtime.sendMessage(data),data);
  const settings={model:'gpt-6-luna',language:'English',languages:['English'],dataConsent:true};
  const save=(extra={})=>msg({type:'save',...settings,storageMode:'device',deviceConsent:true,...extra});
- const reset=async()=>{await worker.evaluate(async()=>{const {serviceProfiles}=await chrome.storage.local.get('serviceProfiles');const p={...serviceProfiles[0],storageMode:'device',dataConsent:false};delete p.deviceKey;delete p.encryptedKey;await chrome.storage.local.clear();await chrome.storage.local.set({serviceProfiles:[p],activeServiceId:p.id});await chrome.storage.session.clear()});await options.reload();await options.getByRole('heading',{name:'设置你的 Lingo'}).waitFor()};
+ const reset=async()=>{await worker.evaluate(async()=>{const {serviceProfiles}=await chrome.storage.local.get('serviceProfiles');const p={...serviceProfiles[0],storageMode:'device',dataConsent:false};delete p.deviceKey;delete p.encryptedKey;await chrome.storage.local.clear();await chrome.storage.local.set({serviceProfiles:[p],activeServiceId:p.id,onboardingComplete:true});await chrome.storage.session.clear()});await options.reload();await options.getByRole('heading',{name:'设置你的 Lingo'}).waitFor()};
  const check=async(name,fn)=>{try{await reset();await fn();checks.push(name);console.log('PASS',name)}catch(e){failures.push({name,error:e.message});console.log('FAIL',name,e.message)}};
  await check('ordinary preferences save before entering any API key',async()=>{const c=await save();assert(!c.error,c.error);assert(!c.hasKey);assert.equal(c.settings.language,'English')});
  await check('locked encrypted key survives a session-only conversion attempt',async()=>{await save({key:fake,storageMode:'encrypted',password,passwordConfirm:password});await msg({type:'lock'});const c=await save({storageMode:'session'});assert.match(c.error||'',/先解锁/);assert((await msg({type:'config'})).hasVault)});
