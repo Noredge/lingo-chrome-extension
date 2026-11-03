@@ -1,6 +1,6 @@
 # Reviewer instructions — draft, not submitted
 
-Current build: 1.0.0-dev.3, manifest 0.9.2. Full AI operations require the reviewer’s valid compatible API account, Key, available Responses API model and quota. No live credential is included. Never use fixture keys for live access.
+Current build: 1.0.0-dev.4, manifest 0.9.3. Full AI operations require the reviewer’s valid compatible API account, Key, available Responses API model and quota. No live credential is included. Never use fixture keys for live access.
 
 1. Install the extension; choose English / 简体中文 / 繁體中文 or browser-follow in settings. Translation target language remains independent.
 2. Set Base URL (OpenAI example: https://api.openai.com/v1), the correct provider Key and model. Review the exact destination and data disclosure. Confirm Chrome’s API origin permission and save. Default storage is automatic local encryption with no password; session and password modes are optional.

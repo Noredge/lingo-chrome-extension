@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0-dev.4",
+  "checks": [
+    "Multiline selection: release point + 8px",
+    "Reverse selection: release point + 8px",
+    "Bottom-right edge flips left and above; stays within viewport"
+  ],
+  "apiRequests": 0,
+  "selectionSetup": "DOM ranges; actual pointer release events"
+}

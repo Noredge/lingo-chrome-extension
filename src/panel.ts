@@ -131,11 +131,19 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     $<HTMLInputElement>('.custom input').value = '';
     if(docked){notify('仅发送当前原文 · 此处可复制结果');panel.hidden=false;$('.source').hidden=false;$<HTMLDetailsElement>('.source').open=true;sourceEditor!.value='';$<HTMLButtonElement>('.source-submit').disabled=true;$('.count').textContent='';$('.write-output').hidden=true;$('.translate-status').classList.remove('error');$('.translate-text').classList.remove('loading');$('.translate-status').textContent='在 PDF 中右键翻译，或在上方粘贴原文。';}
   }
-  function scan() {
+  function scan(pointer?: {x:number;y:number}) {
     if (composing || blocked() || !panel.hidden || root.activeElement) return;
     candidate?.cleanup?.(); candidate = capture();
     if (!candidate || candidate.text.length > MAX_TEXT) { launcher.hidden = true; return; }
-    mount(); launcher.hidden = false; position(launcher, candidate.rect);
+    mount(); launcher.hidden = false;
+    if(pointer){
+      // Use the selection's release point, rather than the top-left of a multiline range.
+      const gap=8,width=launcher.offsetWidth,height=launcher.offsetHeight;
+      const left=pointer.x+gap+width<=innerWidth-10?pointer.x+gap:pointer.x-gap-width;
+      const top=pointer.y+gap+height<=innerHeight-10?pointer.y+gap:pointer.y-gap-height;
+      launcher.style.left=`${clamp(left,10,innerWidth-width-10)}px`;
+      launcher.style.top=`${clamp(top,10,innerHeight-height-10)}px`;
+    }else position(launcher, candidate.rect);
   }
   function show(snapshot: Snapshot, keepOpen=false, targetLanguage=settings.language) {
     $('.source').hidden=false;
@@ -248,7 +256,7 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     lastPointer = { x: e.clientX, y: e.clientY };
     if (!panel.hidden) close();
   }, true);
-  document.addEventListener('pointerup', e => { if (!e.composedPath().includes(host)) setTimeout(scan, 0); }, true);
+  document.addEventListener('pointerup', e => { if (e.button===0 && !e.composedPath().includes(host)) {const point={x:e.clientX,y:e.clientY};lastPointer=point;setTimeout(()=>scan(point),0);} }, true);
   document.addEventListener('keyup', e => { if (!e.composedPath().includes(host) && e.key !== 'Escape') setTimeout(scan, 0); }, true);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && (!panel.hidden || !launcher.hidden)) { close(); e.stopPropagation(); } }, true);
   document.addEventListener('compositionstart', () => { composing = true; launcher.hidden = true; }, true);

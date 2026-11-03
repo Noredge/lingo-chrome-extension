@@ -862,7 +862,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
         $(".translate-status").textContent = "在 PDF 中右键翻译，或在上方粘贴原文。";
       }
     }
-    function scan() {
+    function scan(pointer) {
       if (composing || blocked() || !panel.hidden || root.activeElement) return;
       candidate?.cleanup?.();
       candidate = capture();
@@ -872,7 +872,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
       }
       mount();
       launcher.hidden = false;
-      position(launcher, candidate.rect);
+      if (pointer) {
+        const gap = 8, width = launcher.offsetWidth, height = launcher.offsetHeight;
+        const left = pointer.x + gap + width <= innerWidth - 10 ? pointer.x + gap : pointer.x - gap - width;
+        const top = pointer.y + gap + height <= innerHeight - 10 ? pointer.y + gap : pointer.y - gap - height;
+        launcher.style.left = `${clamp2(left, 10, innerWidth - width - 10)}px`;
+        launcher.style.top = `${clamp2(top, 10, innerHeight - height - 10)}px`;
+      } else position(launcher, candidate.rect);
     }
     function show(snapshot, keepOpen = false, targetLanguage = settings.language) {
       $(".source").hidden = false;
@@ -1098,7 +1104,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:17p
         if (!panel.hidden) close();
       }, true);
       document.addEventListener("pointerup", (e) => {
-        if (!e.composedPath().includes(host)) setTimeout(scan, 0);
+        if (e.button === 0 && !e.composedPath().includes(host)) {
+          const point = { x: e.clientX, y: e.clientY };
+          lastPointer = point;
+          setTimeout(() => scan(point), 0);
+        }
       }, true);
       document.addEventListener("keyup", (e) => {
         if (!e.composedPath().includes(host) && e.key !== "Escape") setTimeout(scan, 0);
