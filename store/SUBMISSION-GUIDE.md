@@ -1,5 +1,7 @@
 # Lingo 1.0.0 · Public 提交清单
 
+当前状态：2026-11-02 已提交 Chrome Web Store 审核，后台显示 **Pending review**。Public、全部地区、免费安装，审核通过后自动发布。商店 ID：`imofdjefcigddmfpoifioiejgkfnomip`。三语介绍、5 张截图、隐私披露和测试步骤已保存；按发布者选择不提供测试 Key，采用用户自备 API Key。尚未审核通过或正式上架。
+
 运行包：`store/packages/Lingo-1.0.0-webstore.zip`，manifest 位于 ZIP 根目录。只上传运行包，不上传源码或完整材料 ZIP。
 
 1. 用户完成开发者注册及付款。

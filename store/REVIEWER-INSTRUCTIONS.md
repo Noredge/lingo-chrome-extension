@@ -1,6 +1,6 @@
 # Lingo 1.0.0 · Reviewer instructions
 
-AI operations require a valid Responses API account, model and quota. No live key is bundled. Arrange any publisher-provided review-only credentials privately in the review channel before submission; do not put them in this repository or the extension package.
+AI operations require a valid Responses API account, model and quota. No live key is bundled. This submission uses the bring-your-own-key workflow; no publisher test credentials are supplied. Configure a compatible service, model and valid API access in the extension settings.
 
 1. Install and follow the dismissible setup dialog: interface language, API connection, optional website access. The API and website steps can be deferred. Existing configured users skip onboarding on upgrade.
 2. Enter the Base URL, API key and model; review the data destination and consent. “Save and test connection” saves pending edits and sends a fixed sample. Testing does not activate a different profile. Saving settings alone sends no request.
