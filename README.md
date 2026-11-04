@@ -2,9 +2,11 @@
 
 轻量 Chrome 翻译与写作扩展。划词翻译、校对、语气改写与自定义修改，使用你自己的 Responses API 服务。
 
+**1.0.0 已在 Chrome Web Store 正式上架。** [安装 Lingo](https://chromewebstore.google.com/detail/imofdjefcigddmfpoifioiejgkfnomip)
+
 ## 安装与使用
 
-1. 从 [Releases](https://github.com/Noredge/lingo-chrome-extension/releases/latest) 下载运行包并解压。在 `chrome://extensions` 开启开发者模式，加载解压后的文件夹；也可直接加载本仓库的 `extension/`。需要 Chrome 120+。
+1. 从 [Chrome Web Store](https://chromewebstore.google.com/detail/imofdjefcigddmfpoifioiejgkfnomip) 安装 Lingo。需要 Chrome 120+。
 2. 首次引导中选择界面语言，填写 Base URL、API Key 和模型，保存并测试连接；网页访问权限可按需授权。
 3. 普通网页选中文字后点击「文」，查看翻译或继续改写。在支持的输入框中可确认后替换选区。
 4. PDF 选中文字后右键“用 Lingo 翻译”。Google Docs 和其它不支持浮窗的页面，可从插件菜单打开侧边栏粘贴原文，处理后复制结果。
@@ -19,6 +21,8 @@
 
 ## 开发
 
+手动安装：从 [Releases](https://github.com/Noredge/lingo-chrome-extension/releases/latest) 下载运行包并解压，在 `chrome://extensions` 开启开发者模式并加载解压后的文件夹；也可直接加载本仓库的 `extension/`。
+
 ```sh
 npm ci
 npx playwright install chromium
@@ -29,6 +33,6 @@ npm run build
 
 加载 `dist/` 测试。浏览器回归：`npm run test:browser`、`test:security`、`test:review`、`test:features`、`test:onboarding`，以及 `node tests/release-smoke.mjs`。测试使用隔离配置与模拟 API。
 
-重新生成截图与上架包：`npm run store:assets && npm run package:store`。提交材料位于 [`store/`](store/)。GitHub 正式版与 Chrome Web Store 上架是独立步骤。
+重新生成截图与上架包：`npm run store:assets && npm run package:store`。提交材料位于 [`store/`](store/)。
 
 MIT License · Noredge · 支持：hongbin.lei98@gmail.com（请勿发送 Key 或私人文档）
