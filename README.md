@@ -35,4 +35,4 @@ npm run build
 
 重新生成截图与上架包：`npm run store:assets && npm run package:store`。提交材料位于 [`store/`](store/)。
 
-MIT License · Noredge · 支持：hongbin.lei98@gmail.com（请勿发送 Key 或私人文档）
+MIT License · Noredge
