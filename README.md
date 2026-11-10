@@ -4,7 +4,7 @@ Chrome 翻译与写作扩展：划词翻译、红绿下划线建议、个人词�
 
 [从 Chrome Web Store 安装](https://chromewebstore.google.com/detail/imofdjefcigddmfpoifioiejgkfnomip) · [隐私政策](https://noredge.github.io/lingo-chrome-extension/privacy.html)
 
-**当前版本为 1.1.0；Chrome 商店更新正在提交中，公开安装版以商店页面为准。** [发布状态](store/PUBLISH-STATUS.md)。1.1 发布材料、验证范围与提交事项见 [`store/RELEASE-CHECKS.md`](store/RELEASE-CHECKS.md)。
+**当前版本为 1.1.0；Chrome 商店更新已提交审核，审核通过后自动发布；公开安装版以商店页面为准。** [发布状态](store/PUBLISH-STATUS.md)。1.1 发布材料、验证范围与提交事项见 [`store/RELEASE-CHECKS.md`](store/RELEASE-CHECKS.md)。
 
 ## 开始使用
 
