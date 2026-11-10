@@ -11,3 +11,11 @@ test-results/
 tests/probe.mjs
 
 store/packages/
+
+# Internal release notes remain local.
+/store/RELEASE-CHECKS.md
+/store/SUBMISSION-GUIDE.md
+/store/PRIVACY-FIELDS.md
+/store/PUBLISH-STATUS.md
+/store/STORE-LISTING.md
+/docs/development-history-1.1.md

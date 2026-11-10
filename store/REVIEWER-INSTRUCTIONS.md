@@ -1,6 +1,6 @@
 # Lingo 1.1.0 · Reviewer instructions
 
-This is an update to existing item `imofdjefcigddmfpoifioiejgkfnomip`. AI operations require a valid Responses API account, model and quota. No live key or credits are bundled. No publisher test credentials are currently supplied; arrange any review access privately before submission, never in this file or the package.
+This is an update to existing item `imofdjefcigddmfpoifioiejgkfnomip`. AI operations require a valid Responses API account, model and quota. No live key or credits are bundled. No publisher credentials are supplied.
 
 1. Install fresh and follow the six-step guide: interface language, API connection, website access, checking preferences, local practice, writing features. Steps can be deferred. The practice exercise makes no API calls: hover underlines, accept, undo and reset. On upgrade, configured users see a skippable writing introduction when opening settings; it preserves existing connection, dictionary, presets and site preferences. Skipping prevents repeated introduction. Reopen it from settings.
 2. Configure a compatible Base URL, API key and model, and review data consent. “Save and test connection” sends a fixed example. Saving alone sends no request. Requests go directly to the chosen endpoint. Automatic checking and style are off by default; site permission does not turn them on.
@@ -16,4 +16,4 @@ Suggestions depend on the configured model and can be inaccurate. The package in
 
 The settings footer has one Introduction entry for connection, permissions, automatic checking and writing. Existing users can jump directly to any topic; browsing or dismissing it preserves saved preferences and unsaved connection drafts.
 
-Support: hongbin.lei98@gmail.com. See RELEASE-CHECKS.md for test scope and SUBMISSION-GUIDE.md for pending submission steps.
+Support: hongbin.lei98@gmail.com.
