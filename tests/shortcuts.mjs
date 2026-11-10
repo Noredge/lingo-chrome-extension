@@ -1,3 +1,4 @@
+import {useVisibleTrigger} from './visible-trigger.mjs';
 import {chromium} from 'playwright';
 import {mkdtemp,cp,readFile,writeFile,rm,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -15,7 +16,7 @@ const until=async fn=>{for(let n=0;n<150;n++){if(await fn())return;await new Pro
 try{
  ctx=await chromium.launchPersistentContext(path.join(temp,'profile'),{channel:'chromium',headless:true,locale:'zh-CN',args:[`--disable-extensions-except=${ext}`,`--load-extension=${ext}`],viewport:{width:1100,height:900}});
  await ctx.route('https://api.openai.com/v1/responses',async route=>{calls.push(route.request().postDataJSON());const text=typeof output==='string'?output:JSON.stringify(output);if(held)await new Promise(r=>release=r);await route.fulfill({contentType:'text/event-stream',body:[{type:'response.output_text.delta',delta:text},{type:'response.completed',response:{status:'completed'}}].map(e=>'data: '+JSON.stringify(e)+'\n\n').join('')}).catch(()=>{});});
- const worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker'),id=worker.url().split('/')[2];
+ const worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker'),id=worker.url().split('/')[2];await useVisibleTrigger(worker);
  const settings=await ctx.newPage();await settings.goto(`chrome-extension://${id}/options.html`);const message=data=>settings.evaluate(data=>chrome.runtime.sendMessage(data),data);
  await message({type:'completeOnboarding'});const config=await message({type:'config'});assert(!(await message({type:'save',...config.settings,uiLanguage:'zh-CN',storageMode:'session',dataConsent:true,key:'fixture-only-shortcut-key'})).error);
  const panelPage=await ctx.newPage();panelPage.on('pageerror',e=>errors.push(e.message));await panelPage.setViewportSize({width:390,height:880});await panelPage.goto(`chrome-extension://${id}/sidepanel.html`);

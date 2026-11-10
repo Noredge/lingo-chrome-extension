@@ -1931,10 +1931,6 @@
     "紅線檢查語法與拼字；綠線提供可選的表達建議。",
     "Red marks show grammar and spelling issues; green marks offer optional style suggestions."
   ],
-  "网站单独设置优先。不会自动授予网页权限，也不会检查密码框、整页或附件。检查使用已配置的服务，API 用量按服务商规则计费。": [
-    "網站個別設定優先。不會自動授予網頁權限，也不會檢查密碼框、整頁或附件。檢查使用已設定的服務，API 用量按服務商規則計費。",
-    "Website overrides take priority. This does not grant site access or check password fields, whole pages or attachments. Checks use your configured service and its usage charges."
-  ],
   "保存检查设置": [
     "儲存檢查設定",
     "Save checking settings"
@@ -2682,5 +2678,53 @@
   "返回设置": [
     "返回設定",
     "Back to settings"
+  ],
+  "输入框旁的检查按钮": [
+    "輸入框旁的檢查按鈕",
+    "Check button beside text fields"
+  ],
+  "仅有建议时显示（默认）": [
+    "僅有建議時顯示（預設）",
+    "Only when there are suggestions (default)"
+  ],
+  "始终隐藏": [
+    "始終隱藏",
+    "Always hide"
+  ],
+  "有文字时一直显示": [
+    "有文字時一直顯示",
+    "Show whenever the field has text"
+  ],
+  "检查按钮显示设置无法读取，未覆盖原有数据。": [
+    "檢查按鈕顯示設定無法讀取，未覆寫原有資料。",
+    "Cannot read the check button display setting. Existing data was not overwritten."
+  ],
+  "用 Lingo 校对选中文字": [
+    "用 Lingo 校對選取文字",
+    "Proofread selected text with Lingo"
+  ],
+  "用 Lingo 检查当前输入框": [
+    "用 Lingo 檢查目前輸入框",
+    "Check this text field with Lingo"
+  ],
+  "在输入框内右键，选择「用 Lingo 检查当前输入框」。": [
+    "在輸入框內按右鍵，選擇「用 Lingo 檢查目前輸入框」。",
+    "Right-click a text field and choose “Check this text field with Lingo”."
+  ],
+  "保存后，按钮显示立即更新，不会发送草稿；检查方式在下次进入编辑区或输入时生效。": [
+    "儲存後，按鈕顯示立即更新，不會傳送草稿；檢查方式在下次進入編輯區或輸入時生效。",
+    "Saving updates button visibility immediately without sending your draft. Checking preferences apply on the next focus or edit."
+  ],
+  "检查设置已保存。": [
+    "檢查設定已儲存。",
+    "Checking preferences saved."
+  ],
+  "有建议时显示": [
+    "有建議時顯示",
+    "Show with suggestions"
+  ],
+  "有文字时显示": [
+    "有文字時顯示",
+    "Show with text"
   ]
 }

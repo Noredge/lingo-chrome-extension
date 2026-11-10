@@ -21,9 +21,13 @@
 <form id="writing-form"><fieldset id="writing-controls" disabled>
 <label class="setting-toggle"><span><strong id="global-auto-label">所有网页默认自动检查</strong><span id="auto-helper" class="help">在已授权、支持的编辑区进入或输入停顿后，自动发送当前编辑区全文至所选服务。</span></span><input id="global-auto" type="checkbox" aria-labelledby="global-auto-label" aria-describedby="auto-helper"></label>
 <label class="setting-toggle"><span><strong id="global-style-label">默认包含表达优化</strong><span class="help">红线检查语法与拼写；绿线提供可选的表达建议。</span></span><input id="global-style" type="checkbox" aria-labelledby="global-style-label"></label>
-<p class="help writing-disclosure">网站单独设置优先。不会自动授予网页权限，也不会检查密码框、整页或附件。检查使用已配置的服务，API 用量按服务商规则计费。</p>
-<div class="actions"><button id="save-writing" type="submit" class="primary" disabled>保存检查设置</button><button id="reset-writing" type="button">重新载入</button><span id="writing-unsaved" class="help" hidden>有未保存的更改</span></div>
-</fieldset></form><p id="writing-status" role="status" aria-live="polite" class="status writing-status"></p><p class="help">保存设置不会发送当前草稿；下次进入编辑区或真实输入时生效。</p>
+<fieldset id="trigger-visibility" class="visibility-options"><legend>输入框旁的检查按钮</legend><div class="visibility-choices">
+<label class="visibility-choice"><input type="radio" name="trigger-visibility" value="issues"><span>有建议时显示</span></label>
+<label class="visibility-choice"><input type="radio" name="trigger-visibility" value="never"><span>始终隐藏</span></label>
+<label class="visibility-choice"><input type="radio" name="trigger-visibility" value="always"><span>有文字时显示</span></label>
+</div></fieldset>
+<div class="actions"><button id="save-writing" type="submit" class="primary" disabled>保存检查设置</button><span id="writing-unsaved" class="help" hidden>有未保存的更改</span></div>
+</fieldset></form><p id="writing-status" role="status" aria-live="polite" class="status writing-status"></p><p class="help">保存后，按钮显示立即更新，不会发送草稿；检查方式在下次进入编辑区或输入时生效。</p>
 </section>
 <section class="card"><div class="card-heading"><span class="step">02</span><div><h3>网站例外</h3><p>保留网站单独设置，或恢复跟随全局默认。</p></div></div>
 <form id="add-override-form" class="site-form"><input id="override-origin" type="url" placeholder="https://example.com" aria-label="不自动检查的网站地址" required><button type="submit">添加关闭例外</button></form><p class="help">按完整网站地址区分；不会改变网站访问授权。</p>
@@ -47,7 +51,7 @@
   <h2 id="guide-check-title">选择适合你的检查方式</h2>
   <p class="help">自动检查与网页授权是两个独立开关，可以随时在「写作与检查」中更改。</p>
   <fieldset id="guide-check-controls" disabled><legend class="sr-only">全局检查方式</legend>
-    <label class="guide-choice"><input type="radio" name="guide-check-mode" id="guide-manual" value="manual"><span><strong>手动检查</strong><small>需要时点击 Lingo，再选择「检查全文」。</small></span></label>
+    <label class="guide-choice"><input type="radio" name="guide-check-mode" id="guide-manual" value="manual"><span><strong>手动检查</strong><small>在输入框内右键，选择「用 Lingo 检查当前输入框」。</small></span></label>
     <label class="guide-choice"><input type="radio" name="guide-check-mode" id="guide-auto" value="auto"><span><strong>输入后自动检查</strong><small>进入编辑区或输入停顿后，显示语法和拼写红线。</small></span></label>
     <label class="guide-style"><input type="checkbox" id="guide-style"><span>同时显示表达优化建议（绿线，可选）</span></label>
   </fieldset>

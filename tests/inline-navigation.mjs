@@ -1,3 +1,4 @@
+import {useVisibleTrigger} from './visible-trigger.mjs';
 import {chromium} from 'playwright';
 import {mkdtemp,cp,readFile,writeFile,rm,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import path from 'node:path';import http from 'node:http';import assert from 'node:assert/strict';
@@ -17,7 +18,7 @@ try{
   const events=[{type:'response.output_text.delta',delta:text}];if(mode!=='partial')events.push({type:'response.completed',response:{status:'completed'}});
   await route.fulfill({contentType:'text/event-stream',body:events.map(e=>'data: '+JSON.stringify(e)+'\n\n').join('')}).catch(()=>{});
  });
- const worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker');
+ const worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker');await useVisibleTrigger(worker);
  const settings=await ctx.newPage();await settings.goto(`chrome-extension://${worker.url().split('/')[2]}/options.html`);
  const message=data=>settings.evaluate(data=>chrome.runtime.sendMessage(data),data);
  await message({type:'completeOnboarding'});const config=await message({type:'config'});

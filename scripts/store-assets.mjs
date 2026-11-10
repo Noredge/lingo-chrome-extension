@@ -1,7 +1,7 @@
 import {chromium} from 'playwright';
 import {mkdtemp,cp,readFile,writeFile,mkdir,rm,readdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import {createHash} from 'node:crypto';import assert from 'node:assert/strict';import path from 'node:path';import http from 'node:http';
-const out=path.resolve('store/assets'),evidence=path.resolve('../evidence/release-final-1.1');await mkdir(out,{recursive:true});await mkdir(evidence,{recursive:true});
+const out=path.resolve('store/assets'),evidence=path.resolve(process.env.LINGO_ASSET_EVIDENCE||'../evidence/store-assets');await mkdir(out,{recursive:true});await mkdir(evidence,{recursive:true});
 const temp=await mkdtemp(path.join(tmpdir(),'lingo-store-')),ext=path.join(temp,'extension');await cp('dist',ext,{recursive:true});
 const manifest=JSON.parse(await readFile(path.join(ext,'manifest.json'),'utf8'));manifest.host_permissions.push('http://127.0.0.1/*');await writeFile(path.join(ext,'manifest.json'),JSON.stringify(manifest));
 const html=await readFile('store/fixtures/showcase.html');const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(html)});await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -34,12 +34,12 @@ try{
  await page.mouse.move(1200,760);await page.locator('.reading textarea').blur();
  let dict=await msg({type:'dictionaryState'});for(const word of ['Qorvanta','Lingo','Noredge']){assert(!(await msg({type:'dictionaryAction',action:'add',word,revision:dict.revision})).error);dict=await msg({type:'dictionaryState'});}
  const presets=await msg({type:'presetState'});assert(!(await msg({type:'presetAction',action:'save',revision:presets.revision,name:'委婉邮件',instruction:'保留原意，用自然、礼貌且简洁的语气表达。'})).error);
- await options.goto(`chrome-extension://${id}/options.html#writing`);await options.reload();await options.locator('#personal-dictionary').waitFor();await options.locator('#personal-dictionary').scrollIntoViewIfNeeded();await shot('04-writing-settings-1280x800.png',options);
+ await options.goto(`chrome-extension://${id}/options.html#writing`);await options.reload();await options.locator('#personal-dictionary').waitFor();await options.locator('#writing-form').evaluate(el=>{el.closest('section').scrollIntoView({block:'start'});window.scrollBy(0,-24)});await shot('04-writing-settings-1280x800.png',options);
  // Keep the normal feature UI untouched; a synthetic page demonstrates the lookup selection.
  await page.reload();await page.evaluate(()=>{document.querySelector('#headline').textContent='认识一个词，也了解怎么用。';document.querySelector('#lead').textContent='切换到「单词与短语」，查看释义、搭配与例句。';document.querySelector('#translate').innerHTML='Remember to <span id="term">make room for</span> the things that matter.';});
  await select('#term');await host.locator('[data-tool=lookup]').click();await host.locator('.lookup-sense').waitFor();await host.locator('.source summary').click();await move(790,95);await shot('05-words-and-phrases-1280x800.png');
  // Completion title evidence, captured from the real guide without altering its DOM.
- await options.locator('#setup-restart').click();await options.locator('[data-guide-step="5"]').click();await options.getByRole('heading',{name:'试试这些写作功能',exact:true}).waitFor();await options.screenshot({path:path.join(evidence,'guide-ready-1.1.png')});
+ await options.locator('#setup-restart').click();await options.locator('[data-guide-step="5"]').click();await options.getByRole('heading',{name:'试试这些写作功能',exact:true}).waitFor();await options.screenshot({path:path.join(evidence,'guide-ready.png')});
  const promo=await context.newPage();await promo.setViewportSize({width:440,height:280});await promo.setContent('<html><body style="margin:0;background:#edf2e6;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,sans-serif;color:#294733;padding:32px;box-sizing:border-box"><div style="font-size:18px;font-weight:650">文 Lingo</div><h1 style="font-size:31px;line-height:1.5;font-weight:550;letter-spacing:-1px;margin:20px 0 12px">读懂每一句。<br>写好每一句。</h1><p style="font-size:12px;color:#73886a;margin:0">翻译 · 行内建议 · 自备 API Key</p></body></html>');await promo.screenshot({path:path.join(out,'promo-440x280.png')});await cp('public/icons/128.png',path.join(out,'icon-128.png'));
  // Remove only replaced generated screenshots; their previous versions remain in the source checkpoint.
  for(const name of await readdir(out))if(/^0.*-1280x800\.png$/.test(name)&&!screenshots.includes(name))await rm(path.join(out,name));

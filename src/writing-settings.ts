@@ -5,23 +5,25 @@ import type {InlineSettings,InlineDefaults} from './inline-preferences';
 export function createWritingSettings(){
   const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
   const auto=$<HTMLInputElement>('global-auto'),style=$<HTMLInputElement>('global-style');
+  const visibility=$<HTMLFieldSetElement>('trigger-visibility');
+  const visibilityInputs=[...visibility.querySelectorAll<HTMLInputElement>('input[type=radio]')];
+  const visibilityValue=()=>visibilityInputs.find(input=>input.checked)?.value;
   const controls=$<HTMLFieldSetElement>('writing-controls');
   let state:InlineSettings|null=null,base:InlineDefaults|null=null,busy=false,refreshEpoch=0;
   const dictionary=createDictionaryControls();
   const presets=createPresetControls($('settings-presets'),{managementOnly:true,instruction:()=>'',changed:()=>{}});
   function status(text:string,error=false,site=false){const output=$(site?'site-overrides-status':'writing-status');output.textContent=text;output.classList.toggle('error',error);}
-  const dirty=()=>!!base&&(auto.checked!==base.autoCheck||style.checked!==base.includeStyle);
+  const dirty=()=>!!base&&(auto.checked!==base.autoCheck||style.checked!==base.includeStyle||visibilityValue()!==base.triggerVisibility);
   function update(){
     controls.disabled=!state||busy;
     $<HTMLButtonElement>('save-writing').disabled=!state||busy||!dirty();
-    $<HTMLButtonElement>('reset-writing').disabled=!state||busy;
     $('writing-unsaved').hidden=!dirty();$('site-overrides').inert=busy;$('add-override-form').inert=!state||busy;
   }
   function adopt(next:InlineSettings,reset=false){
     if(state&&next.defaults.revision<state.defaults.revision)return;
     const keep=dirty()&&!reset;
-    if(!keep){auto.checked=next.defaults.autoCheck;style.checked=next.defaults.includeStyle;base={...next.defaults};}
-    else if(base&&base.autoCheck===next.defaults.autoCheck&&base.includeStyle===next.defaults.includeStyle)base.revision=next.defaults.revision;
+    if(!keep){auto.checked=next.defaults.autoCheck;style.checked=next.defaults.includeStyle;visibilityInputs.forEach(input=>{input.checked=input.value===next.defaults.triggerVisibility;});base={...next.defaults};}
+    else if(base&&base.autoCheck===next.defaults.autoCheck&&base.includeStyle===next.defaults.includeStyle&&base.triggerVisibility===next.defaults.triggerVisibility)base.revision=next.defaults.revision;
     state=next;renderSites();update();
   }
   async function message(data:object){const result=await chrome.runtime.sendMessage(data);if(result?.error)throw new Error(result.error);return result;}
@@ -32,7 +34,7 @@ export function createWritingSettings(){
   }
   async function mutate(action:{action:string;[key:string]:unknown},revision:number,reset=false){
     if(busy)return;const site=action.action!=='defaults';busy=true;update();
-    try{const next=await message({type:'inlineSettingsAction',...action,revision});adopt(next,reset);status('检查设置已保存；下次进入编辑区或输入时生效。',false,site);}
+    try{const next=await message({type:'inlineSettingsAction',...action,revision});adopt(next,reset);status('检查设置已保存。',false,site);}
     catch(e){status((e as Error).message,true,site);await refresh();}
     finally{busy=false;update();}
   }
@@ -54,9 +56,8 @@ export function createWritingSettings(){
       options.append(reset);row.append(options);list.append(row);
     }
   }
-  $('writing-form').addEventListener('submit',event=>{event.preventDefault();if(base&&dirty())void mutate({action:'defaults',autoCheck:auto.checked,includeStyle:style.checked},base.revision,true);});
-  auto.addEventListener('change',update);style.addEventListener('change',update);
-  $('reset-writing').addEventListener('click',()=>{if(state){adopt(state,true);status('');void refresh();}});
+  $('writing-form').addEventListener('submit',event=>{event.preventDefault();if(base&&dirty())void mutate({action:'defaults',autoCheck:auto.checked,includeStyle:style.checked,triggerVisibility:visibilityValue()},base.revision,true);});
+  auto.addEventListener('change',update);style.addEventListener('change',update);visibility.addEventListener('change',update);
   $('add-override-form').addEventListener('submit',event=>{
     event.preventDefault();if(!state)return;
     try{const url=new URL($<HTMLInputElement>('override-origin').value);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw 0;

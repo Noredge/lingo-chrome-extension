@@ -1,7 +1,7 @@
 import {DICTIONARY_KEY,readDictionary,updateDictionary} from './dictionary';
 import { t, setLanguage } from './i18n';
 import {readPresets,updatePresets} from './presets';
-import {INLINE_DEFAULTS_KEY,INLINE_SITE_PREFIX,readInlineDefaults,readInlineOptions,resolveInlineOptions,inlineOrigin} from './inline-preferences';
+import {INLINE_DEFAULTS_KEY,INLINE_SITE_PREFIX,readInlineDefaults,readInlineOptions,readTriggerVisibility,resolveInlineOptions,inlineOrigin} from './inline-preferences';
 import {buildCheckRequest,parseDiagnostics,type CheckTask} from './diagnostics';
 import {prefersSidebar} from './surfaces';
 import { buildRequest, readResponses, apiOrigin, type Task } from './core';
@@ -42,7 +42,12 @@ chrome.runtime.onInstalled.addListener(details => {
 });
 chrome.runtime.onStartup.addListener(() => { void syncScripts(); void refreshMenu(); });
 let menuQueue = Promise.resolve();
-function refreshMenu() { menuQueue = menuQueue.catch(()=>{}).then(async()=>{await config();await chrome.contextMenus.removeAll();chrome.contextMenus.create({id:'lingo-open',title:t('用 Lingo 翻译'),contexts:['selection']});}); return menuQueue; }
+function refreshMenu() { menuQueue = menuQueue.catch(()=>{}).then(async()=>{
+  await config();await chrome.contextMenus.removeAll();
+  chrome.contextMenus.create({id:'lingo-open',title:t('用 Lingo 翻译'),contexts:['selection']});
+  chrome.contextMenus.create({id:'lingo-proofread',title:t('用 Lingo 校对选中文字'),contexts:['selection']});
+  chrome.contextMenus.create({id:'lingo-check-field',title:t('用 Lingo 检查当前输入框'),contexts:['editable'],documentUrlPatterns:['http://*/*','https://*/*']});
+}); return menuQueue; }
 void refreshMenu();
 
 async function openSelection(tabId: number, frameId = 0, fallback = '') {
@@ -55,9 +60,16 @@ async function openSelection(tabId: number, frameId = 0, fallback = '') {
 }
 // Invoke sidePanel.open synchronously in the actual menu gesture, including Chrome PDF viewer.
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId !== 'lingo-open' || tab?.id === undefined || !info.selectionText?.trim()) return;
+  if(tab?.id===undefined)return;
+  if(info.menuItemId==='lingo-check-field'){
+    const tabId=tab.id,frameId=info.frameId||0;
+    void chrome.scripting.executeScript({target:{tabId,frameIds:[frameId]},files:['content.js']})
+      .then(()=>chrome.tabs.sendMessage(tabId,{type:'checkField'},{frameId})).catch(()=>{});
+    return;
+  }
+  if (!['lingo-open','lingo-proofread'].includes(String(info.menuItemId)) || !info.selectionText?.trim()) return;
   const tabId = tab.id, windowId = tab.windowId;
-  const item = {id:crypto.randomUUID(),text:info.selectionText.slice(0,16001),tabId,created:Date.now()};
+  const item = {id:crypto.randomUUID(),text:info.selectionText.slice(0,16001),tabId,created:Date.now(),mode:info.menuItemId==='lingo-proofread'?'proofread':'translate'};
   // Window-specific one-shot inbox; survives service worker suspension, never local disk storage.
   void chrome.storage.session.set({['panel:'+windowId]:item});
   void chrome.sidePanel.open({windowId}).catch(() => {});
@@ -122,7 +134,7 @@ function changeInline(msg:any,origin?:string,passive=true){
     if(passive&&msg.revision!==old.revision)throw new Error('检查设置已在其他窗口更新，请重新载入后再保存。');
     if(old.revision>=Number.MAX_SAFE_INTEGER)throw new Error('自动检查设置无法读取，未覆盖原有数据。');
     const next={...old,revision:old.revision+1};
-    if(msg.action==='defaults')Object.assign(next,readInlineOptions(msg));
+    if(msg.action==='defaults')Object.assign(next,readInlineOptions(msg),{triggerVisibility:readTriggerVisibility(msg.triggerVisibility===undefined?old.triggerVisibility:msg.triggerVisibility)});
     else if(msg.action==='site'){
       origin=inlineOrigin(origin);const options=readInlineOptions(msg);
       await chrome.storage.local.set({[INLINE_SITE_PREFIX+origin]:options});

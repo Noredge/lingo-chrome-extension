@@ -1,3 +1,4 @@
+import {useVisibleTrigger} from './visible-trigger.mjs';
 import {chromium} from 'playwright';
 import {mkdtemp,cp,readFile,writeFile,rm,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import path from 'node:path';import http from 'node:http';import assert from 'node:assert/strict';
@@ -18,7 +19,7 @@ async function boot(){
  await ctx.route('https://api.openai.com/v1/responses',async route=>{calls.push(route.request().postDataJSON());const text=JSON.stringify({issues:output});if(held)await new Promise(r=>release=r);
   await route.fulfill({contentType:'text/event-stream',body:[{type:'response.output_text.delta',delta:text},{type:'response.completed',response:{status:'completed'}}].map(event=>'data: '+JSON.stringify(event)+'\n\n').join('')}).catch(()=>{});
  });
- worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker');settings=await ctx.newPage();await settings.goto(`chrome-extension://${worker.url().split('/')[2]}/options.html#writing`);
+ worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker');await useVisibleTrigger(worker);settings=await ctx.newPage();await settings.goto(`chrome-extension://${worker.url().split('/')[2]}/options.html#writing`);
 }
 const addUI=async word=>{await settings.locator('#dictionary-word').fill(word);await settings.getByRole('button',{name:'添加词条',exact:true}).click();await until(async()=>(await state()).words.some(w=>w.toLowerCase()===word.trim().toLowerCase()));await until(async()=>await settings.locator('#dictionary-word').inputValue()==='');};
 const marks=async(host,count)=>until(async()=>await host.locator('.mark').count()===count);

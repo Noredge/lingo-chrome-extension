@@ -1,3 +1,4 @@
+import {useVisibleTrigger} from './visible-trigger.mjs';
 import {chromium} from 'playwright';
 import {mkdtemp,cp,readFile,writeFile,rm,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';import path from 'node:path';import http from 'node:http';import assert from 'node:assert/strict';
@@ -21,7 +22,7 @@ async function boot(){
   const text=JSON.stringify({issues:[{source:'has',replacement:'have',before:'',after:'',kind:'grammar',reason:'Use have with I.'}]});
   await route.fulfill({contentType:'text/event-stream',body:[{type:'response.output_text.delta',delta:text},{type:'response.completed',response:{status:'completed'}}].map(e=>'data: '+JSON.stringify(e)+'\n\n').join('')}).catch(()=>{});
  });
- worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker');settings=await ctx.newPage();await settings.goto(`chrome-extension://${worker.url().split('/')[2]}/options.html#writing`);
+ worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker');await useVisibleTrigger(worker);settings=await ctx.newPage();await settings.goto(`chrome-extension://${worker.url().split('/')[2]}/options.html#writing`);
 }
 async function saveDefaults(auto,style){
  await settings.locator('#global-auto').setChecked(auto);await settings.locator('#global-style').setChecked(style);await settings.locator('#save-writing').click();
@@ -32,7 +33,7 @@ const add=async(name,instruction)=>{await settings.locator('.add-preset').click(
 try{
  await boot();await message({type:'completeOnboarding'});await worker.evaluate(origin=>chrome.storage.local.set({['inlineCheck:'+origin]:{autoCheck:false,includeStyle:true}}),legacy);await settings.reload();
  await settings.locator('#writing-controls:not(:disabled)').waitFor();assert(await settings.locator('#settings-writing').isVisible());assert(!await settings.locator('#settings-general').isVisible());assert(!await settings.locator('#global-auto').isChecked());
- assert.deepEqual((await state()).sites,[{origin:legacy,autoCheck:false,includeStyle:true}]);assert.equal(calls.length,0);check('writing tab deep link loads safely; global checks default off and legacy site preferences survive');
+ assert(await settings.locator('#save-writing').isDisabled());assert.equal(await settings.locator('#writing-form button').count(),1);assert.deepEqual((await state()).sites,[{origin:legacy,autoCheck:false,includeStyle:true}]);assert.equal(calls.length,0);check('writing tab deep link loads safely; global checks default off and legacy site preferences survive');
  await add('邮件更委婉','Preserve meaning and make the tone polite.');await add('仅改语法','Only fix grammar.');
  await settings.locator('.preset-row').nth(1).getByRole('button',{name:'上移预设',exact:true}).click();await settings.locator('.preset-status').filter({hasText:'顺序已保存'}).waitFor();
  await settings.locator('.preset-row').first().getByRole('button',{name:'编辑',exact:true}).click();await settings.locator('.preset-name').fill('语法校对');await settings.locator('.preset-form button[type=submit]').click();await settings.locator('.preset-form').waitFor({state:'hidden'});
@@ -44,7 +45,7 @@ try{
  await settings.locator('#global-auto').check();await settings.locator('#tab-general').click();await settings.locator('#model').fill('unsaved-model-draft');await settings.locator('#tab-general').press('ArrowRight');
  assert(await settings.locator('#global-auto').isChecked());assert.equal(await settings.locator('.preset-instruction').inputValue(),'Keep this draft.');
  await settings.locator('#tab-writing').press('Home');assert.equal(await settings.locator('#model').inputValue(),'unsaved-model-draft');
- await settings.locator('#tab-general').press('End');await settings.locator('.cancel-preset').click();await settings.locator('#reset-writing').click();
+ await settings.locator('#tab-general').press('End');await settings.locator('.cancel-preset').click();await settings.locator('#global-auto').uncheck();
  const config=await message({type:'config'});await settings.locator('#tab-general').click();await settings.locator('#model').fill(config.settings.model);await settings.locator('#tab-writing').click();
  check('accessible tab switching preserves service, global-checking and preset drafts');
  for(const [locale,label] of [['en','Writing & checking'],['zh-TW','寫作與檢查'],['zh-CN','写作与检查']]){
@@ -75,10 +76,10 @@ try{
  await host.locator('.trigger').click();await host.locator('.auto-check').check();await host.locator('.auto-check:not(:disabled)').waitFor();await host.locator('.close').click();await until(()=>calls.length===count+2);await host.locator('.mark').waitFor();assert.equal((await state()).defaults.autoCheck,false);assert.equal((await state()).sites[0].autoCheck,true);check('explicit site-on remains available when the global default is off');
  await page.close();count=calls.length;
  // Preserve a dirty form while another options window changes the stored values.
- await settings.locator('#global-auto').check();await change({action:'defaults',autoCheck:true,includeStyle:false});await pause(150);assert(await settings.locator('#global-style').isChecked());await settings.locator('#save-writing').click();await settings.locator('#writing-status.error').filter({hasText:'其他窗口'}).waitFor();assert(await settings.locator('#global-style').isChecked());assert.equal((await state()).defaults.includeStyle,false);await settings.locator('#reset-writing').click();assert(!await settings.locator('#global-style').isChecked());check('concurrent settings changes reject stale saves, retain the draft and allow reloading');
+ await settings.locator('#global-auto').check();await change({action:'defaults',autoCheck:true,includeStyle:false});await pause(150);assert(await settings.locator('#global-style').isChecked());await settings.locator('#save-writing').click();await settings.locator('#writing-status.error').filter({hasText:'其他窗口'}).waitFor();assert(await settings.locator('#global-style').isChecked());assert.equal((await state()).defaults.includeStyle,false);settings.once('dialog',dialog=>dialog.accept());await settings.reload();await settings.locator('#writing-controls:not(:disabled)').waitFor();assert(!await settings.locator('#global-style').isChecked());check('concurrent settings changes reject stale saves, retain the draft and recover after browser refresh');
  const before=await state();assert((await message({type:'inlineSettingsAction',action:'defaults',revision:before.defaults.revision,autoCheck:'yes',includeStyle:false})).error);assert.deepEqual(await state(),before);
  const race=await Promise.all([true,false].map(autoCheck=>message({type:'inlineSettingsAction',action:'defaults',revision:before.defaults.revision,autoCheck,includeStyle:false})));assert.equal(race.filter(r=>!r.error).length,1);assert.equal(race.filter(r=>r.error).length,1);check('invalid values and concurrent mutations cannot partially overwrite checking defaults');
- await change({action:'defaults',autoCheck:false,includeStyle:false});await change({action:'resetSite',origin});await settings.locator('#reset-writing').click();
+ await change({action:'defaults',autoCheck:false,includeStyle:false});await change({action:'resetSite',origin});await until(async()=>!await settings.locator('#global-auto').isChecked()&&!await settings.locator('#global-style').isChecked());
  const stored=await worker.evaluate(()=>chrome.storage.local.get(['inlineCheckDefaults','rewritePresets']));assert(!JSON.stringify(stored).includes('I has'));assert.equal(calls.length,count);check('only preferences and user-authored presets persist; settings operations never submit draft text');
  await ctx.close();await boot();await settings.locator('#writing-controls:not(:disabled)').waitFor();assert(!await settings.locator('#global-auto').isChecked());assert.equal((await message({type:'presetState'})).items[0].name,'邮件更委婉');assert.deepEqual((await state()).sites,[]);assert((await message({type:'config'})).hasKey);assert.deepEqual(errors,[]);check('browser restart keeps defaults, removed exceptions, shared presets and the existing service configuration');
  await writeFile(path.join(evidence,'results.json'),JSON.stringify({version:manifest.version_name,checks,pageErrors:errors,requests:calls.length,mockedAPI:true,permissions:'only isolated fixture origins; settings never requested additional grants'},null,2));

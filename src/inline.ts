@@ -10,6 +10,7 @@ import {revealFieldRange} from './inline-navigation';
 import {emptyDictionary,readDictionary,dictionaryWord,filterDictionaryIssues,type DictionaryState} from './dictionary';
 import css from './inline.css?inline';
 import {createShortcutGuard,plainKey} from './shortcuts';
+import {readTriggerVisibility,type TriggerVisibility} from './inline-preferences';
 
 export function createInlineChecker() {
   const host=document.createElement('div');host.id='lingo-inline-root';
@@ -17,7 +18,7 @@ export function createInlineChecker() {
   const root=host.attachShadow({mode:'open'}),style=document.createElement('style');style.textContent=css;root.append(style);localize(root);
   const ui=document.createElement('div');
   // Constant UI only. Source, model output and errors are inserted as text, never markup.
-  ui.innerHTML=`<div class="marks" aria-hidden="true"></div><div class="mirror" translate="no" aria-hidden="true"></div><button class="trigger" type="button" aria-expanded="false" aria-controls="inline-popover" title="手动检查当前输入框全文">Lingo · 检查</button>
+  ui.innerHTML=`<div class="marks" aria-hidden="true"></div><div class="mirror" translate="no" aria-hidden="true"></div><button class="trigger" type="button" hidden aria-expanded="false" aria-controls="inline-popover" title="手动检查当前输入框全文">Lingo · 检查</button>
   <section id="inline-popover" class="popover" role="dialog" aria-label="Lingo 行内检查" hidden>
     <div class="heading"><strong>行内检查</strong><button class="close" type="button" aria-label="收起建议">×</button></div>
     <div class="overview"><p class="scope">仅发送当前输入框全文；点击检查才发送。</p><label class="options"><input type="checkbox" class="auto-check">在此网站自动检查</label><label class="options"><input type="checkbox" class="include-style">包含表达优化（可选）</label><p class="preference-source"></p><button type="button" class="follow-defaults" hidden>跟随全局设置</button><div class="row"><button type="button" class="run primary">检查全文</button><button type="button" class="cancel" hidden>停止</button></div><div class="legend"><span class="grammar-key">红线：语法与拼写</span><span class="style-key">绿线：表达改进</span></div><div class="list"></div></div>
@@ -39,7 +40,7 @@ export function createInlineChecker() {
   let reviewPlacement:{left:number;top:number;height:number}|null=null;
   let lastLayoutKey='',validateScheduled=false,markWatchPoints:{left:number;top:number}[]=[];
   let serviceStatus:CheckServiceStatus={ready:false,label:'Lingo · 加载中',message:'正在读取检查设置…',action:'打开设置'};
-  let inherited=true;
+  let inherited=true,triggerVisibility:TriggerVisibility='issues';
   let autoCheck=false,styleEnabled=false,autoReady=false,preferencesReady=false,savingPreferences=false,preferenceEpoch=0;
   type Snapshot={source:string;revision:string;issues:Issue[];skipped:number;checked:boolean;notice:string;error:boolean};
   let cache=new WeakMap<TextField,Snapshot>();
@@ -136,9 +137,11 @@ export function createInlineChecker() {
   function layout(){
     if(!target)return;
     lastLayoutKey=fieldLayoutKey(target,state,issues,host,markWatchPoints);
-    const clip=fieldClip(target);$('trigger').hidden=!clip||composing;$('popover').hidden=!clip||!open||composing;
+    const clip=fieldClip(target);
+    $('trigger').hidden=!clip||composing||!preferencesReady||!source.trim()||triggerVisibility==='never'||triggerVisibility==='issues'&&!visibleIssues().length;
+    $('popover').hidden=!clip||!open||composing;
     if(!clip||composing){$('marks').replaceChildren();rects=[];markWatchPoints=[];return;}
-    place($('trigger'),clip);
+    if(!$('trigger').hidden)place($('trigger'),clip);
     // Hide during a site's modal or another extension overlay rather than paint above it.
     const midpoint=document.elementFromPoint((clip.left+clip.right)/2,(clip.top+clip.bottom)/2);
     if(!fieldContains(target,midpoint)&&midpoint!==host){$('trigger').hidden=true;$('popover').hidden=true;$('marks').replaceChildren();rects=[];return;}
@@ -154,7 +157,7 @@ export function createInlineChecker() {
     $('marks').replaceChildren(marks);$('geometry').textContent=geometryMessage;
     if(open){
       if(listOpen&&reviewPlacement)placeReview();
-      else {$('popover').classList.remove('context-tight');const at=listOpen?undefined:rects.find(r=>r.key===anchorKey)||rects.find(r=>r.id===active);place($('popover'),at?{left:at.left,right:at.left+at.width,top:at.hitTop,bottom:at.top+4}:$('trigger').getBoundingClientRect(),!!at);}
+      else {$('popover').classList.remove('context-tight');const at=listOpen?undefined:rects.find(r=>r.key===anchorKey)||rects.find(r=>r.id===active);place($('popover'),at?{left:at.left,right:at.left+at.width,top:at.hitTop,bottom:at.top+4}:$('trigger').hidden?clip:$('trigger').getBoundingClientRect(),!!at);}
     }
     lastLayoutKey=fieldLayoutKey(target,state,issues,host,markWatchPoints);
   }
@@ -284,8 +287,9 @@ export function createInlineChecker() {
     try{const prefs=await chrome.runtime.sendMessage({type:'inlineConfig'});if(epoch!==preferenceEpoch)return;if(prefs?.error){preferencesReady=false;autoCheck=false;invalidate(prefs.error);return;}applyPreferences(prefs,schedule);}
     catch{if(epoch===preferenceEpoch){preferencesReady=false;autoCheck=false;invalidate('扩展已更新，请刷新网页后使用。');}}
   }
-  function applyPreferences(prefs:{autoCheck:boolean;includeStyle:boolean;inherited?:boolean},schedule=true){
+  function applyPreferences(prefs:{autoCheck:boolean;includeStyle:boolean;inherited?:boolean;triggerVisibility?:TriggerVisibility},schedule=true){
     inherited=prefs.inherited===true;
+    triggerVisibility=readTriggerVisibility(prefs.triggerVisibility);
     const changed=autoCheck!==prefs.autoCheck||styleEnabled!==prefs.includeStyle;
     preferencesReady=true;autoCheck=prefs.autoCheck===true;styleEnabled=prefs.includeStyle===true;
     if(changed){cache=new WeakMap();invalidate('检查选项已变化，请重新检查。');}else render();
@@ -376,6 +380,30 @@ export function createInlineChecker() {
     allowed=!!c?.settings&&!c.settings.blockedHosts.includes(location.hostname);locale=resolveLanguage(c?.settings?.uiLanguage);setLanguage(locale);
     clear();if(allowed){await refreshDictionary();if(epoch!==configEpoch)return;activate(document.activeElement);await refreshPreferences();}
   }catch{allowed=false;clear();}}
-  chrome.runtime.onMessage.addListener(msg=>{if(msg.type==='dictionaryChanged')void refreshDictionary();if(msg.type==='refreshConfig')void config();if(msg.type==='inlineConfigChanged'&&(!msg.origin||msg.origin===location.origin))void refreshPreferences(msg.passive!==true);});
-  void config();
+  // Keep the actual right-click target, including right clicks inside nested rich text.
+  // A changed draft or expired menu must never submit a different field silently.
+  let menuField:{field:TextField|null;revision:string|undefined;created:number}|undefined;
+  document.addEventListener('contextmenu',event=>{
+    if(!event.isTrusted)return;
+    const field=fieldFor(event.composedPath()[0]),snapshot=field&&supportedField(field)?readField(field):null;
+    menuField={field:snapshot?field:null,revision:snapshot?.revision,created:Date.now()};
+  },true);
+  let configuration=config();
+  chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
+    if(msg.type==='dictionaryChanged')void refreshDictionary();
+    if(msg.type==='refreshConfig')configuration=config();
+    if(msg.type==='inlineConfigChanged'&&(!msg.origin||msg.origin===location.origin))void refreshPreferences(msg.passive!==true);
+    if(msg.type==='checkField'&&sender.id===chrome.runtime.id&&!sender.tab){
+      const captured=menuField;menuField=undefined;
+      void configuration.then(async()=>{
+        const field=captured?captured.field:fieldFor(document.activeElement);
+        if(!allowed||!supportedField(field))return;
+        if(captured&&(Date.now()-captured.created>30000||readField(field)?.revision!==captured.revision))return;
+        const revision=readField(field)?.revision;
+        field.focus({preventScroll:true});activate(field);await refreshPreferences(false);
+        if(target!==field||readField(field)?.revision!==revision||!current())return;
+        cancelAuto();endHover();reviewPlacement=null;active=null;open=listOpen=true;render();run();
+      }).finally(()=>reply({ok:true}));return true;
+    }
+  });
 }

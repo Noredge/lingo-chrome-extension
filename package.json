@@ -1,6 +1,6 @@
 {
   "name": "lingo-chrome-extension",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -34,7 +34,8 @@
     "test:inline-observation": "node tests/inline-observation.mjs",
     "test:editor-boundaries": "node tests/editor-boundaries.mjs",
     "test:release-smoke": "node tests/release-smoke.mjs",
-    "test:ui-trust": "node tests/ui-trust.mjs"
+    "test:ui-trust": "node tests/ui-trust.mjs",
+    "test:trigger-visibility": "node tests/trigger-visibility.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.0",

@@ -234,7 +234,7 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
       launcher.style.top=`${clamp(top,10,innerHeight-height-10)}px`;
     }else position(launcher, candidate.rect);
   }
-  function show(snapshot: Snapshot, targetLanguage=settings.language) {
+  function show(snapshot: Snapshot, targetLanguage=settings.language, initialMode?:'translate'|'proofread') {
     resultFocus=null;
     $('.source').hidden=false; presetControls.reset();void presetControls.refresh();
     generation++; stopAll(); snap?.cleanup?.(); if (candidate && candidate !== snapshot) candidate.cleanup?.();
@@ -246,8 +246,9 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
     mount(); panel.hidden = false; launcher.hidden = true; position(panel, snapshot.rect);
     notifySource();
     language.value = targetLanguage;
+    if(initialMode)toolView='writing';
     renderTool();
-    start(toolView === 'lookup' ? 'lookup' : 'translate');
+    start(initialMode || (toolView === 'lookup' ? 'lookup' : 'translate'));
   }
   function invalidate() {
     generation++; stopAll(); snap?.cleanup?.(); snap = null;
@@ -645,5 +646,5 @@ export function createPanel(options:{container?:HTMLElement;onClose?:()=>void}={
   });
   }
   if(docked){void presetControls.refresh();for(const attr of ['tabindex','aria-label','title'])$('.drag-handle').removeAttribute(attr);mount();close();$('[data-action="reset-layout"]').setAttribute('title','清除');$('[data-action="reset-layout"]').setAttribute('aria-label','清除');sourceEditor!.focus();}
-  return {clear:close, refresh:config, showText:async(text:string)=>{await config();show({text,kind:'read',rect:new DOMRect()});}};
+  return {clear:close, refresh:config, showText:async(text:string,mode?:'translate'|'proofread')=>{await config();show({text,kind:'read',rect:new DOMRect()},settings.language,mode);}};
 }

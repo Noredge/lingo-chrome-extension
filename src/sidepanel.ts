@@ -4,7 +4,7 @@ let windowId=0,sourceTabId=-1,lastSelection='',inboxQueue=Promise.resolve();
 async function receive(){
   const item=await chrome.runtime.sendMessage({type:'panelSelection',windowId});
   if(!item?.id || item.id===lastSelection)return;
-  lastSelection=item.id;sourceTabId=item.tabId;await panel.showText(item.text);
+  lastSelection=item.id;sourceTabId=item.tabId;await panel.showText(item.text,item.mode==='proofread'?'proofread':item.mode==='translate'?'translate':undefined);
 }
 function receiveNext(){inboxQueue=inboxQueue.catch(()=>{}).then(receive);}
 chrome.storage.onChanged.addListener((changes,area)=>{
