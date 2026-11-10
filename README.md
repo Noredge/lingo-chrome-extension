@@ -1,27 +1,66 @@
 # Lingo
 
-轻量 Chrome 翻译与写作扩展。划词翻译、校对、语气改写与自定义修改，使用你自己的 Responses API 服务。
+Chrome 翻译与写作扩展：划词翻译、红绿下划线建议、个人词典和继续调整，使用你自己的 Responses API 服务。
 
-**1.0.0 已在 Chrome Web Store 正式上架。** [安装 Lingo](https://chromewebstore.google.com/detail/imofdjefcigddmfpoifioiejgkfnomip)
+[从 Chrome Web Store 安装](https://chromewebstore.google.com/detail/imofdjefcigddmfpoifioiejgkfnomip) · [隐私政策](https://noredge.github.io/lingo-chrome-extension/privacy.html)
 
-## 安装与使用
+**当前版本为 1.1.0；Chrome 商店更新正在提交中，公开安装版以商店页面为准。** [发布状态](store/PUBLISH-STATUS.md)。1.1 发布材料、验证范围与提交事项见 [`store/RELEASE-CHECKS.md`](store/RELEASE-CHECKS.md)。
 
-1. 从 [Chrome Web Store](https://chromewebstore.google.com/detail/imofdjefcigddmfpoifioiejgkfnomip) 安装 Lingo。需要 Chrome 120+。
-2. 首次引导中选择界面语言，填写 Base URL、API Key 和模型，保存并测试连接；网页访问权限可按需授权。
-3. 普通网页选中文字后点击「文」，查看翻译或继续改写。在支持的输入框中可确认后替换选区。
-4. PDF 选中文字后右键“用 Lingo 翻译”。Google Docs 和其它不支持浮窗的页面，可从插件菜单打开侧边栏粘贴原文，处理后复制结果。
+## 开始使用
 
-浮窗支持拖动和八方向缩放。侧边栏原文框默认展开，可直接编辑。界面支持简体中文、繁體中文和 English；翻译目标语言独立设置，可从 31 种语言中选择常用列表。
+需要 Chrome 120+，以及有效的 OpenAI 或 Responses API 相容服务、模型和 API Key；API 费用由所选服务商另行收取。
 
-## API 与隐私
+1. 首次引导中选择界面语言，填写服务地址、模型和 Key。测试连接会明确发送一条固定示例。
+2. 按需授予网站访问权限，再选择手动或自动检查；两者是独立设置。自动检查和表达优化默认关闭。
+3. 体验不会调用 API 的本地示例：悬停划线、接受建议、撤销和恢复。
+4. 普通网页选中文字后点击「文」，使用翻译或写作工具；在支持的编辑区确认后替换选中文字。
 
-默认连接 OpenAI，也支持自定义 Base URL 的 Responses API 服务。保存多套具名配置，一次使用一套，失败不会自动切换；仅支持 `/responses`，不支持 Chat Completions。API 用量由服务商另行计费。
+已有用户会看到可跳过的 1.1 写作介绍。原有连接、Key、网站例外、词典和预设保留；介绍不会替你开启自动检查。设置底部统一提供「介绍说明」，可直接查看连接、网页授权、自动检查和写作功能；浏览介绍不重置已有配置。
 
-只发送主动提交的原文及必要指令，不上传整个网页或 PDF，不保存文字历史。Key 默认在本机加密保存、免密码解锁，也可选择密码加密或仅本次会话。没有内置 Key、广告、分析脚本或开发者中转服务。详情见 [隐私政策](https://noredge.github.io/lingo-chrome-extension/privacy.html)。
+## 1.1 的写作功能
 
-## 开发
+- **行内检查**：红色波浪线表示语法、拼写或上下文用词问题，绿色实线表示可选的表达改进。只标出实际变化的词；悬停或点击查看建议，逐条接受、忽略或撤销。直接接受下划线建议后收起小卡；主动打开完整列表时，连续处理会保留列表，并定位原文以便查看上下文。
+- **可选自动检查**：全局默认与网站例外分别管理。在已授权、未暂停且支持的编辑区，聚焦或输入停顿后检查。服务缺少 Key、锁定或尚未同意数据处理时，会说明具体原因。设置页保存不会立即提交草稿。
+- **个人词典**：加入姓名、品牌和专业词，减少重复拼写误报。按完整词、不区分大小写匹配；不同词形需分别加入。语法与上下文用词仍会检查。最多 500 个词，每词最多 64 个字符。
+- **自定义预设**：保存常用的语气或改写要求，在设置页管理，与浮窗和侧边栏共用；可编辑、排序和删除，最多 20 个。
+- **结果与对比**：校对和改写支持「结果 / 对比」。复制与替换使用最新完整结果，替换前再次验证原文。
+- **继续调整**：改写完成后按需展开固定高度的对话区，默认显示最新要求和回答，向上滚动可回看历史。复制与替换始终使用最新完整结果；对话模式不显示对比按钮，收起后可查看「结果 / 对比」。收起与重新打开会保留未发送要求。只发送当前结果与本次要求，每个结果最多 20 轮，历史仅保留在页面内存中。翻译结果不提供继续调整入口。
+- **单词与短语**：切换模式查看词性、释义、使用场景、搭配及双语例句。仅发送所选词语，不附带上下文；最多 160 个字符、12 个空格分隔词。当前没有音标、发音或生词本。
 
-手动安装：从 [Releases](https://github.com/Noredge/lingo-chrome-extension/releases/latest) 下载运行包并解压，在 `chrome://extensions` 开启开发者模式并加载解压后的文件夹；也可直接加载本仓库的 `extension/`。
+浮窗和侧边栏的原文默认展开、可编辑；修改原文会取消旧请求并清除旧结果。浮窗可拖动和缩放。界面支持简体中文、繁體中文和 English；翻译目标语言独立设置，提供 31 种语言的常用列表。
+
+## 快捷键
+
+| 场景 | 操作 |
+| --- | --- |
+| 建议卡可见且原文或接受按钮获得焦点 | Enter 接受当前建议 |
+| 继续调整输入框 | Enter 发送，Shift+Enter 换行 |
+| 原文编辑框 | ⌘/Ctrl+Enter 翻译或查询词语 |
+| 自定义改写输入框 | Enter 执行 |
+| 建议详情、继续调整或浮窗 | Esc 按层收起 |
+| 已选中文字 | Alt+Shift+L 打开 Lingo |
+
+中文等输入法确认时不执行这些上下文快捷键；普通网页输入的 Enter 保持原行为。
+
+## 网站与编辑器支持
+
+支持普通 textarea、text 输入框及简单 contenteditable 富文本，例如纯文本、段落、列表、粗体、斜体和链接。关联修改跨段落或不同格式时会跳过，不会为了接受建议而抹平格式。图片、表格、嵌套组件及复杂编辑器不属于直接行内替换范围。
+
+Gmail 简单邮件正文与 Google Translate 曾在本机 Chrome 验证；不同网站、编辑器版本及模型仍可能产生差异。本轮候选版真实网站复验及完整测试范围见发布检查表。复杂编辑器保留复制结果，或使用侧边栏粘贴／复制。
+
+Chrome 原生 PDF：选中文字后右键「用 Lingo 翻译」，结果显示在侧边栏。Google Docs：从扩展菜单打开同一侧边栏，粘贴原文、处理后复制回文档。没有 Google Docs 原生替换、扫描 PDF OCR、整份 PDF 翻译或 PDF 文件编辑功能。
+
+1.1 每次行内检查仍提交当前编辑区全文。长文后续编辑的增量句段检查安排在 1.2，尚未实现。AI 建议可能误报或遗漏，请在接受前核对。
+
+## API 与数据
+
+仅支持 Responses API（`/responses`），不支持 Chat Completions。可保存多套具名连接并手动选择一套；失败不自动切换服务。外部 API 使用 HTTPS，本机回环服务可使用 HTTP，请求不跟随重定向。
+
+手动操作发送选中或粘贴的原文及必要指令；明确开启自动检查后，也会在进入编辑区或输入停顿时发送**当前输入框全文，包括其中的邮件草稿等内容**。不会上传整页、附件或浏览历史。个人词典只附带当前原文中匹配的词条，完整词典不上传。引导示例、管理词典／预设和单独保存偏好不调用 API。
+
+没有内置 Key、广告、分析脚本或开发者中转。Key 默认本机加密保存并免密码解锁，也可选密码加密或仅会话保存；同一浏览器配置具备解密能力，不等同于系统钥匙串。原文、结果和多轮记录不作为持久历史保存。所选服务商决定服务端保留策略；`store:false` 不代表所有服务商零保留。
+
+## 开发与发布准备
 
 ```sh
 npm ci
@@ -31,8 +70,16 @@ npm test
 npm run build
 ```
 
-加载 `dist/` 测试。浏览器回归：`npm run test:browser`、`test:security`、`test:review`、`test:features`、`test:onboarding`，以及 `node tests/release-smoke.mjs`。测试使用隔离配置与模拟 API。
+在 `chrome://extensions` 开启开发者模式并加载 `dist/`。代码更新后重载扩展，并刷新待测网页。
 
-重新生成截图与上架包：`npm run store:assets && npm run package:store`。提交材料位于 [`store/`](store/)。
+`package.json` 中的 `test:*` 命令覆盖各功能；浏览器测试使用隔离配置、合成文本和模拟 API。生产清单烟测为 `npm run test:release-smoke`。发布前运行 `npm audit`、`python3 scripts/audit-secrets.py`，按 [`store/RELEASE-CHECKS.md`](store/RELEASE-CHECKS.md) 完成检查。
+
+```sh
+npm run build
+npm run store:assets
+npm run package:store
+```
+
+打包会核验截图与运行文件的 SHA-256 来源，拒绝开发版本作为正式包。上传时只使用 `store/packages/` 下的运行 ZIP；发布材料、源码和测试文件不放进扩展包。后续提交步骤见 [`store/SUBMISSION-GUIDE.md`](store/SUBMISSION-GUIDE.md)。
 
 MIT License · Noredge

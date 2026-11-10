@@ -1,6 +1,8 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lingo · 设置</title></head><body class="settings-page"><main class="settings-layout" hidden><aside class="intro"><a class="wordmark" href="options.html"><span class="mark">文</span>Lingo<span class="version">1.0.0</span></a><div class="intro-copy"><span class="kicker">YOUR WORDS, A LITTLE CLEARER.</span><h1>读懂每一句。<br>写好每一句。</h1><p>划选、翻译，或换一种更合适的表达。<br>你的文字，始终由你决定。</p><div class="preview-card"><span class="preview-label">一段文字，多一种表达</span><p class="old">Can you send me it today?</p><span class="arrow">↓ &nbsp; 校对</span><p class="new">Can you send it to me today?</p><span class="sample">示例 · 并非实际 API 结果</span></div></div><p class="aside-foot">按需调用 · 使用自己的 API · 不保存文字历史</p></aside>
 
 <div class="settings-main"><header class="page-head"><div><span class="kicker">MAKE IT YOURS</span><h2>设置你的 Lingo</h2></div><div class="locale-control"><label for="ui-language">界面语言</label><select id="ui-language"><option value="auto">跟随浏览器</option><option value="zh-CN" translate="no">简体中文</option><option value="zh-TW" translate="no">繁體中文</option><option value="en" translate="no">English</option></select></div></header>
+<nav class="settings-tabs" role="tablist" aria-label="设置分类"><button id="tab-general" type="button" role="tab" aria-selected="true" aria-controls="settings-general">连接与语言</button><button id="tab-writing" type="button" role="tab" aria-selected="false" aria-controls="settings-writing" tabindex="-1">写作与检查</button></nav>
+<section id="settings-general" role="tabpanel" aria-labelledby="tab-general">
 <form id="settings-form"><section class="card" id="service-card"><div class="card-heading"><span class="step">01</span><div><h3 id="service-title">服务配置</h3><p>选择或编辑连接，保存后使用。</p></div><span id="key-status" class="pill">未配置 Key</span></div>
 <div class="profile-toolbar"><select id="profile" aria-label="服务配置"></select><button id="new-profile" type="button">新增</button></div><div class="profile-state"><span id="active-profile" class="help"></span><button id="delete-profile" class="quiet danger" type="button">删除配置</button></div>
 <label for="profile-name">配置名称</label><input id="profile-name" maxlength="60" required autocomplete="off">
@@ -13,7 +15,66 @@
 <section class="card" id="translation-card"><div class="card-heading"><span class="step">02</span><div><h3>浮窗翻译语言</h3><p>常用语言列表，与界面语言独立。</p></div></div><div id="language-list" class="language-list" aria-label="浮窗中的语言"></div><label for="add-language">添加目标语言</label><div class="language-add"><select id="add-language"></select><button id="add-language-button" type="button">添加到浮窗</button></div><label for="language">浮窗默认目标语言</label><select id="language"></select></section>
 <div class="save-bar" id="save-bar" hidden><span class="help">有未保存的更改</span><button class="primary" type="submit" id="save-settings">保存设置</button></div></form>
 <section class="card" id="website-access"><div class="card-heading"><span class="step">03</span><div><h3>在哪里使用</h3><p id="permission-summary">检查网站授权…</p></div></div><p class="help setup-only" hidden>授权后，选中文字即可看到「文」。也可以稍后在设置中仅授权指定站点。</p><button id="all-sites" class="primary">一键授权所有普通网页</button><details class="site-details"><summary>管理指定站点</summary><form id="site-form" class="site-form"><input id="site-url" type="url" placeholder="https://example.com" aria-label="要授权的网站地址" required><button type="submit">添加站点</button></form><div id="sites" class="site-list"></div><div id="blocked" class="site-list"></div></details><p id="site-status" class="status" role="status"></p><p class="help">网页划词后点击「文」。PDF 选中文字后，右键用 Lingo 翻译。</p></section>
-<footer class="settings-footer"><button type="button" id="setup-restart" class="quiet">查看设置引导</button><a href="privacy.html" target="_blank">隐私政策</a><span>Lingo / 少一点切换，多一点顺手。</span></footer></div></main><dialog id="setup-dialog" aria-labelledby="setup-title"><div class="setup-chrome"><button id="setup-close" type="button" class="quiet" aria-label="关闭设置引导">×</button></div><div id="setup-scroll"><header id="setup-head" hidden><a class="wordmark" href="options.html"><span class="mark">文</span>Lingo</a><h1 tabindex="-1" id="setup-title">欢迎使用 Lingo</h1><p class="setup-subtitle">三个小步骤，开始读懂和写好每一句。</p><ol class="setup-steps" aria-label="设置进度"><li><span>1</span>界面语言</li><li><span>2</span>连接 API</li><li><span>3</span>网页访问</li></ol></header>
+</section>
+<section id="settings-writing" role="tabpanel" aria-labelledby="tab-writing" hidden>
+<section class="card"><div class="card-heading"><span class="step">01</span><div><h3>自动检查</h3><p>让检查跟随你的写作习惯。</p></div></div>
+<form id="writing-form"><fieldset id="writing-controls" disabled>
+<label class="setting-toggle"><span><strong id="global-auto-label">所有网页默认自动检查</strong><span id="auto-helper" class="help">在已授权、支持的编辑区进入或输入停顿后，自动发送当前编辑区全文至所选服务。</span></span><input id="global-auto" type="checkbox" aria-labelledby="global-auto-label" aria-describedby="auto-helper"></label>
+<label class="setting-toggle"><span><strong id="global-style-label">默认包含表达优化</strong><span class="help">红线检查语法与拼写；绿线提供可选的表达建议。</span></span><input id="global-style" type="checkbox" aria-labelledby="global-style-label"></label>
+<p class="help writing-disclosure">网站单独设置优先。不会自动授予网页权限，也不会检查密码框、整页或附件。检查使用已配置的服务，API 用量按服务商规则计费。</p>
+<div class="actions"><button id="save-writing" type="submit" class="primary" disabled>保存检查设置</button><button id="reset-writing" type="button">重新载入</button><span id="writing-unsaved" class="help" hidden>有未保存的更改</span></div>
+</fieldset></form><p id="writing-status" role="status" aria-live="polite" class="status writing-status"></p><p class="help">保存设置不会发送当前草稿；下次进入编辑区或真实输入时生效。</p>
+</section>
+<section class="card"><div class="card-heading"><span class="step">02</span><div><h3>网站例外</h3><p>保留网站单独设置，或恢复跟随全局默认。</p></div></div>
+<form id="add-override-form" class="site-form"><input id="override-origin" type="url" placeholder="https://example.com" aria-label="不自动检查的网站地址" required><button type="submit">添加关闭例外</button></form><p class="help">按完整网站地址区分；不会改变网站访问授权。</p>
+<p id="site-overrides-status" role="status" aria-live="polite" class="status writing-status"></p><div id="site-overrides" class="site-overrides"></div></section>
+<section class="card" id="presets-card"><div class="card-heading"><span class="step">03</span><div><h3>自定义改写预设</h3><p>与浮窗和侧边栏共用，可新增、编辑、排序和删除。</p></div></div><div id="settings-presets"></div></section>
+<section class="card" id="personal-dictionary"><div class="card-heading"><span class="step">04</span><div><h3>个人词典</h3><p>记住姓名、品牌和专业词，减少重复拼写提示。</p></div></div>
+<p class="help">用于行内拼写检查，语法和表达建议仍然保留。不区分大小写；复数等词形需单独添加。</p>
+<form id="dictionary-form" class="site-form"><input id="dictionary-word" maxlength="64" required placeholder="例如：Noredge" aria-label="添加到个人词典的单词" autocomplete="off" spellcheck="false"><button type="submit">添加词条</button></form>
+<p class="help">最多 500 个词，每词最多 64 个字符；可含数字、连字符或撇号。</p>
+<div class="dictionary-toolbar"><input id="dictionary-search" type="search" placeholder="搜索词典" aria-label="搜索词典" autocomplete="off"><span id="dictionary-count" class="help" aria-label="已保存词条数量"></span></div>
+<div id="dictionary-list" role="list" aria-label="个人词典词条"></div>
+<p id="dictionary-status" class="status" role="status" aria-live="polite"></p><button type="button" id="dictionary-refresh">重新载入词典</button>
+<p class="help">词典保存在本机。检查时只发送当前原文中出现的词条；添加、搜索和移除词条不会调用 API。</p>
+</section>
+</section>
+<footer class="settings-footer"><button type="button" id="setup-restart" class="quiet">介绍说明</button><a href="privacy.html" target="_blank">隐私政策</a><span>Lingo / 少一点切换，多一点顺手。</span></footer></div></main><dialog id="setup-dialog" aria-labelledby="setup-title"><div class="setup-chrome"><button id="setup-close" type="button" class="quiet" aria-label="关闭设置引导">×</button></div><div id="setup-scroll"><header id="setup-head" hidden><a class="wordmark" href="options.html"><span class="mark">文</span>Lingo</a><h1 tabindex="-1" id="setup-title">欢迎使用 Lingo</h1><p class="setup-subtitle">连接服务，选择检查方式，再用一个示例开始写作。</p><ol class="setup-steps" aria-label="设置进度"><li><span>1</span>界面语言</li><li><span>2</span>连接 API</li><li><span>3</span>网页访问</li><li><span>4</span>检查方式</li><li><span>5</span>动手体验</li><li><span>6</span>开始写作</li></ol></header>
 <section class="card" id="setup-language" hidden><h2>先选一种熟悉的语言</h2><p class="help">只改变界面显示，不影响翻译目标语言。</p><div id="setup-locale-slot"></div></section>
-<div id="setup-service-slot"></div><div id="setup-access-slot"></div><nav id="setup-nav" class="setup-nav" aria-label="首次设置" hidden><button type="button" id="setup-back">上一步</button><button type="button" id="setup-skip">稍后配置 API</button><button type="button" id="setup-next" class="primary">下一步</button></nav><p id="setup-status" class="status" role="status" hidden></p>
+<div id="setup-service-slot"></div><div id="setup-access-slot"></div>
+<section id="setup-checking" class="card guide-card" hidden aria-labelledby="guide-check-title">
+  <p id="guide-existing-note" class="guide-preserved" hidden>已读取你原来的设置。直接继续或跳过，都不会改变它们。</p>
+  <h2 id="guide-check-title">选择适合你的检查方式</h2>
+  <p class="help">自动检查与网页授权是两个独立开关，可以随时在「写作与检查」中更改。</p>
+  <fieldset id="guide-check-controls" disabled><legend class="sr-only">全局检查方式</legend>
+    <label class="guide-choice"><input type="radio" name="guide-check-mode" id="guide-manual" value="manual"><span><strong>手动检查</strong><small>需要时点击 Lingo，再选择「检查全文」。</small></span></label>
+    <label class="guide-choice"><input type="radio" name="guide-check-mode" id="guide-auto" value="auto"><span><strong>输入后自动检查</strong><small>进入编辑区或输入停顿后，显示语法和拼写红线。</small></span></label>
+    <label class="guide-style"><input type="checkbox" id="guide-style"><span>同时显示表达优化建议（绿线，可选）</span></label>
+  </fieldset>
+  <div class="guide-disclosure"><strong>检查时会发送什么？</strong><p>自动检查会把当前输入框全文发送到你配置的 API 服务，可能产生费用。仅在服务可用、网站已授权且未暂停时运行。</p></div>
+  <p id="guide-site-note" class="help"></p><p id="guide-load-status" class="status" role="status"></p><button id="guide-retry" class="quiet" type="button">重新读取设置</button>
+</section>
+<section id="setup-practice" class="card guide-card" hidden aria-labelledby="guide-practice-title">
+  <span class="guide-badge">本地示例 · 不发送 API 请求</span><h2 id="guide-practice-title">先试一次，改好一句话</h2>
+  <p class="help">悬停或点击划线单词查看建议，点击替换词接受；也可用 Tab 和 Enter 操作。</p>
+  <div class="guide-legend"><span class="guide-red">红线：语法与拼写</span><span class="guide-green">绿线：表达优化</span></div>
+  <div id="guide-demo-surface"><p id="guide-sentence" translate="no"></p>
+    <div id="guide-suggestion" role="group" aria-label="建议预览" hidden><p id="guide-reason"></p><button type="button" id="guide-accept" aria-label="接受示例建议"><span id="guide-replacement" translate="no"></span><kbd>Enter</kbd></button><small>点击替换词，即可接受这条建议。</small></div>
+  </div>
+  <div class="guide-demo-actions"><button type="button" id="guide-undo" disabled>撤销上次接受</button><button type="button" id="guide-reset" class="quiet">恢复示例</button></div><p id="guide-demo-status" class="status" role="status"></p>
+  <p class="help">这是固定演示。真实网页上的建议由你的服务生成，内容和等待时间会有所不同。</p>
+</section>
+<section id="setup-ready" class="card guide-card" hidden aria-labelledby="guide-ready-title">
+  <span class="guide-badge">Lingo 1.1</span><h2 id="guide-ready-title">试试这些写作功能</h2>
+  <p id="guide-ready-status" class="help"></p>
+  <div class="guide-features">
+    <article><span class="guide-feature-icon">01</span><h3>自定义改写预设</h3><p>保存常用语气和修改要求，写作时一键复用。</p><button type="button" data-guide-settings="settings-presets">管理预设 ↗</button></article>
+    <article><span class="guide-feature-icon">02</span><h3>个人词典</h3><p>加入人名、品牌或专有词，减少拼写误报；语法和上下文用词仍会检查。</p><button type="button" data-guide-settings="personal-dictionary">管理个人词典 ↗</button></article>
+    <article><span class="guide-feature-icon">03</span><h3>单词与短语</h3><p>选中词语，打开浮窗并切换到「单词与短语」，查看释义、用法和例句。</p></article>
+    <article><span class="guide-feature-icon">04</span><h3>继续调整</h3><p>得到写作结果后，展开「继续调整」输入新要求。Enter 发送，Shift+Enter 换行。</p></article>
+  </div>
+  <p class="help">写作结果可切换「结果 / 对比」，确认后再替换原文。你也可以从设置底部再次查看本介绍。</p>
+  <button id="guide-connection" type="button" class="quiet">查看连接与网页授权 ↗</button>
+</section>
+<nav id="setup-nav" class="setup-nav" aria-label="首次设置" hidden><button type="button" id="setup-back">上一步</button><button type="button" id="setup-skip">稍后配置 API</button><button type="button" id="setup-next" class="primary">下一步</button></nav><p id="setup-status" class="status" role="status" hidden></p>
 <a class="setup-privacy" href="privacy.html" target="_blank">隐私政策</a></div></dialog><script type="module" src="/src/options.ts"></script></body></html>

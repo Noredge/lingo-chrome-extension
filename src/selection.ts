@@ -1,7 +1,8 @@
+import {unsupportedEditor} from './editor-support';
 export type Snapshot = {
   text: string; rect: DOMRect; target?: HTMLInputElement | HTMLTextAreaElement | HTMLElement;
   kind: 'read' | 'input' | 'rich'; value?: string; start?: number; end?: number; range?: Range;
-  stale?: boolean; observer?: MutationObserver; cleanup?: () => void; rangeText?: string;
+  stale?: boolean; onStale?: () => void; observer?: MutationObserver; cleanup?: () => void; rangeText?: string;
 };
 export function sensitiveFieldActive(): boolean {
   let active = document.activeElement;
@@ -58,14 +59,19 @@ function rangeAtOffsets(target: HTMLElement, start: number, end: number): Range 
   return null;
 }
 function watch(s: Snapshot) {
-  if (!s.target) return s;
-  const dirty = () => { s.stale = true; };
-  s.target.addEventListener('input', dirty);
-  s.target.addEventListener('change', dirty);
-  s.target.addEventListener('compositionstart', dirty);
+  const dirty = () => { if (s.stale) return; s.stale = true; queueMicrotask(() => s.onStale?.()); };
+  s.target?.addEventListener('input', dirty);
+  s.target?.addEventListener('change', dirty);
+  s.target?.addEventListener('compositionstart', dirty);
   if (s.kind === 'rich') {
     s.observer = new MutationObserver(() => { if (richSignature(s.target!) !== s.value) dirty(); });
-    s.observer.observe(s.target, { subtree: true, childList: true, characterData: true, attributes: true });
+    s.observer.observe(s.target!, { subtree: true, childList: true, characterData: true, attributes: true });
+  }
+  if (s.kind === 'read' && s.range) {
+    const node = s.range.commonAncestorContainer;
+    const parent = node.parentElement || node;
+    s.observer = new MutationObserver(() => { if (!snapshotCurrent(s)) dirty(); });
+    s.observer.observe(parent, { subtree: true, childList: true, characterData: true });
   }
   s.cleanup = () => {
     s.observer?.disconnect();
@@ -84,14 +90,14 @@ export function capture(): Snapshot | null {
     if (start === null || end === null || start === end) return null;
     const text = active.value.slice(start, end);
     if (!text.trim()) return null;
-    return watch({ text, rect: active.getBoundingClientRect(), kind: active.disabled || active.readOnly ? 'read' : 'input', target: active, value: active.value, start, end });
+    return watch({ text, rect: active.getBoundingClientRect(), kind: active.disabled || active.readOnly || unsupportedEditor(active) ? 'read' : 'input', target: active, value: active.value, start, end });
   }
   const selection = window.getSelection();
   if (!selection || !selection.rangeCount || selection.isCollapsed || !selection.toString().trim()) return null;
   let range = selection.getRangeAt(0).cloneRange();
   const target = editable(range.startContainer);
   // Rich editor frameworks own their document model. Direct DOM edits are unsafe there.
-  const unsupported = target?.closest('.ProseMirror,.monaco-editor,.CodeMirror,[data-lexical-editor],[data-slate-editor],.ql-editor,.kix-appview-editor') || location.hostname === 'docs.google.com';
+  const unsupported = target && unsupportedEditor(target) || location.hostname === 'docs.google.com';
   const safe = target && !unsupported && target === editable(range.endContainer) &&
     !Array.from(target.querySelectorAll('[contenteditable="false"],img,table,iframe,input,textarea,video')).some(el => !isHint(el));
   let start: number | undefined, end: number | undefined;
@@ -109,8 +115,16 @@ export function capture(): Snapshot | null {
   const rects = range.getClientRects();
   return watch({ text: safe ? selectedText(range) : selection.toString(), rect: rects.length ? rects[rects.length - 1] : range.getBoundingClientRect(), range, rangeText: cleanCopy(range.cloneContents()).textContent || '', start, end, kind: safe ? 'rich' : 'read', target: safe ? target : undefined, value: safe ? richSignature(target) : undefined });
 }
+export function snapshotCurrent(s: Snapshot): boolean {
+  if (s.stale) return false;
+  if (s.kind !== 'read') return canReplace(s);
+  if (s.target) return s.target.isConnected && (s.target as HTMLInputElement).value === s.value;
+  if (s.range) return s.range.startContainer.isConnected && s.range.endContainer.isConnected &&
+    (cleanCopy(s.range.cloneContents()).textContent || '') === s.rangeText;
+  return true; // A manually submitted sidebar/context-menu source is an immutable copy.
+}
 export function canReplace(s: Snapshot): boolean {
-  if (!s.target?.isConnected || s.stale || s.kind === 'read') return false;
+  if (!s.target?.isConnected || s.stale || s.kind === 'read' || unsupportedEditor(s.target)) return false;
   if (s.kind === 'input') {
     const el = s.target as HTMLInputElement | HTMLTextAreaElement;
     return !el.disabled && !el.readOnly && el.value === s.value && el.value.slice(s.start, s.end) === s.text;
@@ -124,6 +138,9 @@ export function canReplace(s: Snapshot): boolean {
   s.range = range;
   return true;
 }
+function focused(target:HTMLElement) {
+  let active=document.activeElement;while(active?.shadowRoot?.activeElement)active=active.shadowRoot.activeElement;return active===target;
+}
 export function replaceSelection(s: Snapshot, result: string): void {
   if (!canReplace(s)) throw new Error('原文已变化或选区已失效，请重新划选。结果仍可复制。');
   if (!result) throw new Error('结果为空，无法替换。');
@@ -132,7 +149,7 @@ export function replaceSelection(s: Snapshot, result: string): void {
     target.focus({ preventScroll: true });
     target.setSelectionRange(s.start!, s.end!);
     // Focusing can trigger site handlers; check again before touching content.
-    if (!canReplace(s)) throw new Error('编辑框内容已变化，请重新划选。');
+    if (!canReplace(s)||!focused(target)) throw new Error('编辑框内容已变化，请重新划选。');
     const expected = s.value!.slice(0, s.start) + result + s.value!.slice(s.end);
     if (!document.execCommand('insertText', false, result)) throw new Error('此编辑框不支持可靠替换，请使用复制。');
     s.stale = true; s.cleanup?.();
@@ -140,7 +157,7 @@ export function replaceSelection(s: Snapshot, result: string): void {
   } else {
     const target = s.target!;
     target.focus({ preventScroll: true });
-    if (!canReplace(s)) throw new Error('编辑区已变化，请重新划选。');
+    if (!canReplace(s)||!focused(target)) throw new Error('编辑区已变化，请重新划选。');
     const original = cleanCopy(target.cloneNode(true) as HTMLElement).textContent || '';
     const expected = original.slice(0,s.start) + result + original.slice(s.end);
     const selection = window.getSelection();

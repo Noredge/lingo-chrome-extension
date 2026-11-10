@@ -26,7 +26,7 @@ export const serviceReady = Promise.all([
 });
 export async function serviceState(id?:string) {
   await serviceReady;
-  const local:any=await chrome.storage.local.get(['settings','serviceProfiles','activeServiceId','apiOrigins','onboardingComplete','onboardingStep','onboardingDismissed']);
+  const local:any=await chrome.storage.local.get(['settings','serviceProfiles','activeServiceId','apiOrigins','onboardingComplete','onboardingStep','onboardingDismissed','writingIntroVersion','writingIntroStep']);
   const session:any=await chrome.storage.session.get(['serviceSessions','legacyMigrated']);
   const profiles=local.serviceProfiles as ServiceProfile[];
   const profile=profiles.find(p=>p.id===(id || local.activeServiceId));
@@ -34,11 +34,11 @@ export async function serviceState(id?:string) {
   const baseUrl=normalizeBaseUrl(profile.baseUrl),cached=session.serviceSessions?.[profile.id] as SessionKey|undefined;
   let apiKey=cached?.baseUrl===baseUrl?cached.apiKey:'',deviceError=false;
   if(!apiKey&&profile.deviceKey) {try{apiKey=await decryptDeviceKey(profile.deviceKey,baseUrl);}catch{deviceError=true;}}
-  return {onboardingDismissed:local.onboardingDismissed===true,onboardingComplete:local.onboardingComplete===true,onboardingStep:Math.min(2,Math.max(0,Number(local.onboardingStep)||0)),profile,profiles,activeServiceId:local.activeServiceId,apiOrigins:local.apiOrigins || [],sessions:session.serviceSessions || {},settings:{...DEFAULTS,...local.settings,...languagePreferences(local.settings || {}),baseUrl,model:profile.model} as Settings,apiKey,deviceError,deviceVault:profile.deviceKey,vault:profile.encryptedKey,storageMode:profile.storageMode,remember:!!profile.encryptedKey,credentialBaseUrl:profile.credentialBaseUrl,dataConsent:profile.dataConsent&&profile.consentBaseUrl===baseUrl,migrated:!!session.legacyMigrated};
+  return {writingIntroSeen:local.writingIntroVersion==='1.1',writingIntroStep:Math.min(5,Math.max(3,Number(local.writingIntroStep)||3)),onboardingDismissed:local.onboardingDismissed===true,onboardingComplete:local.onboardingComplete===true,onboardingStep:Math.min(5,Math.max(0,Number(local.onboardingStep)||0)),profile,profiles,activeServiceId:local.activeServiceId,apiOrigins:local.apiOrigins || [],sessions:session.serviceSessions || {},settings:{...DEFAULTS,...local.settings,...languagePreferences(local.settings || {}),baseUrl,model:profile.model} as Settings,apiKey,deviceError,deviceVault:profile.deviceKey,vault:profile.encryptedKey,storageMode:profile.storageMode,remember:!!profile.encryptedKey,credentialBaseUrl:profile.credentialBaseUrl,dataConsent:profile.dataConsent&&profile.consentBaseUrl===baseUrl,migrated:!!session.legacyMigrated};
 }
 export async function publicServiceConfig(id?:string) {
   const c=await serviceState(id);
-  return {onboardingDismissed:c.onboardingDismissed,onboardingComplete:c.onboardingComplete,onboardingStep:c.onboardingStep,profileId:c.profile.id,profileName:c.profile.name,activeServiceId:c.activeServiceId,profiles:c.profiles.map(p=>({id:p.id,name:p.name,baseUrl:p.baseUrl,model:p.model,storageMode:p.storageMode})),apiOrigins:c.apiOrigins,settings:c.settings,hasKey:!!c.apiKey,hasVault:!!c.vault,remember:c.remember,storageMode:c.storageMode,deviceError:c.deviceError,dataConsent:c.dataConsent,migrated:c.migrated};
+  return {writingIntroSeen:c.writingIntroSeen,writingIntroStep:c.writingIntroStep,onboardingDismissed:c.onboardingDismissed,onboardingComplete:c.onboardingComplete,onboardingStep:c.onboardingStep,profileId:c.profile.id,profileName:c.profile.name,activeServiceId:c.activeServiceId,profiles:c.profiles.map(p=>({id:p.id,name:p.name,baseUrl:p.baseUrl,model:p.model,storageMode:p.storageMode})),apiOrigins:c.apiOrigins,settings:c.settings,hasKey:!!c.apiKey,hasVault:!!c.vault,remember:c.remember,storageMode:c.storageMode,deviceError:c.deviceError,dataConsent:c.dataConsent,migrated:c.migrated};
 }
 async function persistProfile(profile:ServiceProfile,c:Awaited<ReturnType<typeof serviceState>>,extra:object={}) {
   await chrome.storage.local.set({serviceProfiles:c.profiles.map(p=>p.id===profile.id?profile:p),...extra});
@@ -48,8 +48,15 @@ async function discardUnusedDeviceKey(profiles:ServiceProfile[]) { if(!profiles.
 export async function serviceAction(msg:any) {
   const c=await serviceState(msg.profileId),p=c.profile,id=p.id;
   const sessionSet=async(apiKey?:string,baseUrl=p.baseUrl)=>{const sessions={...c.sessions};if(apiKey)sessions[id]={apiKey,baseUrl};else delete sessions[id];await chrome.storage.session.set({serviceSessions:sessions});};
+  if(msg.type==='writingIntroProgress'){
+    if(!Number.isInteger(msg.step)||msg.step<3||msg.step>5)throw new Error('无效的设置步骤。');
+    await chrome.storage.local.set({writingIntroStep:msg.step});return publicServiceConfig(id);
+  }
+  if(msg.type==='dismissWritingIntro'){
+    await chrome.storage.local.set({writingIntroVersion:'1.1',writingIntroStep:3});return publicServiceConfig(id);
+  }
   if(msg.type==='onboardingProgress') {
-    if(!Number.isInteger(msg.step)||msg.step<0||msg.step>2)throw new Error('无效的设置步骤。');
+    if(!Number.isInteger(msg.step)||msg.step<0||msg.step>5)throw new Error('无效的设置步骤。');
     await chrome.storage.local.set({onboardingStep:msg.step});return publicServiceConfig(id);
   }
   if(msg.type==='dismissOnboarding') {
@@ -59,7 +66,7 @@ export async function serviceAction(msg:any) {
     await chrome.storage.local.set({onboardingComplete:false,onboardingDismissed:false,onboardingStep:c.onboardingComplete?0:c.onboardingStep});return publicServiceConfig();
   }
   if(msg.type==='completeOnboarding') {
-    await chrome.storage.local.set({onboardingComplete:true,onboardingDismissed:false});return publicServiceConfig(id);
+    await chrome.storage.local.set({onboardingComplete:true,onboardingDismissed:false,writingIntroVersion:'1.1',writingIntroStep:3});return publicServiceConfig(id);
   }
   if(msg.type==='setUiLanguage') {
     if(!['auto','en','zh-CN','zh-TW'].includes(msg.uiLanguage))throw new Error('请选择有效的界面语言。');

@@ -253,7 +253,7 @@
   ],
   "未发现需要修改的问题。": [
     "未發現需要修改的問題。",
-    "No corrections needed."
+    "No issues found."
   ],
   "停止": [
     "停止",
@@ -1053,7 +1053,7 @@
   ],
   "开始使用": [
     "開始使用",
-    "Get started"
+    "Start using Lingo"
   ],
   "选中文字 → 点击「文」→ 自动翻译 → 按需修改。": [
     "選中文字 → 點選「文」→ 自動翻譯 → 按需修改。",
@@ -1360,7 +1360,7 @@
     "Discard unsaved changes?"
   ],
   "有未保存的更改": [
-    "有未儲存的更改",
+    "有未儲存的變更",
     "Unsaved changes"
   ],
   "本机凭据无法读取，请先重新填写 Key，或删除此配置。": [
@@ -1530,5 +1530,1157 @@
   "此页面使用侧边栏；粘贴原文，或选中文字后右键翻译。": [
     "此頁面使用側邊欄；貼上原文，或選取文字後按右鍵翻譯。",
     "Use the sidebar here: paste text, or select text and translate from the context menu."
+  ],
+  "结果": [
+    "結果",
+    "Result"
+  ],
+  "对比": [
+    "對比",
+    "Compare"
+  ],
+  "写作结果视图": [
+    "寫作結果檢視",
+    "Writing result view"
+  ],
+  "删除": [
+    "刪除",
+    "Removed"
+  ],
+  "增加": [
+    "新增",
+    "Added"
+  ],
+  "原文与结果一致。": [
+    "原文與結果一致。",
+    "The result matches the original."
+  ],
+  "改动较多，已按整段显示差异。": [
+    "改動較多，已按整段顯示差異。",
+    "Extensive changes are shown as a whole passage."
+  ],
+  "原文已变化或选区已失效，请重新划选。": [
+    "原文已變更或選取範圍已失效，請重新選取。",
+    "The source changed or the selection expired. Select the text again."
+  ],
+  "我的预设": [
+    "我的預設",
+    "My presets"
+  ],
+  "管理预设": [
+    "管理預設",
+    "Manage presets"
+  ],
+  "新增预设": [
+    "新增預設",
+    "New preset"
+  ],
+  "预设仅保存在本机；保存不会发送原文或调用 API。": [
+    "預設僅儲存在本機；儲存不會傳送原文或呼叫 API。",
+    "Presets stay on this device. Saving does not send text or call the API."
+  ],
+  "预设名称": [
+    "預設名稱",
+    "Preset name"
+  ],
+  "修改要求": [
+    "修改要求",
+    "Editing instructions"
+  ],
+  "例如：邮件更委婉": [
+    "例如：郵件更委婉",
+    "e.g. Polite email"
+  ],
+  "例如：保留原意，将语气改得更委婉，不增加承诺。": [
+    "例如：保留原意，將語氣改得更委婉，不增加承諾。",
+    "e.g. Keep the meaning, soften the tone, and add no commitments."
+  ],
+  "保存预设": [
+    "儲存預設",
+    "Save preset"
+  ],
+  "取消编辑": [
+    "取消編輯",
+    "Cancel editing"
+  ],
+  "预设已删除。": [
+    "預設已刪除。",
+    "Preset deleted."
+  ],
+  "顺序已保存。": [
+    "順序已儲存。",
+    "Order saved."
+  ],
+  "预设已保存。": [
+    "預設已儲存。",
+    "Preset saved."
+  ],
+  "确认删除": [
+    "確認刪除",
+    "Confirm deletion"
+  ],
+  "取消": [
+    "取消",
+    "Cancel"
+  ],
+  "上移预设": [
+    "上移預設",
+    "Move preset up"
+  ],
+  "下移预设": [
+    "下移預設",
+    "Move preset down"
+  ],
+  "编辑": [
+    "編輯",
+    "Edit"
+  ],
+  "删除预设": [
+    "刪除預設",
+    "Delete preset"
+  ],
+  "还没有自定义预设，点击新增即可创建。": [
+    "還沒有自訂預設，點擊新增即可建立。",
+    "No custom presets yet. Choose New preset to create one."
+  ],
+  "预设名称需要 1–32 个字符。": [
+    "預設名稱需要 1–32 個字元。",
+    "Use 1–32 characters for the preset name."
+  ],
+  "修改要求需要 1–1,000 个字符。": [
+    "修改要求需要 1–1,000 個字元。",
+    "Use 1–1,000 characters for the editing instructions."
+  ],
+  "本机预设数据无法读取，未覆盖原有数据。": [
+    "本機預設資料無法讀取，未覆寫原有資料。",
+    "Local presets could not be read. Existing data was not overwritten."
+  ],
+  "预设已在其他窗口更新，请取消编辑后重试。": [
+    "預設已在其他視窗更新，請取消編輯後重試。",
+    "Presets changed in another window. Cancel editing and try again."
+  ],
+  "找不到这个预设，请重新选择。": [
+    "找不到這個預設，請重新選擇。",
+    "This preset no longer exists. Choose another one."
+  ],
+  "已存在同名预设，请换一个名称。": [
+    "已存在同名預設，請換一個名稱。",
+    "A preset with this name already exists. Choose another name."
+  ],
+  "最多保存 20 个自定义预设。": [
+    "最多儲存 20 個自訂預設。",
+    "You can save up to 20 custom presets."
+  ],
+  "无法创建预设，请重试。": [
+    "無法建立預設，請重試。",
+    "Could not create the preset. Try again."
+  ],
+  "无效的预设排序。": [
+    "無效的預設排序。",
+    "Invalid preset order."
+  ],
+  "点击翻译或选择写作工具，更新结果。": [
+    "點擊翻譯或選擇寫作工具，更新結果。",
+    "Translate or choose a writing tool to update the result."
+  ],
+  "仅发送当前原文 · 可替换最初选区": [
+    "僅傳送目前原文 · 可取代最初選取範圍",
+    "Only the current source is sent · Replace the original selection"
+  ],
+  "手动检查当前输入框全文": [
+    "手動檢查目前輸入框全文",
+    "Manually check the full current field"
+  ],
+  "Lingo 行内检查": [
+    "Lingo 行內檢查",
+    "Lingo inline check"
+  ],
+  "Lingo · 检查": [
+    "Lingo · 檢查",
+    "Lingo · Check"
+  ],
+  "Lingo · 检查中…": [
+    "Lingo · 檢查中…",
+    "Lingo · Checking…"
+  ],
+  "行内检查": [
+    "行內檢查",
+    "Inline check"
+  ],
+  "关闭行内检查": [
+    "關閉行內檢查",
+    "Close inline check"
+  ],
+  "仅发送当前输入框全文；点击检查才发送。": [
+    "僅傳送目前輸入框全文；點擊檢查才傳送。",
+    "Sends the full current field only when you click Check."
+  ],
+  "包含表达优化（可选）": [
+    "包含表達最佳化（可選）",
+    "Include style suggestions (optional)"
+  ],
+  "检查全文": [
+    "檢查全文",
+    "Check full text"
+  ],
+  "重新检查": [
+    "重新檢查",
+    "Check again"
+  ],
+  "所有建议": [
+    "所有建議",
+    "All suggestions"
+  ],
+  "接受修改": [
+    "接受修改",
+    "Accept change"
+  ],
+  "忽略本次": [
+    "忽略本次",
+    "Ignore this suggestion"
+  ],
+  "撤销上次接受": [
+    "復原上次接受",
+    "Undo last acceptance"
+  ],
+  "语法与用词": [
+    "文法與用詞",
+    "Grammar and word use"
+  ],
+  "表达优化 · 可选": [
+    "表達最佳化 · 可選",
+    "Style · Optional"
+  ],
+  "请在当前输入框中填写需要检查的文字。": [
+    "請在目前輸入框中填寫需要檢查的文字。",
+    "Enter text to check in the current field."
+  ],
+  "输入框内容过长，请缩短到 16,000 个字符以内。": [
+    "輸入框內容過長，請縮短到 16,000 個字元以內。",
+    "The field is too long. Shorten it to 16,000 characters or fewer."
+  ],
+  "不支持的检查选项。": [
+    "不支援的檢查選項。",
+    "Unsupported check options."
+  ],
+  "检查结果格式不正确，请重试。": [
+    "檢查結果格式不正確，請重試。",
+    "The check result has an invalid format. Please try again."
+  ],
+  "原文已变化，请重新检查。": [
+    "原文已變更，請重新檢查。",
+    "The source changed. Please check again."
+  ],
+  "此输入框暂用建议列表，避免划线错位。": [
+    "此輸入框暫用建議清單，避免畫線錯位。",
+    "Use the suggestion list for this field; underlines may not align reliably."
+  ],
+  "正在检查当前输入框…": [
+    "正在檢查目前輸入框…",
+    "Checking the current field…"
+  ],
+  "部分建议无法安全定位，已跳过。": [
+    "部分建議無法安全定位，已略過。",
+    "Some suggestions could not be safely located and were skipped."
+  ],
+  "{0} 条建议，点击划线或列表查看。": [
+    "{0} 條建議，點擊畫線或清單查看。",
+    "{0} suggestions. Select an underline or a list item."
+  ],
+  "扩展连接已断开，请刷新网页后重试。": [
+    "擴充功能連線已中斷，請重新整理網頁後重試。",
+    "The extension disconnected. Refresh the page and try again."
+  ],
+  "检查中断，请重试。": [
+    "檢查中斷，請重試。",
+    "The check was interrupted. Please try again."
+  ],
+  "已接受修改；同句中的其他建议已清除，请重新检查。": [
+    "已接受修改；同句中的其他建議已清除，請重新檢查。",
+    "Change accepted. Other suggestions in the same sentence were cleared; check again."
+  ],
+  "已接受修改，可撤销上次接受。": [
+    "已接受修改，可復原上次接受。",
+    "Change accepted. You can undo the last acceptance."
+  ],
+  "无法可靠撤销，请检查输入框内容。": [
+    "無法可靠復原，請檢查輸入框內容。",
+    "Could not reliably undo. Please review the field."
+  ],
+  "已撤销上次接受。": [
+    "已復原上次接受。",
+    "Last acceptance undone."
+  ],
+  "已停止检查。": [
+    "已停止檢查。",
+    "Check stopped."
+  ],
+  "已忽略本次，原文未修改。": [
+    "已忽略本次，原文未修改。",
+    "Suggestion ignored. The source is unchanged."
+  ],
+  "检查选项已变化，请重新检查。": [
+    "檢查選項已變更，請重新檢查。",
+    "Check options changed. Please check again."
+  ],
+  "收起建议": [
+    "收起建議",
+    "Collapse suggestions"
+  ],
+  "语法与拼写": [
+    "文法與拼字",
+    "Grammar and spelling"
+  ],
+  "红线：语法与拼写": [
+    "紅線：文法與拼字",
+    "Red: grammar & spelling"
+  ],
+  "绿线：表达改进": [
+    "綠線：表達改善",
+    "Green: style improvements"
+  ],
+  "在此网站自动检查": [
+    "在此網站自動檢查",
+    "Automatically check on this site"
+  ],
+  "自动检查已开启：输入停顿后，将当前输入框全文发送至所选服务。": [
+    "自動檢查已開啟：輸入停頓後，將目前輸入框全文傳送至所選服務。",
+    "Automatic checking is on: after a typing pause, the full current field is sent to your selected service."
+  ],
+  "等待输入停顿后检查…": [
+    "等待輸入停頓後檢查…",
+    "Waiting for a typing pause…"
+  ],
+  "Lingo · 自动": [
+    "Lingo · 自動",
+    "Lingo · Auto"
+  ],
+  "Lingo · 检查失败": [
+    "Lingo · 檢查失敗",
+    "Lingo · Check failed"
+  ],
+  "此网站的自动检查已关闭。": [
+    "此網站的自動檢查已關閉。",
+    "Automatic checking is off for this site."
+  ],
+  "自动检查已开启：进入文本框或输入停顿后，将当前框全文发送至所选服务。": [
+    "自動檢查已開啟：進入文字框或輸入停頓後，將目前框全文傳送至所選服務。",
+    "Automatic checking is on: focusing a field or pausing after typing sends its full text to your selected service."
+  ],
+  "即将自动检查当前输入框…": [
+    "即將自動檢查目前文字框…",
+    "Automatic check starting shortly…"
+  ],
+  "Lingo · 即将检查": [
+    "Lingo · 即將檢查",
+    "Lingo · Checking soon"
+  ],
+  "自动检查已开启，无需点击检查全文。": [
+    "自動檢查已開啟，無需點選檢查全文。",
+    "Automatic checking is on. No need to click Check full text."
+  ],
+  "空白": [
+    "空白",
+    "Whitespace"
+  ],
+  "插入": [
+    "插入",
+    "Insert"
+  ],
+  "此建议包含 {0} 处关联修改，将一起接受。": [
+    "此建議包含 {0} 處關聯修改，將一起接受。",
+    "This suggestion contains {0} linked changes, applied together."
+  ],
+  "{0} 条建议，悬停或点击划线查看。": [
+    "{0} 條建議，懸停或點選底線查看。",
+    "{0} suggestions. Hover over or click an underline."
+  ],
+  "设置分类": [
+    "設定分類",
+    "Settings categories"
+  ],
+  "连接与语言": [
+    "連線與語言",
+    "Connection & languages"
+  ],
+  "写作与检查": [
+    "寫作與檢查",
+    "Writing & checking"
+  ],
+  "自动检查": [
+    "自動檢查",
+    "Automatic checking"
+  ],
+  "让检查跟随你的写作习惯。": [
+    "讓檢查跟隨你的寫作習慣。",
+    "Choose how Lingo checks your writing."
+  ],
+  "所有网页默认自动检查": [
+    "所有網頁預設自動檢查",
+    "Check all websites by default"
+  ],
+  "在已授权、支持的编辑区进入或输入停顿后，自动发送当前编辑区全文至所选服务。": [
+    "在已授權、支援的編輯區進入或輸入停頓後，自動傳送目前編輯區全文至所選服務。",
+    "When you enter a supported editor on an authorized website or pause typing, send its full text to your selected service."
+  ],
+  "默认包含表达优化": [
+    "預設包含表達最佳化",
+    "Include style suggestions by default"
+  ],
+  "红线检查语法与拼写；绿线提供可选的表达建议。": [
+    "紅線檢查語法與拼字；綠線提供可選的表達建議。",
+    "Red marks show grammar and spelling issues; green marks offer optional style suggestions."
+  ],
+  "网站单独设置优先。不会自动授予网页权限，也不会检查密码框、整页或附件。检查使用已配置的服务，API 用量按服务商规则计费。": [
+    "網站個別設定優先。不會自動授予網頁權限，也不會檢查密碼框、整頁或附件。檢查使用已設定的服務，API 用量按服務商規則計費。",
+    "Website overrides take priority. This does not grant site access or check password fields, whole pages or attachments. Checks use your configured service and its usage charges."
+  ],
+  "保存检查设置": [
+    "儲存檢查設定",
+    "Save checking settings"
+  ],
+  "重新载入": [
+    "重新載入",
+    "Reload settings"
+  ],
+  "保存设置不会发送当前草稿；下次进入编辑区或真实输入时生效。": [
+    "儲存設定不會傳送目前草稿；下次進入編輯區或實際輸入時生效。",
+    "Saving does not send your current draft. Changes take effect when you next enter an editor or type."
+  ],
+  "网站例外": [
+    "網站例外",
+    "Website overrides"
+  ],
+  "保留网站单独设置，或恢复跟随全局默认。": [
+    "保留網站個別設定，或恢復跟隨全域預設。",
+    "Keep individual website settings or return to the global defaults."
+  ],
+  "不自动检查的网站地址": [
+    "不自動檢查的網站位址",
+    "Website to exclude from automatic checking"
+  ],
+  "添加关闭例外": [
+    "新增關閉例外",
+    "Exclude website"
+  ],
+  "按完整网站地址区分；不会改变网站访问授权。": [
+    "按完整網站位址區分；不會變更網站存取授權。",
+    "Overrides apply to the exact origin, including protocol and port. Site access permissions stay unchanged."
+  ],
+  "自定义改写预设": [
+    "自訂改寫預設",
+    "Custom rewrite presets"
+  ],
+  "与浮窗和侧边栏共用，可新增、编辑、排序和删除。": [
+    "與浮窗和側邊欄共用，可新增、編輯、排序和刪除。",
+    "Add, edit, reorder and delete presets shared with the floating panel and sidebar."
+  ],
+  "检查设置已保存；下次进入编辑区或输入时生效。": [
+    "檢查設定已儲存；下次進入編輯區或輸入時生效。",
+    "Checking settings saved. They apply when you next enter an editor or type."
+  ],
+  "暂无网站例外，所有已授权网页跟随全局默认。": [
+    "暫無網站例外，所有已授權網頁跟隨全域預設。",
+    "No website overrides. Authorized websites follow the global defaults."
+  ],
+  "表达优化": [
+    "表達最佳化",
+    "Style suggestions"
+  ],
+  "跟随全局设置": [
+    "跟隨全域設定",
+    "Use global defaults"
+  ],
+  "此网站已有单独设置，请在下方修改。": [
+    "此網站已有個別設定，請在下方修改。",
+    "This website already has an override. Edit it below."
+  ],
+  "请输入有效的普通网页地址。": [
+    "請輸入有效的一般網頁位址。",
+    "Enter a valid HTTP or HTTPS website address."
+  ],
+  "自动检查设置无法读取，未覆盖原有数据。": [
+    "自動檢查設定無法讀取，未覆寫原有資料。",
+    "Automatic checking settings could not be read. Existing data was not overwritten."
+  ],
+  "检查设置已在其他窗口更新，请重新载入后再保存。": [
+    "檢查設定已在其他視窗更新，請重新載入後再儲存。",
+    "Checking settings changed in another window. Reload settings before saving."
+  ],
+  "当前跟随全局默认设置。": [
+    "目前跟隨全域預設設定。",
+    "Using global defaults."
+  ],
+  "此网站使用单独设置。": [
+    "此網站使用個別設定。",
+    "Using a website override."
+  ],
+  "个人词典": [
+    "個人詞典",
+    "Personal dictionary"
+  ],
+  "拼写": [
+    "拼字",
+    "Spelling"
+  ],
+  "加入个人词典": [
+    "加入個人詞典",
+    "Add to dictionary"
+  ],
+  "加入词条：{0}": [
+    "加入詞條：{0}",
+    "Add word: {0}"
+  ],
+  "个人词典无法读取，未覆盖原有数据。": [
+    "個人詞典無法讀取，未覆寫原有資料。",
+    "The personal dictionary could not be read. Existing data was not overwritten."
+  ],
+  "请输入单个词，最多 64 个字符，可含数字、连字符或撇号。": [
+    "請輸入單一詞，最多 64 個字元，可含數字、連字號或撇號。",
+    "Enter a single word of up to 64 characters. Numbers, hyphens and apostrophes are allowed."
+  ],
+  "个人词典已在其他窗口更新，请重试。": [
+    "個人詞典已在其他視窗更新，請重試。",
+    "The dictionary changed in another window. Please try again."
+  ],
+  "个人词典最多保存 500 个词。": [
+    "個人詞典最多儲存 500 個詞。",
+    "The personal dictionary can hold up to 500 words."
+  ],
+  "这个词已不在个人词典中，请重新查看。": [
+    "這個詞已不在個人詞典中，請重新查看。",
+    "This word is no longer in your dictionary. Please refresh the list."
+  ],
+  "已加入个人词典；原文未修改。": [
+    "已加入個人詞典；原文未修改。",
+    "Added to your dictionary. The original text is unchanged."
+  ],
+  "词条已移除，下次检查会恢复检查这个词。": [
+    "詞條已移除，下次檢查會恢復檢查這個詞。",
+    "Word removed. It will be checked again on the next check."
+  ],
+  "记住姓名、品牌和专业词，减少重复拼写提示。": [
+    "記住姓名、品牌和專業詞，減少重複拼字提示。",
+    "Remember names, brands and specialist terms to reduce repeated spelling suggestions."
+  ],
+  "用于行内拼写检查，语法和表达建议仍然保留。不区分大小写；复数等词形需单独添加。": [
+    "用於行內拼字檢查，語法和表達建議仍然保留。不區分大小寫；複數等詞形需分別新增。",
+    "Applies to inline spelling checks. Grammar and style suggestions remain. Matching ignores case; add plurals and other word forms separately."
+  ],
+  "例如：Noredge": [
+    "例如：Noredge",
+    "For example: Noredge"
+  ],
+  "添加到个人词典的单词": [
+    "新增至個人詞典的單詞",
+    "Word to add to your dictionary"
+  ],
+  "添加词条": [
+    "新增詞條",
+    "Add word"
+  ],
+  "最多 500 个词，每词最多 64 个字符；可含数字、连字符或撇号。": [
+    "最多 500 個詞，每詞最多 64 個字元；可含數字、連字號或撇號。",
+    "Up to 500 words, each up to 64 characters. Numbers, hyphens and apostrophes are allowed."
+  ],
+  "搜索词典": [
+    "搜尋詞典",
+    "Search dictionary"
+  ],
+  "已保存词条数量": [
+    "已儲存詞條數量",
+    "Number of saved words"
+  ],
+  "个人词典词条": [
+    "個人詞典詞條",
+    "Personal dictionary words"
+  ],
+  "重新载入词典": [
+    "重新載入詞典",
+    "Reload dictionary"
+  ],
+  "词典保存在本机。检查时只发送当前原文中出现的词条；添加、搜索和移除词条不会调用 API。": [
+    "詞典儲存在本機。檢查時只傳送目前原文中出現的詞條；新增、搜尋和移除詞條不會呼叫 API。",
+    "Your dictionary is stored locally. Checks send only entries present in the current text. Adding, searching or removing words makes no API request."
+  ],
+  "没有匹配的词条。": [
+    "沒有符合的詞條。",
+    "No matching words."
+  ],
+  "还没有词条，可手动添加，或在拼写建议卡中加入。": [
+    "還沒有詞條，可手動新增，或在拼字建議卡中加入。",
+    "No words yet. Add one here or from a spelling suggestion."
+  ],
+  "移除词条": [
+    "移除詞條",
+    "Remove word"
+  ],
+  "移除词条：{0}": [
+    "移除詞條：{0}",
+    "Remove word: {0}"
+  ],
+  "语法": [
+    "語法",
+    "Grammar"
+  ],
+  "工具模式": [
+    "工具模式",
+    "Tool mode"
+  ],
+  "单词与短语": [
+    "單字與片語",
+    "Words & phrases"
+  ],
+  "改写": [
+    "改寫",
+    "Rewrite"
+  ],
+  "查看词语": [
+    "查看詞語",
+    "Explain term"
+  ],
+  "了解词性、含义和使用场景。释义跟随界面语言。": [
+    "了解詞性、含義和使用情境。釋義跟隨介面語言。",
+    "Explore meanings, parts of speech, and usage. Explanations follow your interface language."
+  ],
+  "选择一个单词或短语，点击「查看词语」。": [
+    "選擇一個單字或片語，點擊「查看詞語」。",
+    "Select a word or phrase, then click Explain term."
+  ],
+  "请选择一个单词或短语（最多 160 个字符、12 个词），长句或段落请使用写作工具。": [
+    "請選擇一個單字或片語（最多 160 個字元、12 個詞），長句或段落請使用寫作工具。",
+    "Choose a word or short phrase (up to 160 characters and 12 words). Use Writing tools for longer text."
+  ],
+  "词语说明格式不完整，请重试。": [
+    "詞語說明格式不完整，請重試。",
+    "The term explanation is incomplete or invalid. Please retry."
+  ],
+  "正在解释词语…": [
+    "正在解釋詞語…",
+    "Explaining the term…"
+  ],
+  "单词": [
+    "單字",
+    "Word"
+  ],
+  "短语": [
+    "片語",
+    "Phrase"
+  ],
+  "词语说明": [
+    "詞語說明",
+    "Term explanation"
+  ],
+  "何时使用": [
+    "何時使用",
+    "When to use it"
+  ],
+  "常见搭配": [
+    "常見搭配",
+    "Common combinations"
+  ],
+  "例句": [
+    "例句",
+    "Examples"
+  ],
+  "复制词语说明": [
+    "複製詞語說明",
+    "Copy explanation"
+  ],
+  "从原文开始": [
+    "從原文開始",
+    "Start from the source"
+  ],
+  "对比基准": [
+    "對比基準",
+    "Compare with"
+  ],
+  "调整前": [
+    "調整前",
+    "Before this edit"
+  ],
+  "最初原文": [
+    "最初原文",
+    "Original source"
+  ],
+  "上一版": [
+    "上一版",
+    "Previous version"
+  ],
+  "下一版": [
+    "下一版",
+    "Next version"
+  ],
+  "版本 {0}": [
+    "版本 {0}",
+    "Version {0}"
+  ],
+  "本版基于第 {0} 版调整": [
+    "本版基於第 {0} 版調整",
+    "Based on version {0}"
+  ],
+  "基于当前结果继续调整": [
+    "基於目前結果繼續調整",
+    "Refine the current result"
+  ],
+  "基于第 {0} 版继续调整": [
+    "基於第 {0} 版繼續調整",
+    "Refining version {0}"
+  ],
+  "继续调整要求": [
+    "繼續調整要求",
+    "Refinement instructions"
+  ],
+  "例如：再简短一点，保留友好的语气…": [
+    "例如：再簡短一點，保留友好的語氣…",
+    "For example: shorten it while keeping a friendly tone…"
+  ],
+  "仅发送当前版本与本次要求": [
+    "僅傳送目前版本與本次要求",
+    "Only this version and your new instructions are sent"
+  ],
+  "生成新版本": [
+    "產生新版本",
+    "Create new version"
+  ],
+  "继续调整": [
+    "繼續調整",
+    "Refine result"
+  ],
+  "本次结果已保留 20 个版本，可复制结果后开启新的处理。": [
+    "本次結果已保留 20 個版本，可複製結果後開啟新的處理。",
+    "This result has 20 saved versions. Copy it into a new task to continue."
+  ],
+  "当前结果超过 16,000 个字符，请复制并缩短后再处理。": [
+    "目前結果超過 16,000 個字元，請複製並縮短後再處理。",
+    "This result exceeds 16,000 characters. Copy and shorten it before continuing."
+  ],
+  "正在继续调整，当前版本已保留…": [
+    "正在繼續調整，目前版本已保留…",
+    "Refining… Your current version is preserved."
+  ],
+  "仍显示调整前的完整结果。": [
+    "仍顯示調整前的完整結果。",
+    "The complete result from before this edit is still shown."
+  ],
+  "重试调整": [
+    "重試調整",
+    "Retry refinement"
+  ],
+  "调整前后结果一致。": [
+    "調整前後結果一致。",
+    "This edit made no changes."
+  ],
+  "调整对话": [
+    "調整對話",
+    "Refinement conversation"
+  ],
+  "回到最新": [
+    "回到最新",
+    "Jump to latest"
+  ],
+  "共 {0} 轮": [
+    "共 {0} 輪",
+    "{0} turns"
+  ],
+  "第 {0} 轮": [
+    "第 {0} 輪",
+    "Turn {0}"
+  ],
+  "你的要求": [
+    "你的要求",
+    "Your request"
+  ],
+  "基于第 {0} 轮": [
+    "基於第 {0} 輪",
+    "Based on turn {0}"
+  ],
+  "基于第 {0} 轮继续调整": [
+    "基於第 {0} 輪繼續調整",
+    "Continue from turn {0}"
+  ],
+  "当前调整基础": [
+    "目前調整基礎",
+    "Current starting point"
+  ],
+  "从这轮继续": [
+    "從這輪繼續",
+    "Continue from here"
+  ],
+  "仍保留调整前的完整结果。": [
+    "仍保留調整前的完整結果。",
+    "The complete result from before this edit is preserved."
+  ],
+  "发送要求": [
+    "傳送要求",
+    "Send request"
+  ],
+  "本次对话已保留 20 轮结果，可复制结果后开启新的处理。": [
+    "本次對話已保留 20 輪結果，可複製結果後開啟新的處理。",
+    "This conversation has 20 completed turns. Copy a result into a new task to continue."
+  ],
+  "收起对话": [
+    "收起對話",
+    "Collapse conversation"
+  ],
+  "Enter 接受 · Esc 收起": [
+    "Enter 接受 · Esc 收起",
+    "Enter to accept · Esc to close"
+  ],
+  "Enter 发送 · Shift+Enter 换行": [
+    "Enter 傳送 · Shift+Enter 換行",
+    "Enter to send · Shift+Enter for a new line"
+  ],
+  "Esc 收起，保留草稿": [
+    "Esc 收起，保留草稿",
+    "Esc to collapse and keep your draft"
+  ],
+  "⌘/Ctrl+Enter 执行当前工具": [
+    "⌘/Ctrl+Enter 執行目前工具",
+    "⌘/Ctrl+Enter to run the current tool"
+  ],
+  "Enter 执行自定义改写": [
+    "Enter 執行自訂改寫",
+    "Enter to run your custom rewrite"
+  ],
+  "修改建议列表": [
+    "修改建議列表",
+    "Writing suggestions"
+  ],
+  "Enter 接受 · Esc 返回列表": [
+    "Enter 接受 · Esc 返回列表",
+    "Enter to accept · Esc to return to the list"
+  ],
+  "当前建议已处理完，可撤销上次接受。": [
+    "目前建議已處理完，可復原上次接受。",
+    "All current suggestions are resolved. You can undo the last acceptance."
+  ],
+  "收起详情": [
+    "收起詳情",
+    "Collapse details"
+  ],
+  "Lingo · 需设置": [
+    "Lingo · 需設定",
+    "Lingo · Setup needed"
+  ],
+  "Lingo · 已锁定": [
+    "Lingo · 已鎖定",
+    "Lingo · Locked"
+  ],
+  "Lingo · 需确认": [
+    "Lingo · 需確認",
+    "Lingo · Consent needed"
+  ],
+  "Lingo · 暂不可用": [
+    "Lingo · 暫不可用",
+    "Lingo · Unavailable"
+  ],
+  "Lingo · 加载中": [
+    "Lingo · 載入中",
+    "Lingo · Loading"
+  ],
+  "正在读取检查设置…": [
+    "正在讀取檢查設定…",
+    "Loading check settings…"
+  ],
+  "已保留自动检查设置，当前暂不能检查。": [
+    "已保留自動檢查設定，目前暫不能檢查。",
+    "Your automatic checking preference is saved, but checking is currently unavailable."
+  ],
+  "配置检查服务": [
+    "設定檢查服務",
+    "Set up checking"
+  ],
+  "解锁 Key": [
+    "解鎖 Key",
+    "Unlock Key"
+  ],
+  "确认数据说明": [
+    "確認資料說明",
+    "Review data consent"
+  ],
+  "查看写作介绍": [
+    "查看寫作介紹",
+    "View writing introduction"
+  ],
+  "连接服务，选择检查方式，再用一个示例开始写作。": [
+    "連接服務，選擇檢查方式，再用一個範例開始寫作。",
+    "Connect your service, choose how to check, and try a writing example."
+  ],
+  "检查方式": [
+    "檢查方式",
+    "Checking"
+  ],
+  "动手体验": [
+    "動手體驗",
+    "Try it"
+  ],
+  "开始写作": [
+    "開始寫作",
+    "Start writing"
+  ],
+  "已读取你原来的设置。直接继续或跳过，都不会改变它们。": [
+    "已讀取你原來的設定。直接繼續或略過，都不會改變它們。",
+    "Your current settings are loaded. Continuing or skipping keeps them unchanged."
+  ],
+  "选择适合你的检查方式": [
+    "選擇適合你的檢查方式",
+    "Choose how Lingo checks"
+  ],
+  "自动检查与网页授权是两个独立开关，可以随时在「写作与检查」中更改。": [
+    "自動檢查與網頁授權是兩個獨立開關，可以隨時在「寫作與檢查」中更改。",
+    "Automatic checking is separate from website access. You can change it anytime in Writing & checking."
+  ],
+  "全局检查方式": [
+    "全域檢查方式",
+    "Default checking mode"
+  ],
+  "手动检查": [
+    "手動檢查",
+    "Check manually"
+  ],
+  "需要时点击 Lingo，再选择「检查全文」。": [
+    "需要時點擊 Lingo，再選擇「檢查全文」。",
+    "Click Lingo and choose Check full text when you need it."
+  ],
+  "输入后自动检查": [
+    "輸入後自動檢查",
+    "Check automatically"
+  ],
+  "进入编辑区或输入停顿后，显示语法和拼写红线。": [
+    "進入編輯區或輸入停頓後，顯示文法和拼字紅線。",
+    "Show red grammar and spelling underlines when you enter an editor or pause typing."
+  ],
+  "同时显示表达优化建议（绿线，可选）": [
+    "同時顯示表達優化建議（綠線，可選）",
+    "Also suggest expression improvements (green underlines, optional)"
+  ],
+  "检查时会发送什么？": [
+    "檢查時會傳送什麼？",
+    "What gets sent when checking?"
+  ],
+  "自动检查会把当前输入框全文发送到你配置的 API 服务，可能产生费用。仅在服务可用、网站已授权且未暂停时运行。": [
+    "自動檢查會把目前輸入框全文傳送到你設定的 API 服務，可能產生費用。僅在服務可用、網站已授權且未暫停時執行。",
+    "Automatic checks send the full text of the current field to your configured API service and may incur charges. They run only when the service is ready and the website has access and is not paused."
+  ],
+  "已有网站单独设置会继续保留，不受这里的全局选择影响。": [
+    "已有網站個別設定會繼續保留，不受這裡的全域選擇影響。",
+    "Existing website overrides are preserved and take priority over this default."
+  ],
+  "全局选择适用于已授权、未暂停且没有单独设置的网页。": [
+    "全域選擇適用於已授權、未暫停且沒有個別設定的網頁。",
+    "This default applies to authorized, unpaused websites without an override."
+  ],
+  "检查设置尚未读取，请重试或跳过这一步。": [
+    "檢查設定尚未讀取，請重試或略過這一步。",
+    "Checking settings have not loaded. Retry or skip this step."
+  ],
+  "重新读取设置": [
+    "重新讀取設定",
+    "Reload settings"
+  ],
+  "本地示例 · 不发送 API 请求": [
+    "本機範例 · 不傳送 API 請求",
+    "Local example · No API requests"
+  ],
+  "先试一次，改好一句话": [
+    "先試一次，改好一句話",
+    "Try a small improvement"
+  ],
+  "悬停或点击划线单词查看建议，点击替换词接受；也可用 Tab 和 Enter 操作。": [
+    "懸停或點擊劃線單字查看建議，點擊替換詞接受；也可用 Tab 和 Enter 操作。",
+    "Hover over or click an underlined word, then select its replacement. You can also use Tab and Enter."
+  ],
+  "绿线：表达优化": [
+    "綠線：表達優化",
+    "Green: expression"
+  ],
+  "建议预览": [
+    "建議預覽",
+    "Suggestion preview"
+  ],
+  "接受示例建议": [
+    "接受範例建議",
+    "Accept example suggestion"
+  ],
+  "点击替换词，即可接受这条建议。": [
+    "點擊替換詞，即可接受這條建議。",
+    "Select the replacement to accept this suggestion."
+  ],
+  "恢复示例": [
+    "還原範例",
+    "Reset example"
+  ],
+  "这是固定演示。真实网页上的建议由你的服务生成，内容和等待时间会有所不同。": [
+    "這是固定示範。真實網頁上的建議由你的服務產生，內容和等待時間會有所不同。",
+    "This is a fixed demonstration. On real websites, your service generates suggestions, so results and waiting times vary."
+  ],
+  "主语 I 应搭配 have。": [
+    "主詞 I 應搭配 have。",
+    "Use have with the subject I."
+  ],
+  "用更简洁的表达，保留原意。": [
+    "用更簡潔的表達，保留原意。",
+    "Use a shorter expression with the same meaning."
+  ],
+  "两处建议都已接受。可以撤销或恢复示例，再试一次。": [
+    "兩處建議都已接受。可以復原或還原範例，再試一次。",
+    "Both suggestions accepted. Undo or reset the example to try again."
+  ],
+  "已接受修改，对应下划线已消失。": [
+    "已接受修改，對應底線已消失。",
+    "Change accepted. Its underline has disappeared."
+  ],
+  "已撤销，原词和下划线已恢复。": [
+    "已復原，原詞和底線已恢復。",
+    "Undone. The original word and underline are restored."
+  ],
+  "保存常用语气和修改要求，写作时一键复用。": [
+    "儲存常用語氣和修改要求，寫作時一鍵重用。",
+    "Save your usual tone and instructions to reuse while writing."
+  ],
+  "管理预设 ↗": [
+    "管理預設 ↗",
+    "Manage presets ↗"
+  ],
+  "加入人名、品牌或专有词，减少拼写误报；语法和上下文用词仍会检查。": [
+    "加入人名、品牌或專有詞，減少拼字誤報；文法和上下文用詞仍會檢查。",
+    "Add names, brands, and special terms to reduce spelling false alarms. Grammar and contextual word choice are still checked."
+  ],
+  "管理个人词典 ↗": [
+    "管理個人字典 ↗",
+    "Manage dictionary ↗"
+  ],
+  "得到写作结果后，展开「继续调整」输入新要求。Enter 发送，Shift+Enter 换行。": [
+    "得到寫作結果後，展開「繼續調整」輸入新要求。Enter 傳送，Shift+Enter 換行。",
+    "After generating a writing result, open Refine result and enter your next instruction. Enter sends; Shift+Enter adds a new line."
+  ],
+  "写作结果可切换「结果 / 对比」，确认后再替换原文。你也可以从设置底部再次查看本介绍。": [
+    "寫作結果可切換「結果 / 對比」，確認後再替換原文。你也可以從設定底部再次查看本介紹。",
+    "Switch between Result and Compare before replacing your text. You can revisit this introduction at the bottom of Settings."
+  ],
+  "查看连接与网页授权 ↗": [
+    "查看連接與網頁授權 ↗",
+    "View connection & website access ↗"
+  ],
+  "写作，从这里开始": [
+    "寫作，從這裡開始",
+    "A little help with your writing"
+  ],
+  "Lingo 1.1 写作介绍，可随时跳过，原有设置由你决定。": [
+    "Lingo 1.1 寫作介紹，可隨時略過，原有設定由你決定。",
+    "Meet writing in Lingo 1.1. Skip anytime; your settings stay in your control."
+  ],
+  "跳过介绍": [
+    "略過介紹",
+    "Skip introduction"
+  ],
+  "保留设置并继续": [
+    "保留設定並繼續",
+    "Keep settings & continue"
+  ],
+  "暂不更改": [
+    "暫不更改",
+    "Skip changes"
+  ],
+  "跳过体验": [
+    "略過體驗",
+    "Skip example"
+  ],
+  "还未完成服务连接。可以先探索功能，连接 API 后再检查真实文字。": [
+    "尚未完成服務連接。可以先探索功能，連接 API 後再檢查真實文字。",
+    "Your service connection is not ready yet. Explore the features now, then connect your API to check real text."
+  ],
+  "服务已配置。要在真实网页上检查文字，还需授权该网站。": [
+    "服務已設定。要在真實網頁上檢查文字，還需授權該網站。",
+    "Your service is configured. Grant website access to check text on real pages."
+  ],
+  "服务与网页访问已配置；在已授权网页刷新后即可开始使用。": [
+    "服務與網頁存取已設定；重新整理已授權網頁後即可開始使用。",
+    "Your service and website access are configured. Refresh an authorized page to get started."
+  ],
+  "Lingo 1.1 写作介绍": [
+    "Lingo 1.1 寫作介紹",
+    "Lingo 1.1 writing introduction"
+  ],
+  "Lingo 1.1 · 让写作更顺手": [
+    "Lingo 1.1 · 讓寫作更順手",
+    "Lingo 1.1 · Write with more ease"
+  ],
+  "了解自动检查、个人词典与继续调整。原有设置保持不变。": [
+    "了解自動檢查、個人字典與繼續調整。原有設定保持不變。",
+    "Discover automatic checks, your dictionary, and refinement. Your settings stay unchanged."
+  ],
+  "看看新功能": [
+    "看看新功能",
+    "Explore what’s new"
+  ],
+  "选中词语，打开浮窗并切换到「单词与短语」，查看释义、用法和例句。": [
+    "選取詞語，開啟浮窗並切換到「單字與片語」，查看釋義、用法和例句。",
+    "Select a word or phrase, open Lingo, and switch to Words & phrases for meanings, usage, and examples."
+  ],
+  "试试这些写作功能": [
+    "試試這些寫作功能",
+    "Try these writing features"
+  ],
+  "还想怎么改？": [
+    "還想怎麼改？",
+    "What would you like to change?"
+  ],
+  "返回最新版": [
+    "返回最新版",
+    "Use latest version"
+  ],
+  "更换方式": [
+    "更換方式",
+    "Change rewrite"
+  ],
+  "收起改写方式": [
+    "收起改寫方式",
+    "Hide rewrite options"
+  ],
+  "自定义改写": [
+    "自訂改寫",
+    "Custom rewrite"
+  ],
+  "复制此版": [
+    "複製此版",
+    "Copy this version"
+  ],
+  "查看对比": [
+    "查看對比",
+    "Compare version"
+  ],
+  "从此版继续": [
+    "從此版繼續",
+    "Refine from here"
+  ],
+  "最新": [
+    "最新",
+    "Latest"
+  ],
+  "第 {0} 版": [
+    "第 {0} 版",
+    "Version {0}"
+  ],
+  "第 {0} 版操作": [
+    "第 {0} 版操作",
+    "Actions for version {0}"
+  ],
+  "基于第 {0} 版": [
+    "基於第 {0} 版",
+    "Based on version {0}"
+  ],
+  "介绍说明": [
+    "介紹說明",
+    "Introduction"
+  ],
+  "了解服务连接、自动检查和写作功能。已有设置会保留。": [
+    "了解服務連接、自動檢查和寫作功能。已有設定會保留。",
+    "Explore connections, automatic checking and writing tools. Your settings are preserved."
+  ],
+  "返回设置": [
+    "返回設定",
+    "Back to settings"
   ]
 }

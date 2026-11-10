@@ -3,7 +3,7 @@
     "message": "Lingo · 劃詞翻譯與寫作"
   },
   "extensionDescription": {
-    "message": "選取文字，翻譯、校對、改寫。使用自己的相容 API，支援 PDF 側邊欄。"
+    "message": "自備 API 的翻譯與寫作助手：劃詞翻譯、可選自動檢查、紅綠底線建議、個人詞典與繼續調整。"
   },
   "commandDescription": {
     "message": "翻譯目前選取的文字"

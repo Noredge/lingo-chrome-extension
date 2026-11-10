@@ -1,4 +1,6 @@
 import './ui.css';
+import {createWritingSettings} from './writing-settings';
+import {createWritingGuide} from './writing-guide';
 import { localize, setLanguage, t } from './i18n';
 import { LANGUAGES, DEFAULTS, normalizeBaseUrl, apiOrigin } from './core';
 document.querySelector('.version')!.textContent = chrome.runtime.getManifest().version_name || chrome.runtime.getManifest().version;
@@ -14,7 +16,12 @@ ui.addEventListener('change', () => {setLanguage(ui.value);destination();void me
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const key = $<HTMLInputElement>('api-key'), model = $<HTMLInputElement>('model'), language = $<HTMLSelectElement>('language'), storageMode = $<HTMLSelectElement>('storage-mode');
 let selectedLanguages = [...DEFAULTS.languages], savedForm = '', loaded = false;
-let onboarding=false, setupComplete=false, setupStep=0, knownKey=false, setupBusy=false;
+const writingSettings=createWritingSettings();
+let presetDestination=location.hash==='#presets';
+let settingsTab:'general'|'writing'=location.hash==='#writing'||presetDestination?'writing':'general';
+let onboarding=false, introMode=false, reviewMode=false, setupComplete=false, setupStep=0, knownKey=false, knownConsent=false, setupBusy=false, anySiteGranted=false;
+let renderedGuideStep=-1;
+const writingGuide=createWritingGuide(updateGuideNext);
 const localeHome=document.querySelector('.page-head')!;
 const localeControl=document.querySelector('.locale-control')!;
 const setupDialog=$<HTMLDialogElement>('setup-dialog'),settingsForm=$('settings-form'),accessCard=$('website-access');
@@ -29,7 +36,7 @@ function updateTestButton(){
 }
 function updateDirty(){ $('save-bar').hidden=!dirty();$('save-settings').textContent=profileId===activeProfileId?'保存设置':'保存并使用此配置';updateTestButton();}
 $('settings-form').addEventListener('input',updateDirty);$('settings-form').addEventListener('change',updateDirty);
-window.addEventListener('beforeunload',e=>{if(edited()){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(edited()||writingSettings.hasUnsaved()){e.preventDefault();e.returnValue='';}});
 function drawLanguages(preferred = language.value) {
   language.replaceChildren(); $('language-list').replaceChildren();
   for (const l of selectedLanguages) {
@@ -63,7 +70,8 @@ function drawStorage() {
   $('storage-help').textContent = mode === 'device' ? '保存一次，重启 Chrome 后也可直接使用，无需解锁。' : mode === 'encrypted' ? '重启 Chrome 或重载扩展后解锁一次，之后的划词与打开浮窗都不需要重复输入密码。' : '关闭浏览器或重载扩展后，需要重新填写 Key。';
 }
 function draw(c: any) {
-  knownKey=c.hasKey;setupComplete=c.onboardingComplete;onboarding=!c.onboardingComplete&&!c.onboardingDismissed;setupStep=c.onboardingStep;
+  if(!loaded){introMode=c.onboardingComplete&&(!c.writingIntroSeen||location.hash==='#writing-guide');if(introMode)setupStep=location.hash==='#writing-guide'?3:c.writingIntroStep;}
+  knownKey=c.hasKey;knownConsent=c.dataConsent;setupComplete=c.onboardingComplete;onboarding=reviewMode||introMode||!c.onboardingComplete&&!c.onboardingDismissed;if(!introMode&&!reviewMode)setupStep=c.onboardingStep;
   profileId=c.profileId;activeProfileId=c.activeServiceId;profileName.value=savedName=c.profileName;
   profileSelect.replaceChildren(...c.profiles.map((p:any)=>{const o=new Option(p.name,p.id);o.translate=false;return o;}));profileSelect.value=profileId;
   const active=c.profiles.find((p:any)=>p.id===activeProfileId);const prefix=document.createElement('span');prefix.textContent='当前使用：';const activeName=document.createElement('span');activeName.translate=false;activeName.textContent=active?.name || '';$('active-profile').replaceChildren(prefix,activeName);
@@ -88,24 +96,69 @@ function draw(c: any) {
       row.append(name, b); $('blocked').append(row);
     }
   }
-  loaded=true;savedForm=formState();updateDirty();renderSetup();
+  if(presetDestination){onboarding=false;introMode=false;}
+  loaded=true;savedForm=formState();updateDirty();renderSetup();if(presetDestination)showPresetSettings();
 }
 async function load() { draw(await message({ type:profileId?'serviceConfig':'config',profileId:profileId||undefined })); await sites(); }
+function renderTabs(){
+  document.querySelector<HTMLElement>('.settings-tabs')!.hidden=onboarding;
+  for(const tab of ['general','writing'] as const){const active=tab===settingsTab;const button=$('tab-'+tab);button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;$('settings-'+tab).hidden=onboarding?tab==='writing':!active;}
+}
+function chooseTab(tab:'general'|'writing'){stopTest();settingsTab=tab;history.replaceState(null,'','#'+tab);renderTabs();}
+function showPresetSettings(){
+  presetDestination=true;if(!loaded)return;
+  presetDestination=false;stopTest();settingsTab='writing';onboarding=false;introMode=false;reviewMode=false;
+  history.replaceState(null,'','#presets');renderSetup();
+  requestAnimationFrame(()=>{const section=$('presets-card');section.tabIndex=-1;section.scrollIntoView({block:'start'});section.focus({preventScroll:true});});
+}
+window.addEventListener('hashchange',()=>{if(location.hash==='#presets')showPresetSettings();});
+chrome.runtime.onMessage.addListener((msg,sender,reply)=>{
+  if(sender.id===chrome.runtime.id&&msg.type==='navigatePresetSettings'){
+    void chrome.tabs.getCurrent().then(tab=>{if(tab&&tab.id===msg.tabId){showPresetSettings();reply({tabId:tab.id});}}).catch(()=>reply({error:true}));return true;
+  }
+});
+for(const tab of ['general','writing'] as const){$('tab-'+tab).addEventListener('click',()=>chooseTab(tab));$('tab-'+tab).addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(event.key)){event.preventDefault();const next=event.key==='Home'?'general':event.key==='End'?'writing':tab==='general'?'writing':'general';chooseTab(next);$('tab-'+next).focus();}});}
+// Completed users can browse every topic without changing onboarding progress.
+document.querySelectorAll<HTMLElement>('.setup-steps li').forEach((item,i)=>{
+  const copy=document.createElement('div');copy.className='setup-step-copy';copy.append(...item.childNodes);
+  const link=document.createElement('button');link.type='button';link.className='setup-step-link';link.dataset.guideStep=String(i);link.hidden=true;
+  const number=document.createElement('span');number.textContent=String(i+1);
+  link.append(number,['界面语言','连接 API','网页访问','检查方式','动手体验','开始写作'][i]);
+  link.addEventListener('click',()=>{if(reviewMode)void setupAction(()=>goStep(i));});item.append(copy,link);
+});
+function updateGuideNext(){
+  $('setup-next').textContent=setupStep===1&&!reviewMode?'保存并继续':setupStep===3?(writingGuide.dirty()?'保存并继续':'保留设置并继续'):setupStep===5?(reviewMode?'返回设置':'开始使用'):'下一步';
+  $<HTMLButtonElement>('setup-next').disabled=onboarding&&setupStep===3&&!writingGuide.ready();
+}
+function updateGuideReadiness(){
+  $('guide-ready-status').textContent=!knownKey||!knownConsent?'还未完成服务连接。可以先探索功能，连接 API 后再检查真实文字。':!anySiteGranted?'服务已配置。要在真实网页上检查文字，还需授权该网站。':'服务与网页访问已配置；在已授权网页刷新后即可开始使用。';
+}
 function renderSetup(){
+  renderTabs();
   document.body.classList.toggle('onboarding',onboarding);
-  $('setup-restart').hidden=onboarding;$('setup-restart').textContent=setupComplete?'查看设置引导':'继续设置引导';
+  $('setup-restart').hidden=onboarding;$('setup-restart').textContent='介绍说明';
   if(onboarding){$('setup-service-slot').append(settingsForm);$('setup-access-slot').append(accessCard);}
   else{formHome.after(settingsForm);accessHome.after(accessCard);}
   $('setup-head').hidden=$('setup-nav').hidden=$('setup-status').hidden=!onboarding;
+  $('setup-title').textContent=reviewMode?'介绍说明':introMode?'写作，从这里开始':'欢迎使用 Lingo';
+  document.querySelector<HTMLElement>('.setup-subtitle')!.textContent=reviewMode?'了解服务连接、自动检查和写作功能。已有设置会保留。':introMode?'Lingo 1.1 写作介绍，可随时跳过，原有设置由你决定。':'连接服务，选择检查方式，再用一个示例开始写作。';
+  $('setup-close').textContent=introMode?'跳过介绍':'×';$('setup-close').classList.toggle('intro-skip',introMode);
+  $('setup-close').setAttribute('aria-label',introMode?'跳过介绍':'关闭设置引导');
+  $('guide-existing-note').hidden=!introMode&&!reviewMode;
+  for(const [step,id] of [[3,'setup-checking'],[4,'setup-practice'],[5,'setup-ready']] as const)$(id).hidden=!onboarding||setupStep!==step;
+  const current=onboarding?setupStep:-1;
+  if(current!==renderedGuideStep){renderedGuideStep=current;writingGuide.hide();if(current===3)void writingGuide.refresh();}
+  updateGuideReadiness();
   $('setup-language').hidden=!onboarding || setupStep!==0;
   $('service-card').hidden=onboarding && setupStep!==1;
   $('website-access').hidden=onboarding && setupStep!==2;
   document.querySelectorAll<HTMLElement>('.setup-only').forEach(el=>el.hidden=!onboarding);
   (onboarding?$('setup-locale-slot'):localeHome).append(localeControl);
-  document.querySelectorAll('.setup-steps li').forEach((el,i)=>{if(i===setupStep)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});
-  $('setup-back').hidden=setupStep===0;
-  $('setup-skip').hidden=setupStep!==1;
-  $('setup-next').textContent=setupStep===0?'下一步':setupStep===1?'保存并继续':'完成设置';
+  document.querySelectorAll<HTMLElement>('.setup-steps li').forEach((el,i)=>{el.hidden=introMode&&i<3;el.querySelector('.setup-step-copy span')!.textContent=String(introMode?i-2:i+1);el.querySelector<HTMLElement>('.setup-step-copy')!.hidden=reviewMode;el.querySelector<HTMLElement>('.setup-step-link')!.hidden=!reviewMode;if(i===setupStep)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});
+  $('setup-back').hidden=setupStep===(introMode?3:0);
+  $('setup-skip').hidden=![1,3,4].includes(setupStep)||reviewMode&&setupStep===1;
+  $('setup-skip').textContent=setupStep===1?'稍后配置 API':setupStep===3?'暂不更改':'跳过体验';
+  updateGuideNext();
   updateTestButton();
   $('service-title').textContent=onboarding?'连接你的 API':'服务配置';
   drawSitePermission();
@@ -115,7 +168,7 @@ function renderSetup(){
 }
 async function goStep(step:number){
   stopTest();
-  await message({type:'onboardingProgress',step});setupStep=step;renderSetup();status('setup-status','');
+  if(!reviewMode)await message({type:introMode?'writingIntroProgress':'onboardingProgress',step});setupStep=step;renderSetup();status('setup-status','');
   $('setup-title').focus();$('setup-scroll').scrollTop=0;
 }
 async function setupAction(action:()=>Promise<void>){
@@ -124,15 +177,25 @@ async function setupAction(action:()=>Promise<void>){
 }
 $('setup-back').addEventListener('click',()=>void setupAction(()=>goStep(setupStep-1)));
 $('setup-skip').addEventListener('click',()=>void setupAction(async()=>{
+  if(setupStep!==1){await goStep(setupStep+1);return;}
   if(!discardDraft())return;clearCredentialInputs();draw(await message({type:'config'}));await goStep(2);
 }));
 $('setup-next').addEventListener('click',()=>{
-  if(setupStep===1){$<HTMLFormElement>('settings-form').requestSubmit();return;}
+  if(setupStep===1&&!reviewMode){$<HTMLFormElement>('settings-form').requestSubmit();return;}
   void setupAction(async()=>{
-    if(setupStep===0){await message({type:'setUiLanguage',uiLanguage:ui.value});await goStep(1);}
-    else{stopTest();draw(await message({type:'completeOnboarding'}));status('save-status','设置完成，可以开始使用 Lingo。');window.scrollTo(0,0);document.querySelector<HTMLElement>('.page-head h2')!.setAttribute('tabindex','-1');document.querySelector<HTMLElement>('.page-head h2')!.focus();}
+    if(setupStep===0){if(!reviewMode)await message({type:'setUiLanguage',uiLanguage:ui.value});await goStep(1);}
+    else if(setupStep===5)await finishGuide();
+    else{if(setupStep===3)await writingGuide.save();await goStep(setupStep+1);}
   });
 });
+async function finishGuide(){
+  stopTest();const reviewing=reviewMode;
+  if(!reviewMode){const c=await message({type:introMode?'dismissWritingIntro':'completeOnboarding'});setupComplete=c.onboardingComplete;}
+  introMode=false;reviewMode=false;onboarding=false;renderSetup();updateDirty();if(!reviewing)status('save-status','设置完成，可以开始使用 Lingo。');history.replaceState(null,'','#'+settingsTab);
+  window.scrollTo(0,0);const heading=document.querySelector<HTMLElement>('.page-head h2')!;heading.tabIndex=-1;heading.focus();
+}
+for(const button of document.querySelectorAll<HTMLElement>('[data-guide-settings]'))button.addEventListener('click',()=>void setupAction(async()=>{await finishGuide();chooseTab('writing');const section=$(button.dataset.guideSettings!);section.tabIndex=-1;section.scrollIntoView({block:'start'});section.focus({preventScroll:true});}));
+$('guide-connection').addEventListener('click',()=>void setupAction(async()=>{await finishGuide();chooseTab('general');$('service-title').tabIndex=-1;$('service-title').focus();}));
 void load().catch(e => {document.querySelector<HTMLElement>('.settings-layout')!.hidden=false;status('save-status', e.message, true);});
 async function saveConnection(activate=true):Promise<boolean> {
   const b=$<HTMLButtonElement>('save-settings'),form=$('settings-form');b.disabled=true;form.inert=true;$('setup-nav').inert=true;stopTest();
@@ -192,7 +255,7 @@ async function sites() {
   const p = await chrome.permissions.getAll();
   const c = await message({type:'config'});
   const origins = (p.origins || []).filter(x => /^https?:/.test(x) && x !== 'https://api.openai.com/*' && !(c.apiOrigins || []).includes(x));
-  const all = origins.includes('https://*/*') && origins.includes('http://*/*'); allGranted = all;
+  const all = origins.includes('https://*/*') && origins.includes('http://*/*'); allGranted = all;anySiteGranted=origins.length>0;updateGuideReadiness();
   drawSitePermission();
   $('permission-summary').textContent = all ? '已授权所有普通网页 · 划词即可使用' : origins.length ? '已授权部分站点 · 可开启所有普通网页' : '还差一步：授权网站后，划词才会自动出现入口';
   $('sites').replaceChildren();
@@ -237,10 +300,14 @@ $('delete-profile').addEventListener('click',async()=>{
  try{stopTest();clearCredentialInputs();draw(await message({type:'deleteProfile',profileId}));status('save-status','已删除配置及 Key。');}catch(e){status('save-status',(e as Error).message,true);}
 });
 
-$('setup-restart').addEventListener('click',()=>void setupAction(async()=>{stopTest();const c=await message({type:'restartOnboarding'});setupComplete=false;onboarding=true;setupStep=c.onboardingStep;renderSetup();$('setup-title').focus();$('setup-scroll').scrollTop=0;}));
+$('setup-restart').addEventListener('click',()=>void setupAction(async()=>{
+  stopTest();introMode=false;reviewMode=setupComplete;
+  if(reviewMode)setupStep=0;else{const c=await message({type:'restartOnboarding'});setupStep=c.onboardingStep;}
+  onboarding=true;renderSetup();$('setup-title').focus();$('setup-scroll').scrollTop=0;
+}));
 
 function dismissSetup(){void setupAction(async()=>{
-  stopTest();await message({type:'dismissOnboarding'});onboarding=false;
+  stopTest();if(!reviewMode)await message({type:introMode?'dismissWritingIntro':'dismissOnboarding'});introMode=false;reviewMode=false;onboarding=false;history.replaceState(null,'','#'+settingsTab);
   key.type='password';$('reveal').textContent='显示';renderSetup();updateDirty();
   const heading=document.querySelector<HTMLElement>('.page-head h2')!;heading.tabIndex=-1;heading.focus();
 });}

@@ -1,0 +1,76 @@
+import {chromium} from 'playwright';
+import {mkdtemp,cp,readFile,writeFile,rm,mkdir} from 'node:fs/promises';
+import {tmpdir} from 'node:os';import path from 'node:path';import http from 'node:http';import assert from 'node:assert/strict';
+const temp=await mkdtemp(path.join(tmpdir(),'lingo-inline-')),ext=path.join(temp,'extension'),evidence=path.resolve('../evidence/quiet-accept/hover');await mkdir(evidence,{recursive:true});
+await cp('dist',ext,{recursive:true});const manifest=JSON.parse(await readFile(path.join(ext,'manifest.json'),'utf8'));manifest.host_permissions.push('http://127.0.0.1/*');await writeFile(path.join(ext,'manifest.json'),JSON.stringify(manifest));
+const server=http.createServer((req,res)=>{res.setHeader('Content-Type','text/html;charset=utf-8');res.end(`<!doctype html><style>body{margin:50px;font:16px sans-serif}textarea{display:block;width:720px;height:170px;padding:16px;border:3px solid #aaa;line-height:28px;font:18px/28px Arial;margin-bottom:55px;resize:both}input{display:block;margin:25px 0;padding:10px;font:18px/28px Arial}#scroller{height:230px;width:500px;overflow:auto;border:3px solid #aaa}#scroller textarea{margin-top:90px}#tail{height:900px}</style><textarea id="a">I has a plan.\nShe go to school.</textarea><input id="b" value="He have a book."><input id="secret" type="password" value="never send"><textarea id="readonly" readonly>I has secrets.</textarea><div class="CodeMirror"><textarea id="framework">I has a plan.</textarea></div><div contenteditable id="rich">I has a plan.</div><div id="scroller"><textarea id="nested">I has a plan.</textarea><div style="height:400px"></div></div><div id="tail"></div>`);});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`http://127.0.0.1:${server.address().port}`;
+const checks=[],errors=[],calls=[];let ctx,output,behavior='ok',release;
+const item=(source,replacement,extra={})=>({source,replacement,before:'',after:'',reason:'仅修改语法。',kind:'grammar',...extra});
+const check=name=>{checks.push(name);console.log('PASS',name)};
+try{
+ ctx=await chromium.launchPersistentContext(path.join(temp,'profile'),{channel:'chromium',locale:'zh-CN',headless:true,args:[`--disable-extensions-except=${ext}`,`--load-extension=${ext}`],viewport:{width:1100,height:900}});
+ await ctx.route('https://api.openai.com/v1/responses',async route=>{
+  const body=route.request().postDataJSON();calls.push(body);const mode=behavior,text=typeof output==='string'?output:JSON.stringify({issues:output});
+  if(mode==='held')await new Promise(r=>release=r);
+  const events=[{type:'response.output_text.delta',delta:text}];if(mode!=='partial')events.push({type:'response.completed',response:{status:'completed'}});
+  await route.fulfill({contentType:'text/event-stream',body:events.map(e=>'data: '+JSON.stringify(e)+'\n\n').join('')}).catch(()=>{});
+ });
+ const worker=ctx.serviceWorkers()[0]||await ctx.waitForEvent('serviceworker');
+ const settings=await ctx.newPage();await settings.goto(`chrome-extension://${worker.url().split('/')[2]}/options.html`);
+ const message=data=>settings.evaluate(data=>chrome.runtime.sendMessage(data),data);
+ await message({type:'completeOnboarding'});const config=await message({type:'config'});
+ const saved=await message({type:'save',...config.settings,uiLanguage:'zh-CN',storageMode:'session',dataConsent:true,key:'fixture-inline-only-key'});assert(!saved.error);
+ const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(url);
+ const host=page.locator('#lingo-inline-root'),a=page.locator('#a');
+ const focus=async(id='a')=>{await page.locator('#'+id).focus();await host.locator('.trigger').waitFor();};
+ const open=async()=>{if(!await host.locator('.popover').isVisible())await host.locator('.trigger').click();};
+ const waitDone=()=>host.locator('.trigger[aria-busy=false]').waitFor();
+ const run=async(items,text,id='a',showList=true)=>{behavior='ok';output=items;if(text!==undefined)await page.locator('#'+id).fill(text);await focus(id);await open();await host.locator('.run').click();await waitDone();if(showList)await open();};
+ const select=async(index=0)=>{await open();await host.locator('.issue').nth(index).click();};
+ const pause=ms=>page.waitForTimeout(ms);
+ const moveAway=async()=>{await page.mouse.move(1050,25);await host.locator('.popover').waitFor({state:'hidden'});};
+ const hover=async(index=0)=>{let r;for(let attempt=0;attempt<10&&!r;attempt++){r=await host.locator('.mark').nth(index).boundingBox();if(!r)await pause(20);}assert(r);await page.mouse.move(r.x+r.width/2,r.y-5);await host.locator('.detail').waitFor({state:'visible'});return r;};
+ const draft='I has a plan for tomorrow. She go to school every day. It is really very useful.';
+ const repairs=[item('I has a plan for tomorrow.','I have a plan for tomorrow.'),item('She go to school every day.','She goes to school every day.'),item('It is really very useful.','It is very useful.',{kind:'style'})];
+ await focus();await open();await host.locator('.include-style').check();
+ // A long, scrolled field exercises pinned word cards independently of transient hover cards.
+ const prefix='A clear sentence.\n'.repeat(15),suffix='Another complete paragraph.\n'.repeat(40),longDraft=prefix+draft+'\n'+suffix;
+ for(const entry of ['click','hover']){
+   await page.evaluate(()=>window.scrollTo(0,0));await a.evaluate(e=>e.style.top='0');await run(repairs,longDraft,'a',false);if(await host.locator('.popover').isVisible())await host.locator('.close').click();await a.evaluate(e=>e.scrollTop=15*28);await pause(250);assert.equal(await host.locator('.mark').count(),3);
+   const selectMark=async index=>{const rect=await hover(index);if(entry==='click')await page.mouse.click(rect.x+rect.width/2,rect.y-5);};
+   await selectMark(0);const requestCount=calls.length,scroll=await a.evaluate(e=>e.scrollTop);await host.locator('.accept').click();await pause(300);
+   assert.equal(await a.inputValue(),longDraft.replace('has','have'));assert.equal(await host.locator('.popover').isVisible(),false,entry+' acceptance must not open the overview');assert.equal(await host.locator('.trigger').getAttribute('aria-expanded'),'false');assert.equal(await host.locator('.mark').count(),2);assert.equal(await a.evaluate(e=>e.scrollTop),scroll);assert.equal(await a.evaluate(e=>document.activeElement===e),true);
+   check(entry+' acceptance in long scrolled text closes the card, removes the repaired underline and preserves other marks, focus and scroll');
+   await selectMark(1);assert.equal(await host.locator('.detail .category').textContent(),'表达优化 · 可选');await host.locator('.accept').click();await pause(300);assert.equal(await host.locator('.popover').isVisible(),false);assert.equal(await host.locator('.mark').count(),1);assert.equal(await a.inputValue(),longDraft.replace('has','have').replace('really ',''));
+   await selectMark(0);await host.locator('.accept').click();await pause(300);assert.equal(await host.locator('.popover').isVisible(),false);assert.equal(await host.locator('.mark').count(),0);assert.equal(await a.inputValue(),longDraft.replace('has','have').replace('really ','').replace(' go ',' goes '));assert.equal(calls.length,requestCount);
+   if(entry==='click')await page.screenshot({path:path.join(evidence,'accepted-without-list.png')});
+   await open();await host.locator('.undo').click();assert.equal(await a.inputValue(),longDraft.replace('has','have').replace('really ',''));assert.equal(await host.locator('.mark').count(),1);await host.locator('.close').click();assert.equal(calls.length,requestCount);
+   check(entry+' green and final red accepts stay closed without requests; explicit reopening still supports undo');
+ }
+ await run(repairs,draft,'a',false);assert.equal(await host.locator('.mark').count(),3);
+ assert.deepEqual(await host.locator('.mark').evaluateAll(els=>els.map(e=>Number(e.dataset.key.split(':')[1]))),[draft.indexOf('has'),draft.indexOf('go'),draft.indexOf('really')]);
+ check('broad model excerpts underline only has, go and really, without unchanged context');
+ const caret=await a.evaluate(e=>({start:e.selectionStart,end:e.selectionEnd}));const requests=calls.length;
+ let mark=await host.locator('.mark').first().boundingBox();await page.mouse.move(mark.x+mark.width/2,mark.y-5);await pause(80);assert.equal(await host.locator('.popover').isVisible(),false);await host.locator('.detail').waitFor();
+ assert.equal(await host.locator('.change del').textContent(),'has');assert.equal(await host.locator('.change ins').textContent(),'have');assert.equal(await a.evaluate(e=>document.activeElement===e),true);assert.deepEqual(await a.evaluate(e=>({start:e.selectionStart,end:e.selectionEnd})),caret);assert.equal(calls.length,requests);
+ check('hover opens the exact word suggestion after a brief delay without clicking, moving the caret or calling the API');
+ await host.locator('.accept').hover();await pause(350);assert.equal(await host.locator('.detail').isVisible(),true);
+ await page.screenshot({path:path.join(evidence,'hover-word-card.png')});check('moving from underline across the gap into the card keeps it open');
+ await moveAway();assert.equal(await a.evaluate(e=>document.activeElement===e),true);check('leaving the word and card closes the hover card without changing focus');
+ await hover(1);assert.equal(await host.locator('.change del').textContent(),'go');assert.equal(await host.locator('.change ins').textContent(),'goes');await moveAway();await hover(2);assert.equal(await host.locator('.change del').textContent(),'really');assert.equal(await host.locator('.change ins').textContent(),'删除');assert.equal(await host.locator('.detail .category').textContent(),'表达优化 · 可选');await moveAway();check('red and green words show their own localized correction or deletion');
+ mark=await host.locator('.mark').first().boundingBox();await page.mouse.move(mark.x+5,mark.y-5);await pause(60);await page.mouse.move(1050,25);await pause(300);assert.equal(await host.locator('.popover').isVisible(),false);check('passing quickly over a word does not flash a card');
+ await hover();await page.mouse.move(mark.x+1,mark.y-5);await page.mouse.down();await page.mouse.move(mark.x+mark.width-1,mark.y-5,{steps:5});await page.mouse.up();await pause(300);assert.equal(await host.locator('.popover').isVisible(),false);assert(await a.evaluate(e=>e.selectionStart!==e.selectionEnd));await a.press('ArrowRight');check('hover does not intercept native dragging or text selection');
+ await hover();await page.mouse.click(mark.x+mark.width/2,mark.y-5);await page.mouse.move(1050,25);await pause(300);assert.equal(await host.locator('.detail').isVisible(),true);await host.locator('.close').click();check('clicking pins a suggestion so existing click controls remain available');
+ await hover();await a.press('Escape');assert.equal(await host.locator('.popover').isVisible(),false);await page.mouse.move(1050,25);check('Escape dismisses a hover suggestion');
+ await hover();await host.locator('.accept').click();assert.equal(await a.inputValue(),draft.replace('has','have'));assert.equal(await host.locator('.popover').isVisible(),false);assert.equal(await host.locator('.mark').count(),2);await open();await host.locator('.undo').click();await host.locator('.close').click();assert.equal(await a.inputValue(),draft);assert.equal(await host.locator('.mark').count(),3);check('accept from hover applies the exact validated repair and native undo restores the source');
+ await a.press('ArrowRight');await hover(1);await host.locator('.ignore').click();assert.equal(await a.inputValue(),draft);assert.equal(await host.locator('.mark').count(),2);assert.equal(await host.locator('.popover').isVisible(),false);assert.equal(calls.length,requests);check('ignore from hover clears only that suggestion, with no text edit or new API call');
+ await run(repairs,draft,'a',false);mark=await host.locator('.mark').first().boundingBox();await page.mouse.move(mark.x+5,mark.y-5);await a.fill('A new draft.');await pause(300);assert.equal(await host.locator('.popover').isVisible(),false);assert.equal(await host.locator('.mark').count(),0);check('typing cancels a delayed hover and clears stale suggestions');
+ await run(repairs,draft,'a',false);await hover();await a.dispatchEvent('compositionstart');assert.equal(await host.locator('.popover').isVisible(),false);await a.dispatchEvent('compositionend');check('IME composition dismisses the hover card without interfering with input');
+ await run([item('He have two book.','He has two books.')],'He have two book.','a',false);assert.equal(await host.locator('.mark').count(),2);await hover(1);assert.equal(await host.locator('.change del').textContent(),'book');assert.equal(await host.locator('.change ins').textContent(),'books');assert((await host.locator('.related').textContent()).includes('have → has'));assert((await host.locator('.linked-note').textContent()).includes('2'));await host.locator('.accept').click();assert.equal(await a.inputValue(),'He has two books.');check('linked corrections have separate word marks, show all related edits, and apply atomically');
+ await run([item('I have book.','I have a book.')],'I have book.','a',false);assert.equal(await host.locator('.mark').count(),1);mark=await host.locator('.mark').boundingBox();assert(mark.width<=6.5);await hover();assert.equal(await host.locator('.change del').textContent(),'插入');assert.equal(await host.locator('.change ins').textContent(),'a');await host.locator('.accept').click();assert.equal(await a.inputValue(),'I have a book.');check('insertions use a small position marker instead of underlining an unchanged word');
+ await run(repairs,draft,'a',false);await hover();await a.evaluate(e=>e.style.top='35px');await page.evaluate(()=>window.scrollBy(0,15));await host.locator('.popover').waitFor({state:'hidden'});check('scrolling closes a transient card instead of leaving it attached to an old position');
+ await page.setViewportSize({width:360,height:640});await a.evaluate(e=>{e.style.width='260px';e.style.top='0'});await run([item('I has a plan.','I have a plan.')],'I has a plan.','a',false);await hover();const card=await host.locator('.popover').boundingBox();assert(card.x>=0&&card.x+card.width<=361&&card.y>=0&&card.y+card.height<=641);check('hover card stays inside a narrow viewport');
+ assert.deepEqual(errors,[]);check('no page runtime errors');
+ await writeFile(path.join(evidence,'results.json'),JSON.stringify({version:manifest.version_name,checks,requests:calls.length,mockedAPI:true},null,2));
+}catch(error){const page=ctx?.pages().at(-1);if(page){await page.screenshot({path:path.join(evidence,'failure.png'),timeout:5000}).catch(()=>{});console.log('DEBUG',await page.evaluate(()=>{const root=document.querySelector('#lingo-inline-root')?.shadowRoot;return {checked:root?.querySelector('.include-style')?.checked,disabled:root?.querySelector('.include-style')?.disabled,popup:root?.querySelector('.popover')?.hidden,status:root?.querySelector('.status')?.textContent,active:document.activeElement?.id};}).catch(()=>null),errors);}throw error;}finally{release?.();await ctx?.close();await new Promise(r=>server.close(r));await rm(temp,{recursive:true,force:true});}

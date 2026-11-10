@@ -3,7 +3,7 @@ import json, zipfile, hashlib, re, sys, struct
 root=Path(__file__).resolve().parents[1]
 dist=root/'dist'; manifest=json.loads((dist/'manifest.json').read_text()); version=manifest['version']
 development = '--development' in sys.argv
-assert development or 'dev' not in manifest.get('version_name',''), '开发预览不可作为正式上架包；使用 --development 參數'
+assert development or manifest.get('version_name',version)==version, '预览版本不可作为正式上架包；使用 --development 参数'
 args=[x for x in sys.argv[1:] if x != '--development']
 output=Path(args[0]) if args else root/'store'/'packages'
 output.mkdir(parents=True,exist_ok=True);label=manifest.get('version_name',version) if development else version

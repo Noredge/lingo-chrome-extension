@@ -1,3 +1,4 @@
+import { buildLookupRequest, validateLookupText } from './lookup';
 export const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
 export const DEFAULTS = { baseUrl: DEFAULT_BASE_URL, uiLanguage: 'auto', model: 'gpt-6-luna', language: '简体中文', languages: ['简体中文', 'English'], blockedHosts: [] as string[] };
 export const LANGUAGES = ['简体中文', '繁體中文', 'English', '日本語', '한국어', 'Français', 'Deutsch', 'Español', 'Português（葡萄牙语）', 'Italiano（意大利语）', 'Nederlands（荷兰语）', 'Русский（俄语）', 'Українська（乌克兰语）', 'Polski（波兰语）', 'Čeština（捷克语）', 'Svenska（瑞典语）', 'Dansk（丹麦语）', 'Norsk（挪威语）', 'Suomi（芬兰语）', 'Ελληνικά（希腊语）', 'Türkçe（土耳其语）', 'العربية（阿拉伯语）', 'עברית（希伯来语）', 'فارسی（波斯语）', 'हिन्दी（印地语）', 'বাংলা（孟加拉语）', 'ไทย（泰语）', 'Tiếng Việt（越南语）', 'Bahasa Indonesia（印尼语）', 'Bahasa Melayu（马来语）', 'Filipino（菲律宾语）'];
@@ -9,7 +10,7 @@ export function languagePreferences(saved: { language?: unknown; languages?: unk
   if (!languages.includes(language)) languages.unshift(language);
   return { language, languages };
 }
-export const MODES = { translate: '翻译', proofread: '校对', natural: '自然', professional: '专业', friendly: '友好', concise: '简洁', precise: '精准', custom: '自定义' } as const;
+export const MODES = { translate: '翻译', proofread: '校对', natural: '自然', professional: '专业', friendly: '友好', concise: '简洁', precise: '精准', custom: '自定义', lookup: '单词与短语' } as const;
 export type Mode = keyof typeof MODES;
 export type Settings = typeof DEFAULTS;
 export type Task = { id: string; text: string; mode: Mode; language: string; instruction?: string };
@@ -20,10 +21,12 @@ export function validateTask(t: Task) {
   if (!(Object.prototype.hasOwnProperty.call(MODES, t.mode))) throw new Error('不支持的操作。');
   if (typeof t.language !== 'string' || !LANGUAGES.includes(t.language)) throw new Error('请选择支持的目标语言。');
   if (t.mode === 'custom' && (typeof t.instruction !== 'string' || !t.instruction.trim() || t.instruction.length > 1000)) throw new Error('请填写 1–1,000 个字符的修改要求。');
+  if (t.mode === 'lookup') validateLookupText(t.text);
 }
 export function buildRequest(task: Task, model: string) {
   validateTask(task);
-  const rules: Record<Mode, string> = {
+  if (task.mode === 'lookup') return buildLookupRequest(task.text, task.language, model);
+  const rules: Record<Exclude<Mode,'lookup'>, string> = {
     translate: `Translate the source text into ${task.language}. Preserve meaning, tone, names, numbers and paragraph breaks. If it is already in that language, return it unchanged.`,
     proofread: 'Correct only spelling, grammar and punctuation, preserving language, structure and wording where possible. If there are no errors, return the source text exactly unchanged.',
     natural: 'Rewrite in natural, idiomatic language. Preserve the original language and meaning.',

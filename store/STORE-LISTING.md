@@ -1,63 +1,73 @@
-# Lingo 1.0.0 · 商店文案
+# Lingo 1.1.0 · 商店文案
 
-发布者：Noredge · 支持：hongbin.lei98@gmail.com · 分发：Public（公开）
+状态：发布准备稿，尚未提交。以下分别粘贴到对应商店语言；不把说明标题放进描述。
 
 ## 简体中文
 
-名称：Lingo · 划词翻译与写作
+**名称**：Lingo · Translate & Write
 
-简短说明：划词翻译、校对与改写，支持 PDF 和通用侧边栏。三语界面，自备 Responses API Key，用量另计。
+**简短说明**：自备 API 的翻译与写作助手：划词翻译、可选自动检查、红绿划线建议、个人词典与继续调整。
 
-Lingo 把翻译和写作工具放在文字旁边。选中文字，点击「文」即可翻译，再按需校对、调整语气或输入自定义要求。浮窗可移动和缩放；在支持的输入框及简单富文本编辑器中，可以确认后替换选区，保留原生撤销。
+**详细说明**：
+Lingo 把翻译与写作工具放在文字旁边。选中文字即可翻译、校对或改写；用自己的 OpenAI 或 Responses API 相容服务，选择适合自己的模型。
 
-在 Chrome 原生 PDF 阅读器中，选中文字后右键“用 Lingo 翻译”，即可在侧边栏查看结果。Google Docs 和其他不支持浮窗的页面，可从插件菜单打开同一侧边栏，粘贴原文进行翻译和修改，再复制回文档。侧边栏原文框默认展开，可随时编辑。扫描型 PDF 需要先 OCR；Lingo 不自动读取或修改 Google Docs，也不修改 PDF 文件。
+1.1 新增写作功能：
+- 行内红线提示语法、拼写和上下文用词问题；可选绿线提示表达改进。悬停查看建议，由你决定接受或忽略。
+- 可选自动检查：为已授权网站设置全局默认或网站例外，输入停顿后检查。默认关闭；开启后会发送当前支持编辑区的全文。
+- 个人词典：保存姓名、品牌和专业词，减少重复拼写误报。语法与上下文用词仍会检查。
+- 自定义改写预设：保存常用语气与要求。结果／对比视图帮助查看变化；继续调整可基于当前结果提出新要求，固定高度的对话区默认显示最新要求与回答，向上滚动回看历史，复制与替换使用最新结果。
+- 单词与短语模式：查看词性、释义、使用场景、搭配和双语例句。
+- 六步首次引导和可跳过的升级介绍，保留已有设置；本地练习无需 API。设置中的「介绍说明」可随时查阅。
 
-界面支持简体中文、繁體中文与 English，默认跟随浏览器。翻译目标语言独立设置，可从 31 种语言中选择常用列表。
+网页浮窗可拖动、缩放，原文可编辑。普通文本框和简单富文本支持明确确认后的替换及撤销。完整建议列表可定位原文并连续处理。PDF 可通过右键选区交给侧边栏；Google Docs 等复杂编辑器使用粘贴、处理、复制流程，不提供直接替换。
 
-首次设置引导可中途退出。使用自己的 OpenAI 或 Responses API 相容服务，填写 Base URL、Key、模型，保存并测试连接。可保存多套配置，在设置中手动切换，一次启用一套，失败不自动切换。仅支持 Responses API，不包含服务商账户或 API 额度；用量另行计费。
+界面支持简体中文、繁體中文和 English，翻译目标语言独立选择。Enter 接受建议或发送继续调整，Shift+Enter 在调整框换行。
 
-只在主动请求翻译、写作或测试连接时发送原文和必要指令。打开空白侧边栏、输入文字或单独保存设置不会调用 API。不自动上传整页、邮件、完整 PDF 或浏览历史；无广告、分析脚本或开发者中转服务。
-
-Key 与服务地址绑定，默认本机加密保存并免解锁，也可选择密码加密或仅本次会话。自动解密能力在同一浏览器配置中，不等同于系统钥匙串。服务端数据保留由所选服务商决定。请核对生成结果。
-
-支持：hongbin.lei98@gmail.com，请勿发送 Key、密码或私人文档。Lingo 是独立工具，并非 Google 或 OpenAI 官方产品。
+需要 Chrome 120+、有效 API Key、兼容模型和额度。扩展免费安装，API 用量由所选服务商另行收费。不会提供内置 API 额度。请求直接发送到你配置的服务，可能包含邮件草稿等私人通信；开启自动检查前请确认数据目的地。开发者不运营中转服务器，不加入广告或分析，不保存文字历史。服务商的数据保留以其政策为准。生成建议可能不准确，请确认后应用。
 
 ## 繁體中文
 
-名稱：Lingo · 劃詞翻譯與寫作
+**名稱**：Lingo · Translate & Write
 
-簡短說明：劃詞翻譯、校對與改寫，支援 PDF 和通用側邊欄。三語介面，自備 Responses API Key，用量另計。
+**簡短說明**：自備 API 的翻譯與寫作助手：劃詞翻譯、可選自動檢查、紅綠底線建議、個人詞典與繼續調整。
 
-選取網頁文字後點選「文」，即可翻譯、校對、調整語氣或輸入自訂要求。浮窗可移動和縮放；支援的輸入框與簡單編輯器可確認後替換選取內容，保留原生復原。
+**詳細說明**：
+Lingo 把翻譯與寫作工具放在文字旁。選取文字即可翻譯、校對或改寫，使用自己的 OpenAI 或 Responses API 相容服務與模型。
 
-Chrome 原生 PDF 閱讀器可透過右鍵「用 Lingo 翻譯」開啟側邊欄。Google Docs 和其他不支援浮窗的頁面，可從擴充功能選單開啟同一側邊欄，貼上原文、翻譯或改寫，再複製回文件。原文框預設展開。掃描型 PDF 需先 OCR；不自動讀取或修改 Google Docs，也不修改 PDF 檔案。
+1.1 新增行內紅綠底線與懸停建議、可選自動檢查、個人詞典、自訂改寫預設、結果／對比，以及以目前結果為基礎的「繼續調整」；固定高度對話區預設顯示最新要求與回答，向上捲動回看歷史，複製與替換使用最新結果。單字與片語模式提供詞性、釋義、使用場合、搭配與雙語例句。首次引導包含無需 API 的本機練習；可略過的升級介紹保留原有設定，亦可從設定的「介紹說明」再次查閱。
 
-介面支援簡體中文、繁體中文及 English，可跟隨瀏覽器。翻譯目標語言獨立設定，可從 31 種語言中選擇常用清單。首次設定引導可隨時退出。
+紅線提示語法、拼字及上下文用詞問題；可選綠線提示表達改進。自動檢查預設關閉，可設定已授權網站的全域預設與網站例外。開啟後，進入支援的編輯區或輸入停頓時會傳送目前編輯區全文。個人詞典減少姓名、品牌及專有詞的重複拼字誤報；語法與上下文用詞仍會檢查。
 
-使用自己的 OpenAI 或 Responses API 相容服務，填寫 Base URL、Key、模型，儲存並測試連線。可儲存多套設定並手動切換，一次啟用一套，失敗不自動切換。僅支援 Responses API；不含 API 額度，用量由服務商另行計費。
+浮窗可移動、縮放，原文可編輯。普通文字框及簡單富文字支援確認後替換與復原；完整建議列表可定位原文。PDF 可透過右鍵選區交給側邊欄。Google Docs 等複雜編輯器使用貼上、處理、複製流程，不提供直接替換。介面支援簡體中文、繁體中文及 English，翻譯目標語言獨立設定。
 
-僅在主動翻譯、寫作或測試時傳送原文和必要指令；開啟空白側邊欄、輸入文字或單獨儲存設定不會呼叫 API。不自動上傳整頁、郵件、完整 PDF 或瀏覽紀錄，沒有廣告、分析或開發者中轉服務。
-
-Key 與服務地址綁定，預設本機加密保存、免解鎖，可選密碼加密或僅本次工作階段。自動解密能力同樣存於瀏覽器設定檔，不等同於系統鑰匙圈；服務端資料保留依服務商政策。請核對生成結果。
-
-支援：hongbin.lei98@gmail.com，請勿寄送 Key、密碼或私人文件。Lingo 並非 Google 或 OpenAI 官方產品。
+需要 Chrome 120+、有效 API Key、相容模型及額度。擴充功能免費安裝，API 用量由所選服務商另行收費，沒有內建 API 額度。請求直接傳送至你設定的服務，可能包含郵件草稿等私人通訊；開啟自動檢查前請確認資料目的地。開發者沒有中轉伺服器、廣告、分析或文字歷史。服務商資料保留以其政策為準。請確認建議後再套用。
 
 ## English
 
-Name: Lingo — Translate & Write
+**Name**: Lingo · Translate & Write
 
-Short description: Translate and rewrite selections with a floating panel or sidebar. Bring your own Responses API key; usage billed separately.
+**Short description**: Bring your own API for translation, optional automatic writing checks, inline suggestions, a personal dictionary and refinements.
 
-Select webpage text and click 文 to translate, proofread, adjust tone or give a custom editing instruction. Move and resize the floating panel. Explicitly replace a selection in supported inputs and simple editors, with native undo.
+**Detailed description**:
+Lingo brings translation and writing tools next to your text. Select text to translate, proofread or rewrite using your own OpenAI or Responses API-compatible service and model.
 
-In Chrome's built-in PDF viewer, select text and choose “Translate with Lingo” from the context menu. For Google Docs and other pages without floating-panel support, open the same sidebar from the extension menu, paste text, translate or rewrite, then copy it back. The source editor opens expanded. Scanned PDFs require OCR. Lingo does not automatically read or edit Google Docs or modify PDF files.
+New in 1.1:
+- Word-level red underlines for grammar, spelling and contextual word-use suggestions; optional green underlines for style. Hover to inspect, then accept or dismiss.
+- Optional automatic checks, with a global default for authorized websites and per-site overrides. Off by default. Once enabled, entering a supported editor or pausing after typing sends its entire current text for checking.
+- A personal dictionary for names, brands and specialist words. Grammar and contextual word-use checks still apply.
+- Custom rewriting presets, result/comparison views, and an expandable rewriting conversation based on the latest result. See the latest request and answer by default, scroll upward for history, and copy or replace with the latest complete result.
+- Words and phrases: parts of speech, meanings, usage, collocations and bilingual examples.
+- A six-step setup guide, a local practice exercise with no API calls, and a skippable upgrade introduction that preserves existing settings. Revisit any topic through Introduction in settings.
 
-Choose English, Simplified Chinese or Traditional Chinese for the interface, or follow your browser. Translation targets are separate, with a configurable shortlist from 31 languages. First-run setup can be dismissed and resumed.
+Move or resize the webpage panel and edit the source. Ordinary text fields and simple rich text support explicitly confirmed replacement and undo. The full suggestion list can locate the original text and remain open for successive corrections. In text-based PDFs, use the selection context menu and sidebar. For Google Docs and complex editors, paste into the sidebar and copy the result; direct replacement is not supported.
 
-Connect your own OpenAI or Responses API-compatible service with a Base URL, key and model. Save and test the connection, keep multiple named profiles, and manually choose one active profile. Failures never switch providers automatically. Only Responses API is supported. No provider account or API credits are included; usage is billed separately.
+English, Simplified Chinese and Traditional Chinese interfaces are available. Translation targets are independent. Use Enter to accept a suggestion or send a refinement, and Shift+Enter for a new line in the refinement composer.
 
-Only explicit translation, writing or connection-test actions send source text and necessary instructions. Opening an empty sidebar, typing text or saving preferences alone makes no API request. No automatic full-page, email, whole-PDF or browsing-history upload; no ads, analytics or developer relay.
+Requires Chrome 120+, a valid API key, compatible model and available quota. The extension is free to install; API usage is billed separately by your provider. No API credits are included. Requests go directly to the configured service and may include private communications such as email drafts. Check the destination before enabling automatic checks. The developer operates no relay and includes no advertising, analytics or text history. Provider retention policies apply. Review generated suggestions before using them.
 
-Keys bind to the service address and are encrypted locally by default without a password prompt. Password encryption and session-only storage are optional. Automatic decryption capability is in the same browser profile, not an OS keychain. Provider policies govern server-side retention. Review generated text before use.
+## 支持与链接
 
-Support: hongbin.lei98@gmail.com. Never send keys, passwords or private documents. Independent software, not an official Google or OpenAI product.
+- 隐私政策：https://noredge.github.io/lingo-chrome-extension/privacy.html
+- 支持：hongbin.lei98@gmail.com
+- 源码：https://github.com/Noredge/lingo-chrome-extension
+- 现有商店条目：https://chromewebstore.google.com/detail/imofdjefcigddmfpoifioiejgkfnomip

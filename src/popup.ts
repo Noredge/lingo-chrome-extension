@@ -16,6 +16,7 @@ async function refresh() {
   [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   const c = await chrome.runtime.sendMessage({ type: 'config' }); setLanguage(c.settings.uiLanguage);
   $('key-state').textContent = !c.dataConsent ? '请在设置中确认数据处理说明' : c.hasKey ? `Key 已就绪 · ${c.settings.model}` : c.hasVault ? 'Key 已锁定，请打开设置解锁' : '首次使用：请在设置中填写 API Key';
+  $('writing-intro-notice').hidden=!c.onboardingComplete||c.writingIntroSeen;
   const sidebarOnly=prefersSidebar(tab?.url||'');
   $('open').hidden=sidebarOnly;
   $('open-panel').classList.toggle('primary',sidebarOnly);
@@ -50,3 +51,9 @@ $('enable').addEventListener('click', async () => {
   } catch { status('此页面无法注入扩展，请刷新或换一个普通网页。', true); }
 });
 $('toggle').addEventListener('click', async () => { const r = await chrome.runtime.sendMessage({ type: 'toggleSite' }); if (r.error) status(r.error, true); else { await refresh(); status('站点设置已更新。'); } });
+
+$('open-writing-intro').addEventListener('click',()=>{void chrome.tabs.create({url:chrome.runtime.getURL('options.html#writing-guide')}).then(()=>window.close());});
+$('skip-writing-intro').addEventListener('click',async()=>{
+  try{const result=await chrome.runtime.sendMessage({type:'dismissWritingIntro'});if(result.error)throw new Error(result.error);$('writing-intro-notice').hidden=true;}
+  catch(e){status((e as Error).message,true);}
+});

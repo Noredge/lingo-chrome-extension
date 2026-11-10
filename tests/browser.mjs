@@ -67,7 +67,7 @@ try{
  await host.getByRole('button',{name:'专业',exact:true}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).input).source_text,'The quiet moments are often the ones we remember best.');check('rewrite receives original text instead of translation');
  const count=calls.length;await host.getByRole('button',{name:'专业',exact:true}).click();await page.waitForTimeout(100);assert.equal(calls.length,count);check('same-selection completed results reused without duplicate request');
  await host.getByLabel('自定义修改要求').fill('More polite');await host.getByRole('button',{name:'执行自定义改写'}).click();await done('write');assert.equal(JSON.parse(calls.at(-1).input).editing_request,'More polite');check('custom instruction stays separate from source');
- await host.getByLabel('翻译目标语言').selectOption('English');await done();assert.match(calls.at(-1).instructions,/into English/);check('target language changes trigger translation');await close();
+ await host.getByLabel('翻译目标语言').press('e');assert.equal(await host.getByLabel('翻译目标语言').inputValue(),'English');await done();assert.match(calls.at(-1).instructions,/into English/);check('target language changes trigger translation');await close();
  assert.deepEqual(await options.getByLabel('浮窗默认目标语言').locator('option').allTextContents(),['简体中文','English']);
  await options.getByLabel('添加目标语言',{exact:true}).selectOption('ไทย（泰语）');await options.getByRole('button',{name:'添加到浮窗',exact:true}).click();
  await options.getByRole('button',{name:'移除 English',exact:true}).click();
@@ -86,6 +86,8 @@ try{
  await host.getByRole('button',{name:'专业',exact:true}).click();await done('write');
  const stable=await host.locator('.panel').boundingBox();assert.deepEqual(stable,sized);assert.equal(await host.locator('.source-text').textContent(),sourceBefore);
  check('drag and resize retain source selection; generated content does not move or resize manual layout');
+ // Give each edge enough viewport space now that the source editor is expanded.
+ await drag('.resize-handle[data-edge=s]',0,500-stable.height);
  const beforeEdges=await host.locator('.panel').boundingBox();await drag('.drag-handle',200-beforeEdges.x,150-beforeEdges.y);
  for(const edge of ['n','s','e','w','ne','nw','se','sw']){
   const before=await host.locator('.panel').boundingBox();
@@ -120,13 +122,37 @@ try{
  check('permission onboarding reflects actual grants and offers explicit all-sites action');
  await selectInput('#editor',8,34);await done();await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');
  await drag('.drag-handle',100,0);await drag('.resize-handle[data-edge=se]',80,20);
+ assert.equal(await host.locator('[data-view=result]').getAttribute('aria-pressed'),'true');
+ await host.getByRole('button',{name:'对比',exact:true}).click();
+ assert(await host.locator('.write-diff del').count()>0);assert(await host.locator('.write-diff ins').count()>0);
+ await context.grantPermissions(['clipboard-read','clipboard-write'],{origin:url});await page.bringToFront();
+ await host.locator('.write-actions').getByRole('button',{name:'复制',exact:true}).click();
+ assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'Can you send it to me today? ');
+ check('overlay comparison copy uses only final text');
  await page.screenshot({path:path.join(evidence,'writing.png'),fullPage:true});
  await host.locator('.write-actions').getByRole('button',{name:'替换选中文字',exact:true}).click();
- assert.equal(await page.locator('#editor').inputValue(),'Before. Can you send it to me today? After.');assert.equal(await page.locator('#state').textContent(),'Before. Can you send it to me today? After.');check('textarea replacement changes only original selection and emits native input');
+ assert.equal(await page.locator('#editor').inputValue(),'Before. Can you send it to me today? After.');assert.equal(await page.locator('#state').textContent(),'Before. Can you send it to me today? After.');check('replacement from comparison uses final text, preserves surrounding text and emits native input');
  await page.keyboard.press(process.platform==='darwin'?'Meta+z':'Control+z');assert.equal(await page.locator('#editor').inputValue(),'Before. Can you send me it today? After.');check('native undo restores textarea edit');await close();
  await selectInput('#input',5,18);await done();await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');await host.locator('.write-actions').getByRole('button',{name:'替换选中文字',exact:true}).click();assert.equal(await page.locator('#input').inputValue(),'One. I have a plan. Two.');check('single-line input replaces just selected words');await close();
  await selectInput('#editor',8,34);await done();await page.locator('#editor').evaluate(el=>{el.value+=' User continued typing.';el.dispatchEvent(new Event('input',{bubbles:true}));});
- assert.equal(await host.locator('.translate-actions').getByRole('button',{name:'替换选中文字'}).isDisabled(),true);check('stale source disables replacement while keeping copy');await close();
+ await host.locator('.translate-status').filter({hasText:'原文已变化或选区已失效，请重新划选。'}).waitFor();assert.equal(await host.locator('.translate-actions button').count(),0);assert.equal(await host.locator('.translate-text').textContent(),'');check('stale source invalidates old results and actions');await close();
+ await selectInput('#editor',8,34);await done();await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');
+ await page.locator('#input').evaluate(el=>el.dispatchEvent(new Event('input',{bubbles:true})));
+ await host.getByRole('button',{name:'对比',exact:true}).click();assert(await host.locator('.write-diff').isVisible());
+ check('unrelated page input does not invalidate source or comparison');
+ await page.locator('#editor').evaluate(el=>{el.value+=' Silent programmatic change.';});
+ await host.getByRole('button',{name:'结果',exact:true}).click();await host.locator('.translate-status').filter({hasText:'原文已变化或选区已失效，请重新划选。'}).waitFor();
+ assert.equal(await host.locator('.write-diff').textContent(),'');assert.equal(await host.locator('.write-actions button').count(),0);
+ check('view switch detects silent programmatic source changes before showing old results');await close();
+ await selectRead();await done();await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');await host.getByRole('button',{name:'对比',exact:true}).click();
+ const originalRead=await page.locator('#read').textContent();await page.locator('#read').evaluate(el=>{el.textContent='Updated page text';});
+ await host.locator('.translate-status').filter({hasText:'原文已变化或选区已失效，请重新划选。'}).waitFor();assert.equal(await host.locator('.write-diff').textContent(),'');
+ check('read-only page mutations invalidate visible comparison');await close();await page.locator('#read').evaluate((el,text)=>{el.textContent=text},originalRead);
+ await selectInput('#editor',8,34);await done();await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');
+ await page.locator('#editor').evaluate(el=>el.replaceWith(el.cloneNode(true)));
+ await host.getByRole('button',{name:'对比',exact:true}).click();await host.locator('.translate-status').filter({hasText:'原文已变化或选区已失效，请重新划选。'}).waitFor();
+ assert.equal(await host.locator('.write-actions button').count(),0);check('detached source prevents comparison and application');await close();
+
  await selectRead('#rich-selection');await done();await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');await host.locator('.write-actions').getByRole('button',{name:'替换选中文字'}).click();assert.match((await page.locator('#rich').textContent()).replaceAll('\u00a0',' '),/Hello\. Can you send it to me today\? Thanks\./);assert.equal(await page.locator('#rich b').textContent(),'Hello.');assert.equal(await page.locator('#rich i').textContent(),'Thanks.');check('Gmail-style contenteditable preserves surrounding text and formatting');
  await page.keyboard.press(process.platform==='darwin'?'Meta+z':'Control+z');assert.match(await page.locator('#rich').textContent(),/Can you send me it today/);check('native undo restores rich-text replacement');await close();
  // Gmail selects visual line breaks that Range.toString() does not include.
@@ -138,7 +164,7 @@ try{
  assert.equal(await page.locator('#rich').innerText(),'Hello Alex,\n\nI has reviewed the report and it look good.\n\nReference LINGO-4827');
  check('Gmail line-break boundaries and grammar-only DOM changes retain exact replacement range');await close();
  await selectRead('#rich');await done();await page.locator('#rich').evaluate(el=>{el.firstChild.textContent='Changed greeting';});
- await host.getByRole('button',{name:'校对',exact:true}).click();await done('write');assert.equal(await host.locator('.write-actions').getByRole('button',{name:'替换选中文字'}).isDisabled(),true);check('real rich-text changes still invalidate replacement');await close();
+ const staleCalls=calls.length;await host.getByRole('button',{name:'校对',exact:true}).click();await host.locator('.translate-status').filter({hasText:'原文已变化或选区已失效，请重新划选。'}).waitFor();assert.equal(await host.locator('.write-actions button').count(),0);assert.equal(calls.length,staleCalls);check('real rich-text changes invalidate results and prevent stale requests');await close();
 
  next='401';await selectRead();await host.getByText('API Key 无效或已失效，请在设置中更新。').waitFor();await host.locator('.translate-actions').getByRole('button',{name:'重试'}).click();await done();check('401 error and explicit retry recover');await close();
  next='429';await selectRead();await host.getByText('API 额度不足，请检查 服务账户的余额与用量限制。').waitFor();check('quota failure is explained without leaking server payload');await close();
@@ -177,7 +203,7 @@ try{
  // Simulate Chrome denying access after a content script was already injected.
  const beforeDenied=calls.length;
  await worker.evaluate(()=>{self.auditExecute=chrome.scripting.executeScript;chrome.scripting.executeScript=async()=>{throw new Error('test: host permission removed')}});
- await selectRead();await host.getByText('网站授权已失效，请重新授权，或从扩展菜单临时调用。',{exact:true}).waitFor();assert.equal(calls.length,beforeDenied);check('a request denied by Chrome site-access validation never reaches the API');
+ await selectRead();await host.locator('.translate-status').filter({hasText:'网站授权已失效，请重新授权，或从扩展菜单临时调用。'}).waitFor();assert.equal(await host.locator('.preset-status').textContent(),'网站授权已失效，请重新授权，或从扩展菜单临时调用。');assert.equal(calls.length,beforeDenied);check('a request denied by Chrome site-access validation never reaches the API');
  await worker.evaluate(()=>{chrome.scripting.executeScript=self.auditExecute;delete self.auditExecute});await host.locator('.translate-actions').getByRole('button',{name:'重试',exact:true}).click();await done();check('restored Chrome site access allows explicit retry');await close();
 assert.equal(errors.length,0,errors.join('\n'));check('no uncaught page errors');
  await writeFile(path.join(evidence,'browser-results.json'),JSON.stringify({extensionVersion:manifest.version,browser:await context.browser().version(),checks,limitations:['API responses mocked; no live Key used','Fixture origin pre-authorized in test copy','Gmail-style editor fixture, not logged-in Gmail'],pageErrors:errors},null,2));

@@ -1,4 +1,8 @@
+import {DICTIONARY_KEY,readDictionary,updateDictionary} from './dictionary';
 import { t, setLanguage } from './i18n';
+import {readPresets,updatePresets} from './presets';
+import {INLINE_DEFAULTS_KEY,INLINE_SITE_PREFIX,readInlineDefaults,readInlineOptions,resolveInlineOptions,inlineOrigin} from './inline-preferences';
+import {buildCheckRequest,parseDiagnostics,type CheckTask} from './diagnostics';
 import {prefersSidebar} from './surfaces';
 import { buildRequest, readResponses, apiOrigin, type Task } from './core';
 import {serviceReady,serviceState,publicServiceConfig,serviceAction} from './services';
@@ -68,14 +72,123 @@ chrome.commands.onCommand.addListener((command, tab) => {
   void openSelection(tab.id);
 });
 
+// Preset edits never touch credentials, change the active service, or start/abort API requests.
+let presetQueue = Promise.resolve<unknown>(undefined);
+async function presetSender(sender: chrome.runtime.MessageSender) {
+  if (trusted(sender)) return;
+  if (!sender.tab?.id || !/^https?:/.test(sender.url || '')) throw new Error('未知操作。');
+  const {settings} = await chrome.storage.local.get('settings') as {settings?:{blockedHosts?:string[]}};
+  if (settings?.blockedHosts?.includes(new URL(sender.url!).hostname)) throw new Error('此站点已暂停 Lingo，请从扩展菜单重新启用。');
+  try {
+    await chrome.scripting.executeScript({target:{tabId:sender.tab.id,...(sender.documentId?{documentIds:[sender.documentId]}:{frameIds:[sender.frameId||0]})},func:()=>true});
+  } catch {throw new Error('网站授权已失效，请重新授权，或从扩展菜单临时调用。');}
+}
+let dictionaryQueue=Promise.resolve<unknown>(undefined);
+async function dictionaryState(){await ready;return readDictionary((await chrome.storage.local.get(DICTIONARY_KEY))[DICTIONARY_KEY]);}
+async function notifyDictionary(){
+  await chrome.runtime.sendMessage({type:'dictionaryChanged'}).catch(()=>{});
+  const tabs=await chrome.tabs.query({});
+  await Promise.all(tabs.filter(tab=>tab.id).map(tab=>chrome.tabs.sendMessage(tab.id!,{type:'dictionaryChanged'}).catch(()=>{})));
+}
+let inlineQueue=Promise.resolve<unknown>(undefined);
+const automaticRuns=new Map<AbortController,{origin:string;includeStyle:boolean}>();
+async function effectiveInline(origin:string){
+  const key=INLINE_SITE_PREFIX+origin,stored=await chrome.storage.local.get([INLINE_DEFAULTS_KEY,key]);
+  return {origin,key,...resolveInlineOptions(readInlineDefaults(stored[INLINE_DEFAULTS_KEY]),stored[key])};
+}
+async function inlinePreference(sender:chrome.runtime.MessageSender) {
+  if(!sender.tab?.id||!/^https?:/.test(sender.url||''))throw new Error('未知操作。');
+  return effectiveInline(new URL(sender.url!).origin);
+}
+async function inlineSettings(){
+  const stored=await chrome.storage.local.get(null),defaults=readInlineDefaults(stored[INLINE_DEFAULTS_KEY]);
+  const sites=Object.keys(stored).filter(key=>key.startsWith(INLINE_SITE_PREFIX)).map(key=>({origin:inlineOrigin(key.slice(INLINE_SITE_PREFIX.length)),...readInlineOptions(stored[key])})).sort((a,b)=>a.origin.localeCompare(b.origin));
+  return {defaults,sites};
+}
+async function notifyInline(origin?:string,passive=true){
+  void chrome.runtime.sendMessage({type:'inlineSettingsChanged'}).catch(()=>{});
+  const tabs=await chrome.tabs.query({});
+  await Promise.all(tabs.filter(tab=>tab.id).map(tab=>chrome.tabs.sendMessage(tab.id!,{type:'inlineConfigChanged',origin,passive}).catch(()=>{})));
+  // Preference changes cancel only automatic requests whose effective options changed.
+  for(const [controller,run] of automaticRuns){
+    if(origin&&origin!==run.origin)continue;
+    const prefs=await effectiveInline(run.origin);
+    if(!prefs.autoCheck||prefs.includeStyle!==run.includeStyle)controller.abort();
+  }
+}
+function changeInline(msg:any,origin?:string,passive=true){
+  const operation=inlineQueue.catch(()=>{}).then(async()=>{
+    const stored=await chrome.storage.local.get(INLINE_DEFAULTS_KEY),old=readInlineDefaults(stored[INLINE_DEFAULTS_KEY]);
+    if(passive&&msg.revision!==old.revision)throw new Error('检查设置已在其他窗口更新，请重新载入后再保存。');
+    if(old.revision>=Number.MAX_SAFE_INTEGER)throw new Error('自动检查设置无法读取，未覆盖原有数据。');
+    const next={...old,revision:old.revision+1};
+    if(msg.action==='defaults')Object.assign(next,readInlineOptions(msg));
+    else if(msg.action==='site'){
+      origin=inlineOrigin(origin);const options=readInlineOptions(msg);
+      await chrome.storage.local.set({[INLINE_SITE_PREFIX+origin]:options});
+    }else if(msg.action==='resetSite'){
+      origin=inlineOrigin(origin);await chrome.storage.local.remove(INLINE_SITE_PREFIX+origin);
+    }else throw new Error('未知操作。');
+    await chrome.storage.local.set({[INLINE_DEFAULTS_KEY]:next});
+    await notifyInline(origin,passive);
+    return passive?inlineSettings():effectiveInline(origin!);
+  });inlineQueue=operation;return operation;
+}
+async function presetState() { await ready; return readPresets((await chrome.storage.local.get('rewritePresets')).rewritePresets); }
+async function notifyPresets() {
+  await chrome.runtime.sendMessage({type:'presetsChanged'}).catch(()=>{});
+  const tabs=await chrome.tabs.query({});
+  await Promise.all(tabs.filter(t=>t.id).map(t=>chrome.tabs.sendMessage(t.id!,{type:'presetsChanged'}).catch(()=>{})));
+}
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (sender.id !== chrome.runtime.id) return;
   (async () => {
     if (msg.type === 'config') return publicConfig();
-    if (msg.type === 'options') { await chrome.runtime.openOptionsPage(); return { ok: true }; }
+    if(['inlineConfig','setInlineConfig','resetInlineConfig'].includes(msg.type)) {
+      await ready;await presetSender(sender);await inlineQueue.catch(()=>{});const old=await inlinePreference(sender);
+      if(msg.type==='inlineConfig')return old;
+      return changeInline({...msg,action:msg.type==='resetInlineConfig'?'resetSite':'site'},old.origin,false);
+    }
+    if(msg.type==='dictionaryState'||msg.type==='dictionaryAction'){
+      await ready;await presetSender(sender);
+      if(msg.type==='dictionaryState'){await dictionaryQueue.catch(()=>{});return dictionaryState();}
+      if(msg.action!=='add'&&sender.url?.split(/[?#]/)[0]!==chrome.runtime.getURL('options.html'))throw new Error('此操作只能从扩展设置页执行。');
+      const operation=dictionaryQueue.catch(()=>{}).then(async()=>{
+        const old=await dictionaryState(),next=updateDictionary(old,msg);
+        if(next!==old){await chrome.storage.local.set({[DICTIONARY_KEY]:next});void notifyDictionary();}
+        return next;
+      });dictionaryQueue=operation;return operation;
+    }
+    if (msg.type === 'presetState' || msg.type === 'presetAction') {
+      await ready; await presetSender(sender);
+      if (msg.type === 'presetState') return presetState();
+      const operation=presetQueue.catch(()=>{}).then(async()=>{
+        const next=updatePresets(await presetState(),msg,crypto.randomUUID());
+        await chrome.storage.local.set({rewritePresets:next});void notifyPresets();return next;
+      });
+      presetQueue=operation;return operation;
+    }
+    if (msg.type === 'options') {
+      if(msg.section==='presets'){
+        const url=chrome.runtime.getURL('options.html');
+        const tabs=await chrome.tabs.query({}),existing=tabs.find(t=>t.id&&t.url?.split(/[?#]/)[0]===url);
+        if(existing?.id){
+          const response=await chrome.runtime.sendMessage({type:'navigatePresetSettings',tabId:existing.id}).catch(()=>undefined);
+          if(response?.tabId!==existing.id)await chrome.tabs.update(existing.id,{url:url+'#presets'});
+          await chrome.tabs.update(existing.id,{active:true});await chrome.windows.update(existing.windowId,{focused:true});
+        }else await chrome.tabs.create({url:url+'#presets'});
+      }else await chrome.runtime.openOptionsPage();
+      return { ok: true };
+    }
     if (!trusted(sender)) throw new Error('此操作只能从扩展设置页执行。');
+    if(msg.type==='inlineSettings'){await inlineQueue.catch(()=>{});return inlineSettings();}
+    if(msg.type==='inlineSettingsAction'){if(sender.url?.split(/[?#]/)[0]!==chrome.runtime.getURL('options.html'))throw new Error('此操作只能从扩展设置页执行。');return changeInline(msg,msg.action==='defaults'?undefined:inlineOrigin(msg.origin));}
     if(msg.type === 'serviceConfig')return publicConfig(msg.profileId);
-    if (['save','unlock','lock','deleteKey','createProfile','deleteProfile','activateProfile','setUiLanguage','onboardingProgress','completeOnboarding','restartOnboarding','dismissOnboarding'].includes(msg.type)) return mutateState(() => credentialAction(msg));
+    // Guide navigation changes metadata only; do not abort requests or refresh credentials.
+    if(['onboardingProgress','completeOnboarding','restartOnboarding','dismissOnboarding','writingIntroProgress','dismissWritingIntro'].includes(msg.type)){
+      const operation=stateQueue.catch(()=>{}).then(async()=>{await ready;return serviceAction(msg);});stateQueue=operation;return operation;
+    }
+    if (['save','unlock','lock','deleteKey','createProfile','deleteProfile','activateProfile','setUiLanguage'].includes(msg.type)) return mutateState(() => credentialAction(msg));
     if (msg.type === 'panelSelection') {
       const windowId = msg.windowId; if (!Number.isInteger(windowId) || sender.url?.split(/[?#]/)[0] !== chrome.runtime.getURL('sidepanel.html')) throw new Error('未知操作。');
       const key = 'panel:'+windowId, items = await chrome.storage.session.get(key);
@@ -111,7 +224,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
 
 const running = new Set<AbortController>();
 chrome.runtime.onConnect.addListener(port => {
-  if (port.name !== 'lingo-task' || port.sender?.id !== chrome.runtime.id) { port.disconnect(); return; }
+  if (!['lingo-task','lingo-check'].includes(port.name) || port.sender?.id !== chrome.runtime.id) { port.disconnect(); return; }
   const sender = port.sender;
   if (!trusted(sender) && (!sender.tab || !/^https?:/.test(sender.url || ''))) { port.disconnect(); return; }
   let controller: AbortController | null = null;
@@ -121,7 +234,8 @@ chrome.runtime.onConnect.addListener(port => {
   port.onMessage.addListener(async (msg) => {
     if (msg.type === 'cancel') { controller?.abort(); return; }
     if (msg.type !== 'run' || controller) return;
-    const task = msg.task as Task;
+    const checking=port.name==='lingo-check';
+    const task = msg.task as Task & CheckTask;
     controller = new AbortController();
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let idle: ReturnType<typeof setTimeout> | undefined;
@@ -137,7 +251,14 @@ chrome.runtime.onConnect.addListener(port => {
       if (!c.apiKey && c.vault) throw new Error('Key 已锁定，请在设置中输入本机解锁密码。');
       if (!c.apiKey) throw new Error('请先打开设置，填写你的 API Key。');
       if (!trusted(sender) && sender.tab && c.settings.blockedHosts.includes(new URL(sender.url!).hostname)) throw new Error('此站点已暂停 Lingo，请从扩展菜单重新启用。');
-      const request = buildRequest(task, c.settings.model);
+      if(checking&&msg.automatic===true){
+        await inlineQueue.catch(()=>{});const prefs=await inlinePreference(sender);
+        if(!prefs.autoCheck)throw new Error('此网站的自动检查已关闭。');
+        if(prefs.includeStyle!==task.includeStyle)throw new Error('检查选项已变化，请重新检查。');
+        automaticRuns.set(controller,{origin:prefs.origin,includeStyle:task.includeStyle});
+      }
+      if(checking)await dictionaryQueue.catch(()=>{});
+      const request = checking?buildCheckRequest(task,c.settings.model,(await dictionaryState()).words):buildRequest(task, c.settings.model);
       if (!trusted(sender)) {
         try {
           await chrome.scripting.executeScript({
@@ -154,15 +275,18 @@ chrome.runtime.onConnect.addListener(port => {
       timeout = setTimeout(() => { timedOut = true; controller?.abort(); }, 120000);
       if (!await chrome.permissions.contains({origins:[apiOrigin(c.settings.baseUrl)]})) throw new Error('API 服务授权已失效，请在设置中重新授权。');
       if (c.credentialBaseUrl !== c.settings.baseUrl) throw new Error('凭据与服务地址不匹配，请重新保存 Key。');
+      if(checking&&msg.automatic===true){const prefs=await inlinePreference(sender);if(!prefs.autoCheck||prefs.includeStyle!==task.includeStyle||controller.signal.aborted)throw new Error('检查选项已变化，请重新检查。');}
       const res = await fetch(c.settings.baseUrl + '/responses', {
         redirect:'error', credentials:'omit', referrerPolicy:'no-referrer',
         method: 'POST', headers: { 'Authorization': `Bearer ${c.apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(request), signal: controller.signal
       });
-      await readResponses(res, text => send({type:'delta', id:task.id, text}), resetIdle);
-      send({ type: 'done', id: task.id });
+      let raw='';
+      await readResponses(res, text => {if(checking)raw+=text;else send({type:'delta', id:task.id, text});}, resetIdle);
+      if(checking)send({type:'checked',id:task.id,...parseDiagnostics(raw,task.text,task.includeStyle)});
+      else send({ type: 'done', id: task.id });
     } catch (e) {
       send({ type: 'error', id: task?.id, error: t(timedOut ? '请求超时，请稍后重试。' : controller.signal.aborted ? '已停止生成。' : e instanceof TypeError ? '网络连接失败，请检查网络后重试。' : (e as Error).message || '请求失败，请重试。') });
-    } finally { clearTimeout(timeout); clearTimeout(idle); if (controller) running.delete(controller); }
+    } finally { clearTimeout(timeout); clearTimeout(idle); if (controller) {running.delete(controller);automaticRuns.delete(controller);} }
   });
 });
