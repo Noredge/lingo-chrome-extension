@@ -22,13 +22,13 @@ export function createInlineChecker() {
   <section id="inline-popover" class="popover" role="dialog" aria-label="Lingo 行内检查" hidden>
     <div class="heading"><strong>行内检查</strong><button class="close" type="button" aria-label="收起建议">×</button></div>
     <div class="overview"><p class="scope">仅发送当前输入框全文；点击检查才发送。</p><label class="options"><input type="checkbox" class="auto-check">在此网站自动检查</label><label class="options"><input type="checkbox" class="include-style">包含表达优化（可选）</label><p class="preference-source"></p><button type="button" class="follow-defaults" hidden>跟随全局设置</button><div class="row"><button type="button" class="run primary">检查全文</button><button type="button" class="cancel" hidden>停止</button></div><div class="legend"><span class="grammar-key">红线：语法与拼写</span><span class="style-key">绿线：表达改进</span></div><div class="list"></div></div>
-    <div class="detail" hidden><div class="heading"><span class="category"></span><button type="button" class="back">所有建议</button></div><div class="change" translate="no" dir="auto"><del></del><span aria-hidden="true">→</span><ins></ins></div><div class="related" translate="no" dir="auto"></div><div class="linked-note"></div><div class="reason" translate="no" dir="auto"></div><div class="row"><button type="button" class="accept primary">接受修改</button><button type="button" class="ignore">忽略本次</button></div><button type="button" class="add-word" hidden>加入个人词典</button><div class="dictionary-feedback" role="status" aria-live="polite"></div></div>
+    <div class="detail" hidden><div class="heading"><span class="category"></span><button type="button" class="back">所有建议</button></div><div id="inline-reason" class="reason" translate="no" dir="auto"></div><div class="change"><button type="button" class="accept" aria-label="接受修改" aria-describedby="inline-replacement inline-reason"><ins id="inline-replacement" translate="no" dir="auto"></ins><kbd class="enter-key" aria-hidden="true" translate="no">Enter</kbd></button></div><div class="related" translate="no" dir="auto"></div><div class="linked-note"></div><div class="row detail-actions"><button type="button" class="ignore">忽略本次</button><button type="button" class="add-word" hidden>加入个人词典</button></div><div class="dictionary-feedback" role="status" aria-live="polite"></div></div>
     <div class="status" role="status" aria-live="polite"></div><div class="geometry"></div><div class="footer"><button type="button" class="undo" disabled>撤销上次接受</button><button type="button" class="settings">打开设置</button></div>
   </section><div class="announcement" role="status" aria-live="polite"></div>`;root.append(ui);
   const shortcutGuard=createShortcutGuard(document);
   ui.querySelector('.accept')!.setAttribute('aria-keyshortcuts','Enter');
   const $=<T extends HTMLElement=HTMLElement>(name:string)=>root.querySelector<T>('.'+name)!;
-  const detail=$('detail');$('list').tabIndex=-1;$('list').setAttribute('aria-label','修改建议列表');
+  const detail=$('detail');$('popover').tabIndex=-1;$('list').tabIndex=-1;$('list').setAttribute('aria-label','修改建议列表');
   let state:FieldState|null=null;
   let target:TextField|null=null,source='',issues:Issue[]=[],skipped=0,checked=false,active:string|null=null,open=false,listOpen=false;
   let allowed=false,locale:'zh-CN'|'zh-TW'|'en'='zh-CN',configEpoch=0,generation=0;
@@ -71,7 +71,7 @@ export function createInlineChecker() {
   function stop(){cancelAuto();endHover();generation++;pending=false;automaticRequest=false;clearTimeout(requestTimer);const old=port;port=null;old?.disconnect();}
   function clear(){
     if(autoCheck&&target&&readField(target)?.revision===state?.revision&&(checked||error))cache.set(target,{source,revision:state!.revision,issues,skipped,checked,notice,error});
-    stop();reviewPlacement=null;trustedEdit=false;clearTimeout(editEventTimer);compositionTyped=false;target=null;state=null;source='';issues=[];undo=null;rects=[];open=listOpen=false;active=null;checked=false;resize.disconnect();mutations.disconnect();ancestors.disconnect();styles.disconnect();lastLayoutKey='';markWatchPoints=[];validateScheduled=false;clearInterval(timer);cancelAnimationFrame(frame);frame=0;host.remove();$('popover').insertBefore(detail,$('status'));$('marks').replaceChildren();$('mirror').replaceChildren();$('list').replaceChildren();$('related').replaceChildren();$('linked-note').textContent='';$('reason').textContent='';$('change').querySelector('del')!.textContent='';$('change').querySelector('ins')!.textContent='';
+    stop();reviewPlacement=null;trustedEdit=false;clearTimeout(editEventTimer);compositionTyped=false;target=null;state=null;source='';issues=[];undo=null;rects=[];open=listOpen=false;active=null;checked=false;resize.disconnect();mutations.disconnect();ancestors.disconnect();styles.disconnect();lastLayoutKey='';markWatchPoints=[];validateScheduled=false;clearInterval(timer);cancelAnimationFrame(frame);frame=0;host.remove();$('popover').insertBefore(detail,$('status'));$('marks').replaceChildren();$('mirror').replaceChildren();$('list').replaceChildren();$('related').replaceChildren();$('linked-note').textContent='';$('reason').textContent='';$('change').querySelector('ins')!.textContent='';
   }
   function invalidate(message='原文已变化，请重新检查。') {
     if(target)cache.delete(target);
@@ -194,10 +194,10 @@ export function createInlineChecker() {
       $('detail').dataset.kind=issue.kind;root.querySelector<HTMLElement>('.detail .category')!.textContent=category(issue);
       const edits=inlineChanges(issue),at=rects.find(r=>r.key===anchorKey),selected=edits.find(edit=>edit.start===at?.start)||edits[0];
     const before=(text:string)=>text?text.trim()?text:t('空白'):t('插入');const after=(text:string)=>text?text.trim()?text:t('空白'):t('删除');
-      $('change').querySelector('del')!.textContent=before(selected.source);$('change').querySelector('ins')!.textContent=after(selected.replacement);$('reason').textContent=issue.reason;
+      $('change').querySelector('ins')!.textContent=after(selected.replacement);$('reason').textContent=issue.reason;
       for(const edit of edits.filter(edit=>edit!==selected)){const row=document.createElement('div'),old=document.createElement('del'),next=document.createElement('ins');old.textContent=before(edit.source);next.textContent=after(edit.replacement);row.append(old,document.createTextNode(' → '),next);$('related').append(row);}
       if(edits.length>1)$('linked-note').textContent=`此建议包含 ${edits.length} 处关联修改，将一起接受。`;
-    }else{$('reason').textContent='';$('change').querySelector('del')!.textContent='';$('change').querySelector('ins')!.textContent='';}
+    }else{$('reason').textContent='';$('change').querySelector('ins')!.textContent='';}
     layout();
     $('list').scrollTop=listScroll;$('popover').scrollTop=popoverScroll;
     const restore=focusedIssue?[...$('list').querySelectorAll<HTMLElement>('.issue')].find(el=>el.dataset.id===focusedIssue):focused;
@@ -297,10 +297,14 @@ export function createInlineChecker() {
   }
   async function savePreferences(event:Event,reset=false){
     if(!event.isTrusted||savingPreferences){render();return;}
+    const focused=root.activeElement as HTMLElement|null;
+    const restoreFocus=focused===$('auto-check')||focused===$('include-style')?focused:null;
+    // Disabling a focused checkbox blurs it; park focus before saving so the editor stays active.
+    if(restoreFocus)$('popover').focus({preventScroll:true});
     const next={autoCheck:$<HTMLInputElement>('auto-check').checked,includeStyle:$<HTMLInputElement>('include-style').checked};
     const previous={autoCheck,includeStyle:styleEnabled};const epoch=++preferenceEpoch;savingPreferences=true;cache=new WeakMap();autoCheck=next.autoCheck;styleEnabled=next.includeStyle;invalidate('检查选项已变化，请重新检查。');
     try{const prefs=await chrome.runtime.sendMessage(reset?{type:'resetInlineConfig'}:{type:'setInlineConfig',...next});if(prefs?.error)throw new Error(prefs.error);if(epoch===preferenceEpoch)applyPreferences(prefs);}
-    catch(e){autoCheck=previous.autoCheck;styleEnabled=previous.includeStyle;notice=(e as Error).message;error=true;}finally{savingPreferences=false;render();queueAuto();}
+    catch(e){autoCheck=previous.autoCheck;styleEnabled=previous.includeStyle;notice=(e as Error).message;error=true;}finally{savingPreferences=false;render();if(restoreFocus&&root.activeElement===$('popover')&&!$('popover').hidden)restoreFocus.focus({preventScroll:true});queueAuto();}
   }
   function applyDictionary(next:DictionaryState){
     if(next.revision<dictionary.revision)return;
